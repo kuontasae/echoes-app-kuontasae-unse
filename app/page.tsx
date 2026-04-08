@@ -2650,4 +2650,3 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
     </main>
   );
 }
-
