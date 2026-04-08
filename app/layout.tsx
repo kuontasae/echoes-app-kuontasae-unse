@@ -16,6 +16,10 @@ export const metadata: Metadata = {
   title: "Echoes",
   description: "音楽で繋がる新しいSNS",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/icon.png",
+    apple: "/icon.png", // ← これがiPhoneでアイコンを表示させる魔法の1行
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
