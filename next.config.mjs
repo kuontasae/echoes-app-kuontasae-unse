@@ -13,16 +13,15 @@ const withPWA = withPWAInit({
 });
 
 /** @type {import('next').NextConfig} */
-/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   eslint: {
-    // Vercelでのビルド時にESLintのエラーを無視する
     ignoreDuringBuilds: true,
   },
   typescript: {
-    // Vercelでのビルド時にTypeScriptのエラーを無視する
     ignoreBuildErrors: true,
   },
+  turbopack: {}, // ← Vercelのパニックを黙らせる最強の1行！
 };
+
 export default withPWA(nextConfig);
