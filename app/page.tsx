@@ -118,31 +118,15 @@ const compressImage = async (file: File, maxWidth = 800, quality = 0.7): Promise
 
 
 
+// 💡 ステップ7適用: 全ての言語設定を追加（AIメッセージ等含む・修正版）
 const localI18n: Record<string, any> = {
-
-  "日本語": { feed: "フィード", discover: "見つける", match: "マッチ", diary: "ダイアリー", chat: "チャット", profile: "プロフィール", searchPlaceholder: "楽曲やアーティストを検索...", settings: "設定", cancel: "キャンセル", postVibe: "記録する", audio: "オーディオプレビュー", notifications: "通知", privateAcc: "プライベートアカウント", timezone: "タイムゾーン", language: "言語設定", logout: "ログアウト", features: "機能", appInfo: "このアプリについて", shareApp: "Echoesをシェア", rateApp: "Echoesを評価する", help: "ヘルプ", editProfile: "プロフィールを編集", artist: "アーティスト", topResults: "トップの結果", allSongs: "すべての楽曲", latestRelease: "最新の楽曲", popularSongs: "人気の楽曲", popularAlbums: "人気のアルバム", followers: "フォロワー", rewind: "Echoes Rewind", overwriteVibe: "上書きして記録", alreadyPostedWarning: "今日はすでに記録済みです。新しく記録すると上書きされます。", favoriteArtists: "お気に入りアーティスト", postSuccess: "記録が完了しました！", sendMessage: "メッセージを送る", typeMessage: "メッセージを入力...", vibeMatchAnalysis: "Vibe 分析", topSharedArtists: "共通のトップアーティスト", sharedGenres: "共通のジャンル", noPreview: "プレビュー音源がありません", pass: "スキップ", connect: "気になる", friendsChat: "フレンド", matchesChat: "マッチ", groupsChat: "グループ", communityChat: "コミュニティ", liveHistory: "ライブ参戦履歴", hashtags: "ハッシュタグ" },
-
-  "English": { feed: "Feed", discover: "Discover", match: "Match", diary: "Diary", chat: "Chat", profile: "Profile", searchPlaceholder: "Search music or artists...", settings: "Settings", cancel: "Cancel", postVibe: "Record", audio: "Audio Preview", notifications: "Notifications", privateAcc: "Private Account", timezone: "Time Zone", language: "Language", logout: "Log Out", features: "Features", appInfo: "About App", shareApp: "Share", rateApp: "Rate", help: "Help", editProfile: "Edit Profile", artist: "Artist", topResults: "Top Results", allSongs: "All Songs", latestRelease: "Latest Release", popularSongs: "Popular Songs", popularAlbums: "Popular Albums", followers: "Followers", rewind: "Echoes Rewind", overwriteVibe: "Overwrite", alreadyPostedWarning: "Already posted today.", favoriteArtists: "Favorite Artists", postSuccess: "Vibe recorded!", sendMessage: "Message", typeMessage: "Type...", vibeMatchAnalysis: "Vibe Analysis", topSharedArtists: "Top Shared Artists", sharedGenres: "Shared Genres", noPreview: "No preview available.", pass: "Skip", connect: "Interested", friendsChat: "Friends", matchesChat: "Matches", groupsChat: "Groups", communityChat: "Community", liveHistory: "Live History", hashtags: "Hashtags" },
-
-  "中文": { feed: "动态", discover: "发现", match: "匹配", diary: "日记", chat: "聊天", profile: "我的", searchPlaceholder: "搜索音乐或歌手...", settings: "设置", cancel: "取消", postVibe: "记录", audio: "音频预览", notifications: "通知", privateAcc: "私密账户", timezone: "时区", language: "语言", logout: "登出", features: "功能", appInfo: "关于应用", shareApp: "分享", rateApp: "评价", help: "帮助", editProfile: "编辑资料", artist: "歌手", topResults: "最佳结果", allSongs: "所有歌曲", latestRelease: "最新发布", popularSongs: "热门歌曲", popularAlbums: "热门专辑", followers: "粉丝", rewind: "Echoes 回顾", overwriteVibe: "覆盖记录", alreadyPostedWarning: "今天已经记录过了。", favoriteArtists: "喜欢的歌手", postSuccess: "记录成功！", sendMessage: "发消息", typeMessage: "输入消息...", vibeMatchAnalysis: "Vibe 分析", topSharedArtists: "共同喜欢的歌手", sharedGenres: "共同类型", noPreview: "无试听", pass: "跳过", connect: "感兴趣", friendsChat: "好友", matchesChat: "匹配", groupsChat: "群组", communityChat: "社区", liveHistory: "参战历史", hashtags: "标签" }
-
+  "日本語": { feed: "Global", discover: "見つける", match: "マッチ", diary: "ダイアリー", chat: "チャット", profile: "プロフィール", searchPlaceholder: "楽曲やアーティストを検索...", settings: "設定", cancel: "キャンセル", postVibe: "記録する", audio: "プレビュー音", notifications: "通知", privateAcc: "非公開アカウント", timezone: "タイムゾーン", language: "言語", logout: "ログアウト", features: "機能", appInfo: "アプリについて", shareApp: "シェアする", rateApp: "評価する", help: "ヘルプ", editProfile: "編集", editProfileFull: "プロフィールを編集", artist: "歌手", topResults: "ヒット", allSongs: "全曲", latestRelease: "最新曲", popularSongs: "人気曲", popularAlbums: "アルバム", followers: "フォロワー", rewind: "振り返り", overwriteVibe: "上書き", alreadyPostedWarning: "投稿済みです。上書きしますか？", favoriteArtists: "お気に入り", postSuccess: "記録完了！", sendMessage: "送信", typeMessage: "入力...", vibeMatchAnalysis: "Vibe分析", topSharedArtists: "共通アーティスト", sharedGenres: "共通ジャンル", noPreview: "プレビューなし", pass: "スキップ", connect: "気になる", friendsChat: "フレンド", matchesChat: "マッチ", groupsChat: "グループ", communityChat: "ライブ", liveHistory: "参戦歴", hashtags: "ハッシュタグ", deleteAcc: "アカウント削除", deleteAccFull: "アカウントを完全に削除（退会）", admin: "通報管理", adminOnly: "Admin (運営専用)", adminDashboard: "通報管理ダッシュボード", musicSearch: "音楽を探す", follow: "フォロー", following: "フォロー中", block: "ブロックする", report: "通報する", myEchoes: "My Echoes", likedPosts: "いいねした投稿", aiStart: "まだ記録がありません。曲を記録すると、AIが好みを分析します。", aiRec: "などの傾向から、今のあなたにぴったりな3曲をピックアップしました。", aiAnalyzing: "分析中..." },
+  "English": { feed: "Global", discover: "Discover", match: "Match", diary: "Diary", chat: "Chat", profile: "Profile", searchPlaceholder: "Search...", settings: "Settings", cancel: "Cancel", postVibe: "Post", audio: "Audio", notifications: "Notif", privateAcc: "Private", timezone: "Timezone", language: "Lang", logout: "Log Out", features: "Features", appInfo: "About", shareApp: "Share", rateApp: "Rate", help: "Help", editProfile: "Edit", editProfileFull: "Edit Profile", artist: "Artist", topResults: "Top", allSongs: "All", latestRelease: "New", popularSongs: "Hot", popularAlbums: "Albums", followers: "Followers", rewind: "Rewind", overwriteVibe: "Overwrite", alreadyPostedWarning: "Already posted. Overwrite?", favoriteArtists: "Favorites", postSuccess: "Success!", sendMessage: "Send", typeMessage: "Aa", vibeMatchAnalysis: "Analysis", topSharedArtists: "Shared Artists", sharedGenres: "Shared Genres", noPreview: "No audio", pass: "Skip", connect: "Like", friendsChat: "Friends", matchesChat: "Matches", groupsChat: "Groups", communityChat: "Lives", liveHistory: "History", hashtags: "Hashtags", deleteAcc: "Delete Account", deleteAccFull: "Delete Account Permanently", admin: "Admin", adminOnly: "Admin Only", adminDashboard: "Report Dashboard", musicSearch: "Search Music", follow: "Follow", following: "Following", block: "Block", report: "Report", myEchoes: "My Echoes", likedPosts: "Liked Posts", aiStart: "Start recording vibes to get AI recommendations.", aiRec: "inspired recommendations just for you.", aiAnalyzing: "Analyzing..." },
+  "中文": { feed: "Global", discover: "发现", match: "匹配", diary: "日记", chat: "聊天", profile: "我的", searchPlaceholder: "搜索...", settings: "设置", cancel: "取消", postVibe: "记录", audio: "音频", notifications: "通知", privateAcc: "私密", timezone: "时区", language: "语言", logout: "登出", features: "功能", appInfo: "关于", shareApp: "分享", rateApp: "评价", help: "帮助", editProfile: "编辑", editProfileFull: "编辑个人资料", artist: "歌手", topResults: "最佳", allSongs: "所有", latestRelease: "最新", popularSongs: "热门", popularAlbums: "专辑", followers: "粉丝", rewind: "回顾", overwriteVibe: "覆盖", alreadyPostedWarning: "已记录。覆盖吗？", favoriteArtists: "喜欢", postSuccess: "成功！", sendMessage: "发送", typeMessage: "输入...", vibeMatchAnalysis: "分析", topSharedArtists: "共同歌手", sharedGenres: "共同类型", noPreview: "无试听", pass: "跳过", connect: "感兴趣", friendsChat: "好友", matchesChat: "匹配", groupsChat: "群组", communityChat: "社区", liveHistory: "参战历史", hashtags: "标签", deleteAcc: "注销", deleteAccFull: "永久注销账号", admin: "管理员", adminOnly: "Admin (管理员专用)", adminDashboard: "举报管理面板", musicSearch: "搜索音乐", follow: "关注", following: "已关注", block: "拉黑", report: "举报", myEchoes: "我的记录", likedPosts: "赞过的帖子", aiStart: "开始记录以获取 AI 推荐。", aiRec: "风格的专属推荐。", aiAnalyzing: "分析中..." }
 };
 
 
-
-const initialMockUsers: User[] = [
-
-  { id: "u1", handle: "anzuuumo", name: "杏夏", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&q=80", bio: "Alternative & Indie", followers: 4200, following: 50, isPrivate: false, category: 'suggested', mutualText: "16人の共通の友達", topArtists: ["Tele", "Vaundy", "King Gnu"], hashtags: ["邦ロック好きな人と繋がりたい", "Tele"], liveHistory: ["VIVA LA ROCK 2026", "Tele ツアー2026 - 東京Zepp公演"], age: 22, gender: "female" },
-
-  { id: "u2", handle: "ayk_21", name: "あやか", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80", bio: "チルい曲好き。", followers: 89, following: 120, isPrivate: true, category: 'similar', mutualText: "13人の共通の友達", similarMusic: "藤井風、ヨルシカを聴いています", topArtists: ["藤井風", "ヨルシカ"], hashtags: ["チルい曲", "深夜の音楽"], liveHistory: ["藤井風 日産スタジアム"], age: 21, gender: "female" },
-
-  { id: "u3", handle: "kuma479", name: "くま", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80", bio: "Western music lover", followers: 200, following: 180, isPrivate: false, category: 'suggested', mutualText: "12人の共通の友達", topArtists: ["Taylor Swift", "The 1975"], hashtags: ["洋楽", "Swiftie"], liveHistory: ["Taylor Swift Tokyo Dome"], age: 24, gender: "male" },
-
-  { id: "s1", handle: "rock_boy99", name: "Ken", avatar: "https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&q=80", bio: "マカロニえんぴつ好き", followers: 150, following: 200, isPrivate: false, category: 'similar', similarMusic: "Vaundy、Saucy Dogを聴いています", topArtists: ["マカロニえんぴつ", "Saucy Dog"], hashtags: ["マカえん", "邦ロック"], liveHistory: ["マカロニえんぴつ アリーナツアー"], age: 20, gender: "male" },
-
-  { id: "f1", handle: "tenshinisreal", name: "那須川天心", avatar: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80", bio: "Fighter", followers: 100000, following: 15, isPrivate: false, category: 'famous', mutualText: "10万人にフォローされています", age: 27, gender: "male" },
-
-];
+const initialMockUsers: User[] = [];
 
 
 
@@ -668,7 +652,7 @@ const [followedUsers, setFollowedUsers] = useState<Set<string>>(new Set());
 
 
 
-  // 💡 他のユーザーのフォロー数をリアルタイム取得する
+  // 💡 他のユーザーの{t('follow')}数をリアルタイム取得する
 
   const [viewingUserStats, setViewingUserStats] = useState({ followers: 0, following: 0 });
 
@@ -861,22 +845,14 @@ const profileBackTarget = { tab: 'search', chatUserId: null }; // 💡 読み込
       const myVibes = vibes.filter(v => v.user.id === currentUser.id || v.user.id === myProfile.id);
 
       if (myVibes.length === 0) {
-
-        setAiMessage("まだ記録がありません。曲を記録すると、AIがあなたの好みを分析しておすすめを提案します。");
-
-        setAiRecommendations([]);
-
-        return;
-
-      }
-
-      
-
-      // 直近に聴いたアーティストを最大3組抽出
-
-      const recentArtists = [...new Set(myVibes.slice(0, 10).map(v => v.artist))].slice(0, 3);
-
-      setAiMessage(`最近よく聴いている「${recentArtists.join('、')}」などの傾向から、今のあなたにぴったりな3曲をピックアップしました。`);
+        setAiMessage(t('aiStart'));
+        setAiRecommendations([]);
+        return;
+      }
+      
+      // 直近に聴いたアーティストを最大3組抽出
+      const recentArtists = [...new Set(myVibes.slice(0, 10).map(v => v.artist))].slice(0, 3);
+      setAiMessage(`${recentArtists.join(', ')} ${t('aiRec')}`);
 
 
 
@@ -920,7 +896,7 @@ const profileBackTarget = { tab: 'search', chatUserId: null }; // 💡 読み込
 
     analyzeVibes();
 
-  }, [vibes, currentUser, myProfile.id, trendingSongs]);
+  }, [vibes, currentUser, myProfile.id, trendingSongs, language]);
 
 
 
@@ -955,89 +931,59 @@ const profileBackTarget = { tab: 'search', chatUserId: null }; // 💡 読み込
 
 
   useEffect(() => {
-
-    const checkSession = async () => {
-
-      const { data: { session } } = await supabase.auth.getSession();
-
-      if (session) {
-
-        setCurrentUser(session.user);
-
-        setIsLoggedIn(true);
-
-        const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-
-        if (profile) {
-
-          setMyProfile(prev => ({ ...prev, ...profile }));
-
-          const { data: followingData } = await supabase.from('follows').select('following_id').eq('follower_id', session.user.id);
-
-          if (followingData) setFollowedUsers(new Set(followingData.map(d => d.following_id)));
-
-          const { data: followersData } = await supabase.from('follows').select('follower_id').eq('following_id', session.user.id);
-
-          if (followersData) setMyFollowers(new Set(followersData.map(d => d.follower_id)));
-
-        }
-
+    const handleSession = async (session: any) => {
+      setCurrentUser(session.user);
+      setIsLoggedIn(true);
+      
+      let { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+      
+      // 💡 プロフィールが存在しない場合（新規登録の初回ログイン時）は確実に作成する
+      if (!profile) {
+        const defaultName = session.user.email?.split('@')[0] || "ゲスト";
+        const newProfile = { 
+          id: session.user.id, 
+          name: defaultName, 
+          handle: defaultName, 
+          avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80", 
+          bio: "よろしくお願いします！" 
+        };
+        await supabase.from('profiles').insert([newProfile]);
+        profile = newProfile;
       }
 
-      setIsInitializing(false);
+      setMyProfile(prev => ({ ...prev, ...profile }));
+      
+      const { data: followingData } = await supabase.from('follows').select('following_id').eq('follower_id', session.user.id);
+      if (followingData) setFollowedUsers(new Set(followingData.map(d => d.following_id)));
+      const { data: followersData } = await supabase.from('follows').select('follower_id').eq('following_id', session.user.id);
+      if (followersData) setMyFollowers(new Set(followersData.map(d => d.follower_id)));
 
+      // 💡 初期状態なら、自動的にプロフィール設定画面をポップアップさせる
+      if (profile.bio === "よろしくお願いします！") {
+        setEditName(profile.name); 
+        setEditHandle(profile.handle); 
+        setEditBio("");
+        setIsEditingProfile(true); // これが編集画面を開く魔法のスイッチだ
+        showToast("初めまして！プロフィールを設定しましょう", "success");
+      }
     };
 
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) await handleSession(session);
+      setIsInitializing(false);
+    };
     checkSession();
-
     
-
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-
       if (session) {
-
-        setCurrentUser(session.user);
-
-        setIsLoggedIn(true);
-
-        const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
-
-        if (profile) {
-
-          setMyProfile(prev => ({ ...prev, ...profile }));
-
-          const { data: followingData } = await supabase.from('follows').select('following_id').eq('follower_id', session.user.id);
-
-          if (followingData) setFollowedUsers(new Set(followingData.map(d => d.following_id)));
-
-          const { data: followersData } = await supabase.from('follows').select('follower_id').eq('following_id', session.user.id);
-
-          if (followersData) setMyFollowers(new Set(followersData.map(d => d.follower_id)));
-
-          if (profile.bio === "よろしくお願いします！") {
-
-            setEditName(profile.name); setEditHandle(profile.handle); setEditBio("");
-
-            setIsEditingProfile(true);
-
-            showToast("初めまして！プロフィールを設定しましょう", "success");
-
-          }
-
-        }
-
+        await handleSession(session);
       } else {
-
         setCurrentUser(null);
-
         setIsLoggedIn(false);
-
       }
-
     });
-
     return () => { authListener.subscription.unsubscribe(); };
-
   }, []);
 
 
@@ -1065,101 +1011,55 @@ const profileBackTarget = { tab: 'search', chatUserId: null }; // 💡 読み込
 
 
   const fetchVibes = async (pageNumber = 0, isRefresh = false) => {
-
     if (isLoadingVibes || (!hasMoreVibes && !isRefresh)) return;
-
     setIsLoadingVibes(true);
 
-
-
     const from = pageNumber * VIBES_PER_PAGE;
-
     const to = from + VIBES_PER_PAGE - 1;
 
-
-
-    // 💡 range() を使って必要な件数だけをデータベースから取得する
-
     const { data: vibesData, error: vibesError } = await supabase.from('vibes').select('*').order('created_at', { ascending: false }).range(from, to);
-
     const { data: profilesData, error: profilesError } = await supabase.from('profiles').select('*');
-
     const { data: likesData } = await supabase.from('likes').select('*');
-
     const { data: commentsData } = await supabase.from('comments').select('*');
 
-
-
     if (vibesError || profilesError) {
-
       setIsLoadingVibes(false);
-
       return;
-
     }
-
-
 
     if (vibesData && profilesData) {
-
       const currentUserId = (await supabase.auth.getUser()).data.user?.id;
+      
+      // 💡 復活！プロフィールが存在する（退会していない）本物のユーザーの投稿だけを残す強力フィルター
+      const validVibesData = vibesData.filter((v: any) => profilesData.some((p: any) => p.id === v.user_id));
 
-      const formatted = vibesData.map((v: any) => {
-
+      const formatted = validVibesData.map((v: any) => {
         const authorProfile = profilesData.find((p: any) => p.id === v.user_id);
-
         const postUser = authorProfile ? { id: authorProfile.id, name: authorProfile.name, handle: authorProfile.handle, avatar: authorProfile.avatar, bio: authorProfile.bio, followers: 0, following: 0, isPrivate: false, category: 'suggested' } : myProfile;
-
         const postLikes = likesData ? likesData.filter((l: any) => l.vibe_id === v.id) : [];
-
         const postComments = commentsData ? commentsData.filter((c: any) => c.vibe_id === v.id) : [];
-
         const isLikedByMe = currentUserId ? postLikes.some((l: any) => l.user_id === currentUserId) : false;
-
         const formattedComments = postComments.map((c: any) => {
-
            const commenterProfile = profilesData.find((p: any) => p.id === c.user_id);
-
            return { id: c.id, text: c.text, user: commenterProfile ? { id: commenterProfile.id, handle: commenterProfile.handle, name: commenterProfile.name, avatar: commenterProfile.avatar } : myProfile };
-
         });
-
         return { id: v.id, trackId: parseInt(v.track_id) || 0, title: v.title, artist: v.artist, artistId: 0, imgUrl: v.img_url, previewUrl: v.preview_url, date: new Date(v.created_at).toLocaleDateString('ja-JP'), year: new Date(v.created_at).getFullYear(), month: new Date(v.created_at).getMonth() + 1, dayIndex: new Date(v.created_at).getDate(), timestamp: new Date(v.created_at).getTime(), time: new Date(v.created_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }), caption: v.caption || "", user: postUser, likes: postLikes.length, isLiked: isLikedByMe, comments: formattedComments };
-
       });
-
       
-
       if (isRefresh || pageNumber === 0) {
-
         setVibes(formatted as Song[]);
-
       } else {
-
         setVibes(prev => {
-
-          // 💡 重複を排除してデータを結合する
-
           const existingIds = new Set(prev.map(p => p.id));
-
           const newItems = formatted.filter(f => !existingIds.has(f.id));
-
           return [...prev, ...newItems] as Song[];
-
         });
-
       }
-
       
-
       setHasMoreVibes(vibesData.length === VIBES_PER_PAGE);
-
       setVibePage(pageNumber);
-
     }
-
     setIsLoadingVibes(false);
-
   };
 
 
@@ -1890,7 +1790,7 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
 
 
 
-  // 💡 嘘のコミュニティを通報する機能（重複チェック版）
+  // 💡 嘘のコミュニティを{t('report')}機能（重複チェック版）
 
   const handleReportCommunity = (id: string) => {
 
@@ -1910,7 +1810,7 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
 
 
 
-    if (confirm("このライブ情報は間違っていますか？\n（3人以上の異なるユーザーが通報すると運営が確認します）")) {
+    if (confirm("このライブ情報は間違っていますか？\n（3人以上の異なるユーザーが{t('report')}と運営が確認します）")) {
 
       setRealCommunities(prev => prev.map(c => 
 
@@ -2266,13 +2166,13 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
 
       const { error } = await supabase.from('follows').delete().eq('follower_id', currentUser.id).eq('following_id', targetUserId);
 
-      if (!error) { setFollowedUsers(prev => { const next = new Set(prev); next.delete(targetUserId); return next; }); showToast("フォローを解除しました"); }
+      if (!error) { setFollowedUsers(prev => { const next = new Set(prev); next.delete(targetUserId); return next; }); showToast("{t('follow')}を解除しました"); }
 
     } else {
 
       const { error } = await supabase.from('follows').insert([{ follower_id: currentUser.id, following_id: targetUserId }]);
 
-      if (!error) { setFollowedUsers(prev => { const next = new Set(prev); next.add(targetUserId); return next; }); showToast("フォローしました！", "success"); }
+      if (!error) { setFollowedUsers(prev => { const next = new Set(prev); next.add(targetUserId); return next; }); showToast("{t('follow')}しました！", "success"); }
 
     }
 
@@ -2375,26 +2275,62 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
   
 
   const handleSignUp = async () => {
-
-    setIsAuthLoading(true);
-
-    const { data, error } = await supabase.auth.signUp({ email, password });
-
-    if (error) { showToast("登録失敗: " + error.message, "error"); setIsAuthLoading(false); return; }
-
-    if (data.user && data.user.identities && data.user.identities.length === 0) { showToast("このメールアドレスはすでに登録されています", "error"); setIsAuthLoading(false); return; }
-
-    if (data.user) {
-
-      await supabase.from('profiles').insert([{ id: data.user.id, name: email.split('@')[0], handle: email.split('@')[0], avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80", bio: "よろしくお願いします！" }]);
-
+    const pwRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    if (!pwRegex.test(password)) {
+      showToast("パスワードは8文字以上で、英語と数字を両方含めてください", "error");
+      return;
     }
 
-    setIsAuthLoading(false); setSignupSuccess(true);
+    setIsAuthLoading(true);
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) { showToast("登録失敗: " + error.message, "error"); setIsAuthLoading(false); return; }
+    if (data.user && data.user.identities && data.user.identities.length === 0) { showToast("このメールアドレスはすでに登録されています", "error"); setIsAuthLoading(false); return; }
+    if (data.user) {
+      await supabase.from('profiles').insert([{ id: data.user.id, name: email.split('@')[0], handle: email.split('@')[0], avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80", bio: "よろしくお願いします！" }]);
+      setSignupSuccess(true);
+    }
+    setIsAuthLoading(false);
+  }; // ⬅️ おそらくこの「 }; 」が消えてしまっていたのがエラーの原因だ！
 
+  // 💡 ステップ8: ログアウト・退会機能の完全実装
+  const handleLogout = async () => {
+    showToast(t('logout') + "しています...");
+    await supabase.auth.signOut();
+    // キャッシュやReactの状態を完全にリセットしてトップへ戻す
+    window.location.href = '/';
   };
 
+  const handleDeleteAccount = async () => {
+    if (!currentUser) return;
+    showToast("アカウントのデータを完全に消去しています...", "success");
+    
+    try {
+      // 1. 関連するすべてのデータを並行して一気に消去する
+      await Promise.all([
+        supabase.from('vibes').delete().eq('user_id', currentUser.id),
+        supabase.from('likes').delete().eq('user_id', currentUser.id),
+        supabase.from('comments').delete().eq('user_id', currentUser.id),
+        supabase.from('follows').delete().eq('follower_id', currentUser.id),
+        supabase.from('follows').delete().eq('following_id', currentUser.id),
+        supabase.from('notifications').delete().eq('user_id', currentUser.id),
+        supabase.from('chat_messages').delete().eq('sender_id', currentUser.id)
+      ]);
+      
+      // 2. プロフィールを削除
+      await supabase.from('profiles').delete().eq('id', currentUser.id);
 
+      // 3. 💡 【重要】ここが動画で抜けていた部分！Supabaseのユーザー自体を消滅させる
+      const { error: rpcError } = await supabase.rpc('delete_user', { target_id: currentUser.id });
+      if (rpcError) throw rpcError;
+      
+      // 4. ログアウトして画面を初期化
+      await supabase.auth.signOut();
+      window.location.href = '/';
+    } catch (e) {
+      console.error("退会エラー詳細:", e);
+      showToast("退会処理中にエラーが発生しました", "error");
+    }
+  };
 
   const DrumrollPickerModal = () => {
 
@@ -2525,19 +2461,19 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
             <div key={i} className={`group aspect-square bg-[#1c1c1e] rounded-[14px] flex items-center justify-center relative overflow-hidden ${v ? 'border border-zinc-800/30' : ''}`}>
 
               {v ? (
-
                 <>
-
                   <img src={v.imgUrl} className="absolute inset-0 w-full h-full object-cover opacity-60 cursor-pointer" onClick={() => setSelectedCalendarPopupVibe(v)} />
-
-                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-
-                    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePlay(v.previewUrl); }} className="w-10 h-10 bg-black/60 rounded-full flex items-center justify-center text-white pointer-events-auto shadow-lg hover:scale-105 transition-transform relative z-50">{playingSong === v.previewUrl ? <IconStop /> : <IconPlay />}</button>
-
+                  
+                  {/* 💡 ステップ9追加: マスの下部にグラデーションを敷いて文字を見やすくする */}
+                  <div className="absolute bottom-0 left-0 w-full p-1.5 bg-gradient-to-t from-black/90 via-black/50 to-transparent pointer-events-none flex flex-col justify-end">
+                    <p className="text-[9px] font-bold text-white truncate leading-tight drop-shadow-md">{v.title}</p>
+                    <p className="text-[7.5px] font-black text-[#1DB954] truncate drop-shadow-md mt-0.5">{v.artist}</p>
                   </div>
 
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                    <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePlay(v.previewUrl); }} className="w-8 h-8 bg-black/80 rounded-full flex items-center justify-center text-white pointer-events-auto shadow-xl hover:scale-110 transition-transform relative z-50">{playingSong === v.previewUrl ? <IconStop /> : <IconPlay />}</button>
+                  </div>
                 </>
-
               ) : <span className="text-[10px] text-zinc-700 font-bold">{day}</span>}
 
             </div>
@@ -3326,7 +3262,7 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
 
                <button onClick={() => handleReportCommunity(activeCommunityDetail.id)} className="w-full py-3 bg-transparent text-zinc-600 hover:text-red-500 rounded-xl text-[10px] font-bold transition-colors flex items-center justify-center gap-1.5 mt-2">
 
-                 <IconWarning /> このライブ情報を嘘として通報する
+                 <IconWarning /> このライブ情報を嘘として{t('report')}
 
                </button>
 
@@ -4122,27 +4058,24 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
 
                <div className="flex items-center justify-between p-4 border-b border-zinc-800/50 cursor-pointer"><div className="flex items-center gap-3"><IconStar /><p className="font-bold text-sm">{t('rateApp')}</p></div><IconChevronRight /></div>
 
-               <div className="flex items-center justify-between p-4 border-b border-zinc-800/50 cursor-pointer" onClick={() => setShowAppInfoModal({title: t('help'), content: "サポート窓口: support@echo.es\n\n24時間以内に担当者がお答えします。"})}><div className="flex items-center gap-3"><IconHelp /><p className="font-bold text-sm">{t('help')}</p></div><IconChevronRight /></div>
+              <div className="flex items-center justify-between p-4 border-b border-zinc-800/50 cursor-pointer" onClick={() => setShowAppInfoModal({title: t('help'), content: "サポート窓口: echos.jpn@gmail.com\n\n24時間以内に担当者がお答えします。"})}><div className="flex items-center gap-3"><IconHelp /><p className="font-bold text-sm">{t('help')}</p></div><IconChevronRight /></div>
 
                <div className="flex items-center justify-between p-4 cursor-pointer" onClick={() => setShowAppInfoModal({title: t('appInfo'), content: "バージョン: 42.0.0\n\nEchoesは、音楽を通じて日々の記録を残す新しい形のSNSです。"})}><div className="flex items-center gap-3"><IconInfo /><p className="font-bold text-sm">{t('appInfo')}</p></div><IconChevronRight /></div>
 
             </div>
 
-            {/* 💡 ここに運営用メニューを追加 */}
-
-             <p className="text-xs font-bold text-red-500 mb-2 px-2">Admin (運営専用)</p>
-
-             <div className="bg-[#1c1c1e] rounded-2xl mb-8 flex flex-col border border-red-500/30">
-
-               <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-red-500/10 transition-colors rounded-2xl" onClick={() => { setShowSettingsMenu(false); setShowAdminDashboard(true); }}>
-
-                 <div className="flex items-center gap-3 text-red-500"><IconWarning /><p className="font-bold text-sm">通報管理ダッシュボード</p></div>
-
-                 <IconChevronRight />
-
-               </div>
-
-             </div>
+            {/* 💡 修正5: 指定メアドだけが見える管理者ダッシュボード */}
+            {currentUser?.email === 'kota12202003@icloud.com' && (
+              <>
+                <p className="text-xs font-bold text-red-500 mb-2 px-2">{t('adminOnly')}</p>
+                <div className="bg-[#1c1c1e] rounded-2xl mb-8 flex flex-col border border-red-500/30">
+                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-red-500/10 transition-colors rounded-2xl" onClick={() => { setShowSettingsMenu(false); setShowAdminDashboard(true); }}>
+                    <div className="flex items-center gap-3 text-red-500"><IconWarning /><p className="font-bold text-sm">{t('adminDashboard')}</p></div>
+                    <IconChevronRight />
+                  </div>
+                </div>
+              </>
+            )}
 
              
 
@@ -4150,7 +4083,7 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
 
              {/* 💡 アカウント退会ボタン */}
 
-             <button onClick={() => setShowDeleteAccountConfirm(true)} className="w-full bg-transparent border border-red-500/30 hover:bg-red-500/10 transition-colors text-red-500 font-bold py-4 rounded-2xl text-center mb-10 shadow-sm">アカウントを完全に削除（退会）</button>
+             <button onClick={() => setShowDeleteAccountConfirm(true)} className="w-full bg-transparent border border-red-500/30 hover:bg-red-500/10 transition-colors text-red-500 font-bold py-4 rounded-2xl text-center mb-10 shadow-sm">{t('deleteAccFull')}</button>
 
           </div>
 
@@ -4182,21 +4115,7 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
 
               <button onClick={() => setShowDeleteAccountConfirm(false)} className="flex-1 py-3.5 border border-zinc-800 rounded-xl text-xs font-bold uppercase hover:bg-zinc-800">キャンセル</button>
 
-              <button onClick={async () => { 
-
-                showToast("アカウントを削除しています...", "success");
-
-                // 💡 本番環境ではここで Supabase の auth.admin.deleteUser などを行う
-
-                setTimeout(async () => {
-
-                  await supabase.auth.signOut(); 
-
-                  window.location.reload(); 
-
-                }, 1500);
-
-              }} className="flex-1 py-3.5 bg-red-500 text-white rounded-xl text-xs font-bold uppercase hover:scale-105 transition-transform shadow-lg">退会する</button>
+              <button onClick={handleDeleteAccount} className="flex-1 py-3.5 bg-red-500 text-white rounded-xl text-xs font-bold uppercase hover:scale-105 transition-transform shadow-lg">退会する</button>
 
             </div>
 
@@ -4210,7 +4129,7 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
 
       
 
-      {/* 💡 運営専用：通報管理ダッシュボード画面 */}
+      {/* 💡 運営専用：{t('adminDashboard')}画面 */}
 
       {showAdminDashboard && (
 
@@ -4220,7 +4139,7 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
 
             <button onClick={() => setShowAdminDashboard(false)}><IconChevronLeft /></button>
 
-            <h2 className="text-red-500 font-bold text-lg mx-auto pr-8 flex items-center gap-2"><IconWarning /> 通報管理ダッシュボード</h2>
+            <h2 className="text-red-500 font-bold text-lg mx-auto pr-8 flex items-center gap-2"><IconWarning /> {t('adminDashboard')}</h2>
 
           </div>
 
@@ -4420,35 +4339,21 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
 
 
 
-            {/* 💡 フィード切り替えタブ */}
-
-            <div className="flex gap-6 mb-6 px-1 border-b border-zinc-900">
-
-              <button 
-
-                onClick={() => setHomeFeedMode('all')} 
-
-                className={`pb-2 text-sm font-bold transition-colors ${homeFeedMode === 'all' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}
-
-              >
-
-                Everyone
-
-              </button>
-
-              <button 
-
-                onClick={() => setHomeFeedMode('following')} 
-
-                className={`pb-2 text-sm font-bold transition-colors ${homeFeedMode === 'following' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}
-
-              >
-
-                Following
-
-              </button>
-
-            </div>
+          {/* 💡 フィード切り替えタブ */}
+            <div className="flex gap-6 mb-6 px-1 border-b border-zinc-900">
+              <button 
+                onClick={() => setHomeFeedMode('all')} 
+                className={`pb-2 text-sm font-bold transition-colors ${homeFeedMode === 'all' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}
+              >
+                Global
+              </button>
+              <button 
+                onClick={() => setHomeFeedMode('following')} 
+                className={`pb-2 text-sm font-bold transition-colors ${homeFeedMode === 'following' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}
+              >
+                Following
+              </button>
+            </div>
 
             
 
@@ -4571,200 +4476,103 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
 
 
         {activeTab === 'search' && (
-
-          <div className="mt-6 animate-fade-in px-1 pb-10">
-
-            <header className="flex justify-center mb-6"><h2 className="text-xl font-black tracking-tight">Echoes.</h2></header>
-
-            <div className="flex bg-[#1c1c1e] p-1 rounded-xl mb-6 mx-2 border border-zinc-800">
-
-               <button onClick={() => setDiscoverTabMode('users')} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors ${discoverTabMode === 'users' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-white'}`}>People</button>
-
-               <button onClick={() => setDiscoverTabMode('communities')} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors ${discoverTabMode === 'communities' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-white'}`}>Communities</button>
-
-            </div>
-
-
-
-            {discoverTabMode === 'users' ? (
-
-              <div className="px-2">
-
-                <div className="relative mb-6">
-
-                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-zinc-500"><IconSearch /></div>
-
-                  <input type="text" placeholder="ユーザーを検索" className="w-full bg-[#1c1c1e] border border-zinc-800 rounded-xl py-3.5 pl-12 pr-4 text-[13px] font-bold text-white focus:outline-none" value={userSearchQuery} onChange={(e) => setUserSearchQuery(e.target.value)} onFocus={() => setUserSearchFocused(true)} onBlur={() => setTimeout(() => setUserSearchFocused(false), 200)} />
-
-                  {userSearchFocused && userSearchQuery && (
-
-                    <div className="absolute top-full left-0 w-full mt-2 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden z-50 shadow-2xl">
-
-                      {realUserSearchResults.map(u => (
-
-                        <div key={u.id} onMouseDown={(e) => { e.preventDefault(); setViewingUser(u); setActiveTab('other_profile'); }} className="flex items-center gap-3 p-3 text-xs text-white hover:bg-zinc-700 cursor-pointer border-b border-zinc-700 last:border-0">
-
-                          <img src={u.avatar} className="w-8 h-8 rounded-full object-cover" />
-
-                          <div className="flex flex-col">
-
-                            <span className="font-bold">{u.name}</span>
-
-                            <span className="text-[10px] text-zinc-400">@{u.handle}</span>
-
-                          </div>
-
-                        </div>
-
-                      ))}
-
-                      {realUserSearchResults.length === 0 && (
-
-                         <div className="p-4 text-xs text-zinc-500 text-center">ユーザーが見つかりません</div>
-
-                      )}
-
-                    </div>
-
-                  )}
-
-                </div>
-
-                <div className="mb-10">
-
-                   <p className="text-xs font-bold text-zinc-500 mb-4 px-2">おすすめの友達</p>
-
-                   {mockUsers.filter(u => u.category === 'suggested').slice(0, 3).map(u => (
-
-                     <div key={u.id} className="flex items-center justify-between py-2 px-1 mb-1"><div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => { setViewingUser(u); setActiveTab('other_profile'); }}><img src={u.avatar} className="w-[52px] h-[52px] rounded-full object-cover" /><div><p className="font-bold text-[15px]">{u.name}</p><p className="text-xs text-zinc-400">@{u.handle}</p></div></div><button onClick={() => toggleFollow(u.id)} className={`px-4 py-1.5 rounded-full text-xs font-bold ${followedUsers.has(u.id) ? 'bg-zinc-800 text-white' : 'bg-[#2c2c2e] hover:bg-[#3c3c3e] text-white'}`}>{followedUsers.has(u.id) ? 'フォロー中' : 'フォロー'}</button></div>
-
-                   ))}
-
-                </div>
-
-                <div className="mb-10">
-
-                   <p className="text-xs font-bold text-zinc-500 mb-4 px-2">音楽の好みが近いユーザー</p>
-
-                   {mockUsers.filter(u => u.category === 'similar').slice(0, 3).map(u => (
-
-                     <div key={u.id} className="flex items-center justify-between py-2 px-1 mb-1"><div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => { setViewingUser(u); setActiveTab('other_profile'); }}><img src={u.avatar} className="w-[52px] h-[52px] rounded-full object-cover" /><div><p className="font-bold text-[15px]">{u.name}</p><p className="text-[11px] text-[#1DB954] font-bold mt-0.5 flex items-center"><IconMusicSmall /> {u.similarMusic}</p></div></div><button onClick={() => toggleFollow(u.id)} className={`px-4 py-1.5 rounded-full text-xs font-bold ${followedUsers.has(u.id) ? 'bg-zinc-800 text-white' : 'bg-[#2c2c2e] hover:bg-[#3c3c3e] text-white'}`}>{followedUsers.has(u.id) ? 'フォロー中' : 'フォロー'}</button></div>
-
-                   ))}
-
-                </div>
-
-                <div className="mb-10">
-
-                   <p className="text-xs font-bold text-zinc-500 mb-4 px-2">人気のアカウント</p>
-
-                   {mockUsers.filter(u => u.category === 'famous').slice(0, 3).map(u => (
-
-                     <div key={u.id} className="flex items-center justify-between py-2 px-1 mb-1"><div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => { setViewingUser(u); setActiveTab('other_profile'); }}><img src={u.avatar} className="w-[52px] h-[52px] rounded-full object-cover" /><div><p className="font-bold text-[15px] flex items-center">{u.name} <IconVerified /></p><p className="text-xs text-zinc-400">@{u.handle}</p></div></div><button onClick={() => toggleFollow(u.id)} className={`px-4 py-1.5 rounded-full text-xs font-bold ${followedUsers.has(u.id) ? 'bg-zinc-800 text-white' : 'bg-[#2c2c2e] hover:bg-[#3c3c3e] text-white'}`}>{followedUsers.has(u.id) ? 'フォロー中' : 'フォロー'}</button></div>
-
-                   ))}
-
-                </div>
-
-              </div>
-
-            ) : (
-
-              <div className="px-2">
-
-                <div className="relative mb-6">
-
-                  <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-zinc-500"><IconSearch /></div>
-
-                  <input type="text" placeholder="ライブ・公演名でコミュニティを検索" className="w-full bg-[#1c1c1e] border border-zinc-800 rounded-xl py-3.5 pl-12 pr-4 text-[13px] font-bold text-white focus:outline-none" value={communitySearchQuery} onChange={(e) => setCommunitySearchQuery(e.target.value)} onFocus={() => setCommunitySearchFocused(true)} onBlur={() => setTimeout(() => setCommunitySearchFocused(false), 200)} />
-
-                  {communitySearchFocused && suggestedCommunities.length > 0 && (
-
-                    <div className="absolute top-full left-0 w-full mt-2 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden z-50 shadow-2xl">
-
-                      {suggestedCommunities.map(c => (
-
-                        <div key={c.id} onMouseDown={(e) => { e.preventDefault(); setActiveCommunityDetail(c); }} className="flex items-center gap-3 p-3 text-xs text-white hover:bg-zinc-700 cursor-pointer border-b border-zinc-700 last:border-0"><IconTicket /><span className="font-bold">{c.name}</span></div>
-
-                      ))}
-
-                    </div>
-
-                  )}
-
-                </div>
-
-<div onClick={() => setShowCommCalendar(true)} className="mb-6 relative bg-[#1c1c1e] p-4 rounded-xl flex items-center justify-between cursor-pointer hover:bg-zinc-800 transition-colors shadow-sm">
-
-                  <div className="flex items-center gap-3">
-
-                    <IconCalendar />
-
-                    <span className="text-sm font-bold text-white">{communityDateFilter ? `${communityDateFilter.replace(/-/g, '/')} の公演` : "カレンダーから探す"}</span>
-
-                  </div>
-
-                  {communityDateFilter ? (
-
-                    <button onClick={(e) => { e.stopPropagation(); setCommunityDateFilter(""); }} className="w-6 h-6 bg-zinc-800 rounded-full flex items-center justify-center text-zinc-400 hover:text-white"><IconCross /></button>
-
-                  ) : (
-
-                    <IconChevronRight />
-
-                  )}
-
-                </div>
-
-                <div className="bg-[#1c1c1e] rounded-3xl p-5 mb-8 shadow-sm">
-
-                   <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><IconCrown /> 人気公演コミュニティ</h3>
-
-                   <div className="flex flex-col">{suggestedCommunities.map((c, i) => (
-
-                         <div key={c.id} className="flex items-center justify-between py-3 border-b border-zinc-800/50 last:border-0 cursor-pointer group" onClick={() => setActiveCommunityDetail(c)}>
-
-                           <div className="flex items-center gap-4 flex-1 overflow-hidden">
-
-                             <span className="w-6 h-6 rounded-full bg-zinc-800 text-zinc-400 font-bold text-[10px] flex items-center justify-center flex-shrink-0">{i+1}</span>
-
-                             <div className="flex-1 overflow-hidden">
-
-                               <p className="font-bold text-sm text-white truncate group-hover:text-[#1DB954] transition-colors flex items-center gap-1.5">
-
-                                 {c.name} {c.isVerified && <span className="text-[#1DB954] w-3.5 h-3.5 flex items-center"><IconVerified /></span>}
-
-                               </p>
-
-                               <p className="text-[10px] text-zinc-500">{c.date} • {c.memberCount}人が参加中</p>
-
-                             </div>
-
-                           </div>
-
-                           <IconChevronRight />
-
-                         </div>
-
-                      ))}
-
-                   </div>
-
-                   <button onClick={() => setShowCreateCommunityModal(true)} className="w-full mt-4 py-4 border border-dashed border-zinc-700 text-zinc-400 rounded-xl text-sm font-bold hover:bg-zinc-800 hover:text-white transition-colors flex items-center justify-center gap-2">
-
-                     <IconPlus /> 探しているライブがない場合は新しく作成
-
-                   </button>
-
-                </div>
-
-              </div>
-
-            )}
-
+        <div className="mt-6 animate-fade-in px-1 pb-10">
+          <header className="flex justify-center mb-6"><h2 className="text-xl font-black tracking-tight">Echoes.</h2></header>
+          <div className="flex bg-[#1c1c1e] p-1 rounded-xl mb-6 mx-2 border border-zinc-800">
+             <button onClick={() => setDiscoverTabMode('users')} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors ${discoverTabMode === 'users' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-white'}`}>People</button>
+             <button onClick={() => setDiscoverTabMode('communities')} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-colors ${discoverTabMode === 'communities' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-white'}`}>Communities</button>
           </div>
 
-        )}
+          {discoverTabMode === 'users' ? (
+            <div className="px-2">
+              <div className="relative mb-6">
+                <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-zinc-500"><IconSearch /></div>
+                <input type="text" placeholder={t('searchUser')} className="w-full bg-[#1c1c1e] border border-zinc-800 rounded-xl py-3.5 pl-12 pr-4 text-[13px] font-bold text-white focus:outline-none" value={userSearchQuery} onChange={(e) => setUserSearchQuery(e.target.value)} onFocus={() => setUserSearchFocused(true)} onBlur={() => setTimeout(() => setUserSearchFocused(false), 200)} />
+                {userSearchFocused && userSearchQuery && (
+                  <div className="absolute top-full left-0 w-full mt-2 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden z-50 shadow-2xl">
+                    {realUserSearchResults.map(u => (
+                      <div key={u.id} onMouseDown={(e) => { e.preventDefault(); setViewingUser(u); setActiveTab('other_profile'); }} className="flex items-center gap-3 p-3 text-xs text-white hover:bg-zinc-700 cursor-pointer border-b border-zinc-700 last:border-0">
+                        <img src={u.avatar} className="w-8 h-8 rounded-full object-cover" />
+                        <div className="flex flex-col">
+                          <span className="font-bold">{u.name}</span>
+                          <span className="text-[10px] text-zinc-400">@{u.handle}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {realUserSearchResults.length === 0 && (
+                       <div className="p-4 text-xs text-zinc-500 text-center">{t('notFound')}</div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="mb-10">
+                 <p className="text-xs font-bold text-zinc-500 mb-4 px-2">{t('suggestedFriends')}</p>
+                 {mockUsers.filter(u => u.category === 'suggested').slice(0, 3).map(u => (
+                   <div key={u.id} className="flex items-center justify-between py-2 px-1 mb-1"><div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => { setViewingUser(u); setActiveTab('other_profile'); }}><img src={u.avatar} className="w-[52px] h-[52px] rounded-full object-cover" /><div><p className="font-bold text-[15px]">{u.name}</p><p className="text-xs text-zinc-400">@{u.handle}</p></div></div><button onClick={() => toggleFollow(u.id)} className={`px-4 py-1.5 rounded-full text-xs font-bold ${followedUsers.has(u.id) ? 'bg-zinc-800 text-white' : 'bg-[#2c2c2e] hover:bg-[#3c3c3e] text-white'}`}>{followedUsers.has(u.id) ? t('following') : t('follow')}</button></div>
+                 ))}
+              </div>
+              <div className="mb-10">
+                 <p className="text-xs font-bold text-zinc-500 mb-4 px-2">{t('similarMusicUser')}</p>
+                 {mockUsers.filter(u => u.category === 'similar').slice(0, 3).map(u => (
+                   <div key={u.id} className="flex items-center justify-between py-2 px-1 mb-1"><div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => { setViewingUser(u); setActiveTab('other_profile'); }}><img src={u.avatar} className="w-[52px] h-[52px] rounded-full object-cover" /><div><p className="font-bold text-[15px]">{u.name}</p><p className="text-[11px] text-[#1DB954] font-bold mt-0.5 flex items-center"><IconMusicSmall /> {u.similarMusic}</p></div></div><button onClick={() => toggleFollow(u.id)} className={`px-4 py-1.5 rounded-full text-xs font-bold ${followedUsers.has(u.id) ? 'bg-zinc-800 text-white' : 'bg-[#2c2c2e] hover:bg-[#3c3c3e] text-white'}`}>{followedUsers.has(u.id) ? t('following') : t('follow')}</button></div>
+                 ))}
+              </div>
+              <div className="mb-10">
+                 <p className="text-xs font-bold text-zinc-500 mb-4 px-2">{t('popularAccounts')}</p>
+                 {mockUsers.filter(u => u.category === 'famous').slice(0, 3).map(u => (
+                   <div key={u.id} className="flex items-center justify-between py-2 px-1 mb-1"><div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => { setViewingUser(u); setActiveTab('other_profile'); }}><img src={u.avatar} className="w-[52px] h-[52px] rounded-full object-cover" /><div><p className="font-bold text-[15px] flex items-center">{u.name} <IconVerified /></p><p className="text-xs text-zinc-400">@{u.handle}</p></div></div><button onClick={() => toggleFollow(u.id)} className={`px-4 py-1.5 rounded-full text-xs font-bold ${followedUsers.has(u.id) ? 'bg-zinc-800 text-white' : 'bg-[#2c2c2e] hover:bg-[#3c3c3e] text-white'}`}>{followedUsers.has(u.id) ? t('following') : t('follow')}</button></div>
+                 ))}
+              </div>
+            </div>
+          ) : (
+            <div className="px-2">
+              <div className="relative mb-6">
+                <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-zinc-500"><IconSearch /></div>
+                <input type="text" placeholder={t('searchLive')} className="w-full bg-[#1c1c1e] border border-zinc-800 rounded-xl py-3.5 pl-12 pr-4 text-[13px] font-bold text-white focus:outline-none" value={communitySearchQuery} onChange={(e) => setCommunitySearchQuery(e.target.value)} onFocus={() => setCommunitySearchFocused(true)} onBlur={() => setTimeout(() => setCommunitySearchFocused(false), 200)} />
+                {communitySearchFocused && suggestedCommunities.length > 0 && (
+                  <div className="absolute top-full left-0 w-full mt-2 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden z-50 shadow-2xl">
+                    {suggestedCommunities.map(c => (
+                      <div key={c.id} onMouseDown={(e) => { e.preventDefault(); setActiveCommunityDetail(c); }} className="flex items-center gap-3 p-3 text-xs text-white hover:bg-zinc-700 cursor-pointer border-b border-zinc-700 last:border-0"><IconTicket /><span className="font-bold">{c.name}</span></div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div onClick={() => setShowCommCalendar(true)} className="mb-6 relative bg-[#1c1c1e] p-4 rounded-xl flex items-center justify-between cursor-pointer hover:bg-zinc-800 transition-colors shadow-sm">
+                <div className="flex items-center gap-3">
+                  <IconCalendar />
+                  <span className="text-sm font-bold text-white">{communityDateFilter ? `${communityDateFilter.replace(/-/g, '/')} の公演` : t('searchFromCalendar')}</span>
+                </div>
+                {communityDateFilter ? (
+                  <button onClick={(e) => { e.stopPropagation(); setCommunityDateFilter(""); }} className="w-6 h-6 bg-zinc-800 rounded-full flex items-center justify-center text-zinc-400 hover:text-white"><IconCross /></button>
+                ) : (
+                  <IconChevronRight />
+                )}
+              </div>
+              <div className="bg-[#1c1c1e] rounded-3xl p-5 mb-8 shadow-sm">
+                 <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><IconCrown /> {t('popularLiveCommunity')}</h3>
+                 <div className="flex flex-col">{suggestedCommunities.map((c, i) => (
+                       <div key={c.id} className="flex items-center justify-between py-3 border-b border-zinc-800/50 last:border-0 cursor-pointer group" onClick={() => setActiveCommunityDetail(c)}>
+                         <div className="flex items-center gap-4 flex-1 overflow-hidden">
+                           <span className="w-6 h-6 rounded-full bg-zinc-800 text-zinc-400 font-bold text-[10px] flex items-center justify-center flex-shrink-0">{i+1}</span>
+                           <div className="flex-1 overflow-hidden">
+                             <p className="font-bold text-sm text-white truncate group-hover:text-[#1DB954] transition-colors flex items-center gap-1.5">
+                               {c.name} {c.isVerified && <span className="text-[#1DB954] w-3.5 h-3.5 flex items-center"><IconVerified /></span>}
+                             </p>
+                             <p className="text-[10px] text-zinc-500">{c.date} • {c.memberCount}人が参加中</p>
+                           </div>
+                         </div>
+                         <IconChevronRight />
+                       </div>
+                    ))}
+                 </div>
+                 <button onClick={() => setShowCreateCommunityModal(true)} className="w-full mt-4 py-4 border border-dashed border-zinc-700 text-zinc-400 rounded-xl text-sm font-bold hover:bg-zinc-800 hover:text-white transition-colors flex items-center justify-center gap-2">
+                   <IconPlus /> {t('createLiveIfNotFound')}
+                 </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
 
 
@@ -4852,7 +4660,8 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
 
             <div className="flex flex-col px-2">
 
-              {chatTabMode === 'friends' && Object.keys(chatHistory).filter(id => !matchedUsers.has(id) && !id.startsWith('com') && !id.startsWith('g')).map(partnerId => {
+
+{chatTabMode === 'friends' && Object.keys(chatHistory).filter(id => !matchedUsers.has(id) && !id.startsWith('com') && !id.startsWith('g') && allProfiles.some(p => p.id === id)).map(partnerId => {
 
                 const u = allProfiles.find(x => x.id === partnerId);
 
@@ -5018,7 +4827,7 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
 
                   )) : (
 
-                    <div className="py-6 text-center text-zinc-500 text-xs font-bold animate-pulse">分析中...</div>
+                    <div className="py-6 text-center text-zinc-500 text-xs font-bold animate-pulse">{t('aiAnalyzing')}</div>
 
                   )}
 
@@ -5074,7 +4883,7 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
 
             {activeTab === 'profile' && myStreak > 0 && (<div className="mt-3 flex items-center bg-[#1c1c1e] border border-orange-500/30 px-3 py-1.5 rounded-full shadow-sm"><IconFlame /><span className="text-[11px] font-bold text-orange-400">{myStreak}日連続記録中</span></div>)}
 
-            <div className="flex gap-4 mt-5 text-sm font-bold"><span className="cursor-pointer" onClick={() => setShowUserListModal('FOLLOWING')}>{formatCount(activeTab === 'profile' ? followedUsers.size : viewingUserStats.following)} フォロー中</span><span className="text-zinc-600">•</span><span className="cursor-pointer" onClick={() => setShowUserListModal('FOLLOWERS')}>{formatCount(activeTab === 'profile' ? myFollowers.size : viewingUserStats.followers)} フォロワー</span></div>
+            <div className="flex gap-4 mt-5 text-sm font-bold"><span className="cursor-pointer" onClick={() => setShowUserListModal('FOLLOWING')}>{formatCount(activeTab === 'profile' ? followedUsers.size : viewingUserStats.following)} {t('following')}</span><span className="text-zinc-600">•</span><span className="cursor-pointer" onClick={() => setShowUserListModal('FOLLOWERS')}>{formatCount(activeTab === 'profile' ? myFollowers.size : viewingUserStats.followers)} フォロワー</span></div>
 
             <p className="text-zinc-300 text-sm mt-4 text-center max-w-xs">{activeTab === 'profile' ? myProfile.bio : viewingUser?.bio}</p>
 
@@ -5202,7 +5011,7 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
 
             {activeTab === 'profile' ? (
 
-              <button onClick={openEditProfile} className="mt-6 w-full max-w-[200px] py-3 bg-[#1c1c1e] hover:bg-zinc-800 transition-colors rounded-xl text-sm font-bold text-white shadow-sm">プロフィールを編集</button>
+              <button onClick={openEditProfile} className="mt-6 w-full max-w-[200px] py-3 bg-[#1c1c1e] hover:bg-zinc-800 transition-colors rounded-xl text-sm font-bold text-white shadow-sm">{t('editProfileFull')}</button>
 
             ) : (
 
@@ -5210,7 +5019,7 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
 
                 <div className="flex gap-2 w-full">
 
-                  <button onClick={() => toggleFollow(viewingUser!.id)} className={`flex-1 py-3 rounded-xl text-sm font-bold ${followedUsers.has(viewingUser!.id) ? 'bg-[#1c1c1e] text-white hover:bg-zinc-800' : 'bg-white text-black hover:bg-gray-200'} transition-colors shadow-sm`}>{followedUsers.has(viewingUser!.id) ? 'フォロー中' : 'フォロー'}</button>
+                  <button onClick={() => toggleFollow(viewingUser!.id)} className={`flex-1 py-3 rounded-xl text-sm font-bold ${followedUsers.has(viewingUser!.id) ? 'bg-[#1c1c1e] text-white hover:bg-zinc-800' : 'bg-white text-black hover:bg-gray-200'} transition-colors shadow-sm`}>{followedUsers.has(viewingUser!.id) ? t('following') : t('follow')}</button>
 
                   <button onClick={() => { setActiveChatUserId(viewingUser!.id); setActiveTab('chat'); }} className="flex-1 py-3 bg-[#1c1c1e] text-white hover:bg-zinc-800 transition-colors rounded-xl text-sm font-bold shadow-sm flex items-center justify-center gap-2"><IconMessagePlus /></button>
 
@@ -5220,9 +5029,9 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
 
                 <div className="flex gap-2 w-full mt-2">
 
-                  <button onClick={() => handleBlockUser(viewingUser!.id)} className="flex-1 py-2 bg-transparent border border-red-500/30 text-red-500 hover:bg-red-500/10 transition-colors rounded-xl text-[10px] font-bold">ブロックする</button>
+                  <button onClick={() => handleBlockUser(viewingUser!.id)} className="flex-1 py-2 bg-transparent border border-red-500/30 text-red-500 hover:bg-red-500/10 transition-colors rounded-xl text-[10px] font-bold">{t('block')}</button>
 
-                  <button onClick={() => handleReportUser(viewingUser!.id)} className="flex-1 py-2 bg-transparent border border-zinc-700 text-zinc-400 hover:bg-zinc-800 transition-colors rounded-xl text-[10px] font-bold">通報する</button>
+                  <button onClick={() => handleReportUser(viewingUser!.id)} className="flex-1 py-2 bg-transparent border border-zinc-700 text-zinc-400 hover:bg-zinc-800 transition-colors rounded-xl text-[10px] font-bold">{t('report')}</button>
 
                 </div>
 
@@ -5240,9 +5049,9 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
 
                <div className="flex w-full mb-6">
 
-                 <button onClick={() => setProfileTabMode('my_vibes')} className={`flex-1 pb-2 text-sm font-bold border-b-2 transition-colors ${profileTabMode === 'my_vibes' ? 'border-white text-white' : 'border-transparent text-zinc-600'}`}>My Echoes</button>
+                 <button onClick={() => setProfileTabMode('my_vibes')} className={`flex-1 pb-2 text-sm font-bold border-b-2 transition-colors ${profileTabMode === 'my_vibes' ? 'border-white text-white' : 'border-transparent text-zinc-600'}`}>{t('myEchoes')}</button>
 
-                 <button onClick={() => setProfileTabMode('liked')} className={`flex-1 pb-2 text-sm font-bold border-b-2 transition-colors ${profileTabMode === 'liked' ? 'border-white text-white' : 'border-transparent text-zinc-600'}`}>いいねした投稿</button>
+                 <button onClick={() => setProfileTabMode('liked')} className={`flex-1 pb-2 text-sm font-bold border-b-2 transition-colors ${profileTabMode === 'liked' ? 'border-white text-white' : 'border-transparent text-zinc-600'}`}>{t('likedPosts')}</button>
 
                </div>
 
@@ -5254,7 +5063,7 @@ const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました
 
               <div className="w-full flex flex-col gap-4">
 
-                {likedVibes.length === 0 ? <p className="text-center text-zinc-500 py-10 text-xs">まだいいねした投稿はありません</p> : likedVibes.map(renderFeedCard)}
+                {likedVibes.length === 0 ? <p className="text-center text-zinc-500 py-10 text-xs">まだ{t('likedPosts')}はありません</p> : likedVibes.map(renderFeedCard)}
 
               </div>
 
