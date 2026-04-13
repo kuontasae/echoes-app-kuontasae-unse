@@ -656,14 +656,11 @@ export default function Home() {
     fetchLiveSchedules();
   }, []);
   const [matchIndex, setMatchIndex] = useState(0);
-  const [matchedUsers, setMatchedUsers] = useState<Set<string>>(new Set());
   const [showMatchFilterModal, setShowMatchFilterModal] = useState(false);
   const [matchFilter, setMatchFilter] = useState({ artists: [] as any[], hashtags: [] as string[], liveHistories: [] as string[], ageMin: 18, ageMax: 100, gender: "All" });
   const [filterArtistInput, setFilterArtistInput] = useState("");
   const [filterArtistSuggestions, setFilterArtistSuggestions] = useState<any[]>([]);
   const [filterHashtagInput, setFilterHashtagInput] = useState("");
-  const [showMatchMessageModal, setShowMatchMessageModal] = useState<string | null>(null);
-  const [matchMessageInput, setMatchMessageInput] = useState("");
   // 💡 Match画面：スワイプアニメーション用の状態管理
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -677,21 +674,30 @@ export default function Home() {
     const currentX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     setSwipeOffset(currentX - dragStartX.current);
   };
+  const handleSwipeFollow = async (uid: string, uname: string) => {
+    setMatchIndex(p => p + 1);
+    if (!currentUser) return;
+    const { error } = await supabase.from('follows').insert([{ follower_id: currentUser.id, following_id: uid }]);
+    if (!error) {
+      setFollowedUsers(prev => { const next = new Set(prev); next.add(uid); return next; });
+      showToast(`${uname}さんをフォローしました`, "success");
+      await supabase.from('notifications').insert([{ user_id: uid, sender_id: currentUser.id, type: 'follow', text: `${myProfile.name}さんにフォローされました` }]);
+    }
+  };
+
   const handleDragEnd = () => {
     setIsDragging(false);
     if (swipeOffset > 100) {
-      // 右スワイプ（気になる）
-      handleSendVibe(filteredMatchUsers[matchIndex].id, filteredMatchUsers[matchIndex].name);
+      handleSwipeFollow(filteredMatchUsers[matchIndex].id, filteredMatchUsers[matchIndex].name);
     } else if (swipeOffset < -100) {
-      // 左スワイプ（スキップ）
       setMatchIndex(prev => prev + 1);
     }
     setSwipeOffset(0);
   };
+
   const filteredMatchUsers = useMemo(() => {
     return allProfiles.filter(u => {
-      // 💡 自分自身と、ブロックしたユーザーはマッチ画面に出さない
-      if (u.id === currentUser?.id || blockedUsers.has(u.id)) return false;
+      if (u.id === currentUser?.id || blockedUsers.has(u.id) || followedUsers.has(u.id)) return false;
       if (matchFilter.artists.length > 0 && !matchFilter.artists.some(fa => u.topArtists?.map((x: any) => x.toLowerCase())?.includes(fa.artistName.toLowerCase()))) return false;
       if (matchFilter.hashtags.length > 0 && !matchFilter.hashtags.some(fh => u.hashtags?.map((x: any) => x.toLowerCase())?.includes(fh.toLowerCase()))) return false;
       if (matchFilter.liveHistories.length > 0 && !matchFilter.liveHistories.some(fl => u.liveHistory?.map((x: any) => x.toLowerCase())?.includes(fl.toLowerCase()))) return false;
@@ -699,7 +705,8 @@ export default function Home() {
       if (matchFilter.gender !== "All" && u.gender !== matchFilter.gender.toLowerCase()) return false;
       return true;
     });
-  }, [matchFilter, allProfiles, currentUser, blockedUsers]);
+  }, [matchFilter, allProfiles, currentUser, blockedUsers, followedUsers]);
+
   const [activeChatUserId, setActiveChatUserId] = useState<string | null>(null);
   const [chatMessageInput, setChatMessageInput] = useState("");
   const [showChatPlusMenu, setShowChatPlusMenu] = useState(false);
@@ -1395,13 +1402,6 @@ export default function Home() {
       showToast("コミュニティを削除しました", "success");
     }
   };
-  const handleSendVibe = async (uid: string, uname: string) => {
-    setMatchIndex(p => p + 1); showToast(`${uname}さんに気になるを送信しました！`, 'success');
-    if (currentUser) {
-      await supabase.from('notifications').insert([{ user_id: uid, sender_id: currentUser.id, type: 'vibe_request', text: `${myProfile.name}さんがあなたに「気になる」を送信しました！` }]);
-    }
-  };
-  const handleSendVibeWithMessage = (uid: string) => { if (!matchMessageInput.trim()) return; submitChatMessage(uid); setMatchedUsers(p => new Set(p).add(uid)); setShowMatchMessageModal(null); setMatchMessageInput(""); setMatchIndex(p => p + 1); showToast("送信完了！", 'success'); };
   // 💡 ステップ11: @メンションに加えて、#ハッシュタグもタップ可能にする（緑色のリンク化）
   // 💡 ステップ11: @メンションはプロフィールへ、#ハッシュタグはコミュニティ検索へ飛ぶ
   const parseMention = (cap: string) => {
@@ -2436,16 +2436,6 @@ export default function Home() {
           </div>
         </div>
       )}
-      {showMatchMessageModal && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[950] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowMatchMessageModal(null)}>
-          <div className="bg-[#1c1c1e] border border-zinc-800 p-6 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
-            <h3 className="font-bold text-lg mb-2 text-center">Send a Message</h3>
-            <p className="text-xs text-zinc-400 text-center mb-6">メッセージを添えてVibeを送ると、返信率が上がります。</p>
-            <textarea placeholder="初めまして！同じアーティストが好きで思わず反応しちゃいました。" value={matchMessageInput} onChange={e => setMatchMessageInput(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl p-4 text-xs text-white focus:outline-none min-h-[100px] resize-none mb-4" />
-            <div className="flex gap-4"><button onClick={() => setShowMatchMessageModal(null)} className="flex-1 py-3 border border-zinc-800 rounded-xl text-xs font-bold uppercase hover:bg-zinc-800 transition-colors">{t('cancel')}</button><button onClick={() => handleSendVibeWithMessage(showMatchMessageModal)} className="flex-1 py-3 bg-[#1DB954] text-black rounded-xl text-xs font-bold uppercase hover:scale-105 transition-transform shadow-lg">Send</button></div>
-          </div>
-        </div>
-      )}
       {showCreateGroupModal && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[950] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowCreateGroupModal(false)}>
           <div className="bg-[#1c1c1e] border border-zinc-800 p-6 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
@@ -2950,8 +2940,8 @@ export default function Home() {
                     style={{ transform: `translateX(${swipeOffset}px) rotate(${swipeOffset * 0.05}deg)`, transition: isDragging ? 'none' : 'transform 0.3s ease-out' }}
                     onTouchStart={handleDragStart} onTouchMove={handleDragMove} onTouchEnd={handleDragEnd} onMouseDown={handleDragStart} onMouseMove={handleDragMove} onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}
                   >
-                    {swipeOffset > 20 && <div className="absolute top-10 left-6 z-50 border-4 border-[#1DB954] text-[#1DB954] font-black text-4xl px-4 py-1 rounded-xl transform -rotate-12 uppercase tracking-widest opacity-80">LIKE</div>}
-                    {swipeOffset < -20 && <div className="absolute top-10 right-6 z-50 border-4 border-red-500 text-red-500 font-black text-4xl px-4 py-1 rounded-xl transform rotate-12 uppercase tracking-widest opacity-80">NOPE</div>}
+                    {swipeOffset > 20 && <div className="absolute top-10 left-6 z-50 border-4 border-[#1DB954] text-[#1DB954] font-black text-3xl px-4 py-1 rounded-xl transform -rotate-12 uppercase tracking-widest opacity-80">FOLLOW</div>}
+                    {swipeOffset < -20 && <div className="absolute top-10 right-6 z-50 border-4 border-zinc-500 text-zinc-500 font-black text-3xl px-4 py-1 rounded-xl transform rotate-12 uppercase tracking-widest opacity-80">PASS</div>}
                     <div className="relative h-64 w-full flex-shrink-0 cursor-pointer" onClick={() => { setViewingUser(filteredMatchUsers[matchIndex]); setActiveTab('other_profile'); }}>
                       <img src={filteredMatchUsers[matchIndex].avatar} className="w-full h-full object-cover pointer-events-none" />
                       <div className="absolute inset-0 bg-gradient-to-t from-[#1c1c1e] via-transparent to-transparent pointer-events-none"></div>
@@ -2966,8 +2956,7 @@ export default function Home() {
                     </div>
                     <div className="absolute bottom-6 left-0 w-full flex justify-center gap-4 px-6 bg-gradient-to-t from-[#1c1c1e] pt-6 z-40">
                       <button onClick={() => setMatchIndex(prev => prev + 1)} className="w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center text-zinc-400 hover:bg-zinc-700 transition-colors shadow-lg flex-shrink-0"><IconCross /></button>
-                      <button onClick={() => handleSendVibe(filteredMatchUsers[matchIndex].id, filteredMatchUsers[matchIndex].name)} className="flex-1 h-14 bg-[#1c1c1e] border border-zinc-700 rounded-full flex items-center justify-center text-white font-bold text-sm hover:bg-zinc-800 transition-colors shadow-lg gap-2"><IconSparkles /> 気になる</button>
-                      <button onClick={() => setShowMatchMessageModal(filteredMatchUsers[matchIndex].id)} className="w-14 h-14 bg-white rounded-full flex items-center justify-center text-black hover:scale-105 transition-transform shadow-lg flex-shrink-0"><IconComment /></button>
+                      <button onClick={() => handleSwipeFollow(filteredMatchUsers[matchIndex].id, filteredMatchUsers[matchIndex].name)} className="flex-1 h-14 bg-[#1DB954] text-black rounded-full flex items-center justify-center font-bold text-sm hover:scale-105 transition-transform shadow-lg gap-2"><IconUserPlus /> フォロー</button>
                     </div>
                   </div>
                 ) : <div className="text-center mt-20"><IconSearch /><p className="font-bold mt-4">ユーザーが見つかりません</p></div>}
@@ -3088,7 +3077,6 @@ export default function Home() {
             <h2 className="text-2xl font-bold tracking-tight mb-6 px-2">{t('chat')}</h2>
             <div className="flex bg-[#1c1c1e] p-1 rounded-xl mb-6 mx-2 border border-zinc-800">
               <button onClick={() => setChatTabMode('friends')} className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition-colors ${chatTabMode === 'friends' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-white'}`}>{t('friendsChat')}</button>
-              <button onClick={() => setChatTabMode('matches')} className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition-colors ${chatTabMode === 'matches' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-white'}`}>{t('matchesChat')}</button>
               <button onClick={() => setChatTabMode('groups')} className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition-colors ${chatTabMode === 'groups' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-white'}`}>{t('groupsChat')}</button>
               <button onClick={() => setChatTabMode('community')} className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition-colors ${chatTabMode === 'community' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-white'}`}>{t('communityChat')}</button>
             </div>
@@ -3100,7 +3088,7 @@ export default function Home() {
               </div>
             )}
             <div className="flex flex-col px-2">
-              {chatTabMode === 'friends' && Object.keys(chatHistory).filter(id => !matchedUsers.has(id) && !id.startsWith('com') && !id.startsWith('g') && allProfiles.some(p => p.id === id)).map(partnerId => {
+              {chatTabMode === 'friends' && Object.keys(chatHistory).filter(id => !id.startsWith('com') && !id.startsWith('g') && allProfiles.some(p => p.id === id)).map(partnerId => {
                 const u = allProfiles.find(x => x.id === partnerId);
                 const lastMsg = chatHistory[partnerId][chatHistory[partnerId].length - 1];
                 return (
@@ -3137,15 +3125,11 @@ export default function Home() {
                   </div>
                 );
               })}
-              {chatTabMode === 'friends' && Object.keys(chatHistory).filter(id => !matchedUsers.has(id) && !id.startsWith('com') && !id.startsWith('g')).length === 0 && (
+              {chatTabMode === 'friends' && Object.keys(chatHistory).filter(id => !id.startsWith('com') && !id.startsWith('g')).length === 0 && (
                 <div className="py-20 text-center">
                   <p className="text-zinc-500 text-sm">メッセージはまだありません</p>
                 </div>
               )}
-              {chatTabMode === 'matches' && Array.from(matchedUsers).map(uid => {
-                const u = allProfiles.find(x => x.id === uid);
-                return u ? (<div key={uid} onClick={() => setActiveChatUserId(uid)} className="flex items-center gap-4 p-3 hover:bg-[#1c1c1e] rounded-2xl cursor-pointer transition-colors group"><img src={u.avatar} className="w-14 h-14 rounded-full object-cover flex-shrink-0" /><div className="flex-1 overflow-hidden"><p className="font-bold text-sm truncate">{u.name}</p><p className="text-xs text-zinc-400 truncate">メッセージを送ろう</p></div></div>) : null;
-              })}
               {chatTabMode === 'groups' && chatGroups.map(g => (<div key={g.id} onClick={() => setActiveChatUserId(g.id)} className="flex items-center gap-4 p-3 hover:bg-[#1c1c1e] rounded-2xl cursor-pointer"><div className="w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden relative"><IconUsers /></div><div className="flex-1 overflow-hidden z-10"><p className="font-bold text-sm truncate">{g.name}</p><p className="text-xs text-zinc-400 truncate">参加しました</p></div></div>))}
               {chatTabMode === 'community' && chatCommunities.map(c => (<div key={c.id} onClick={() => setActiveChatUserId(c.id)} className="flex items-center gap-4 p-3 hover:bg-[#1c1c1e] rounded-2xl cursor-pointer"><div className="w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden relative"><IconTicket /></div><div className="flex-1 overflow-hidden z-10"><p className="font-bold text-sm truncate">{c.name}</p><p className="text-xs text-zinc-400 truncate">参加しました</p></div></div>))}
             </div>
