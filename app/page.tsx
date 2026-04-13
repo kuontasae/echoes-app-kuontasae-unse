@@ -75,14 +75,7 @@ const localI18n: Record<string, any> = {
   "English": { feed: "Global", discover: "Discover", match: "Match", diary: "Diary", chat: "Chat", profile: "Profile", searchPlaceholder: "Search...", settings: "Settings", cancel: "Cancel", postVibe: "Post", audio: "Audio", notifications: "Notif", privateAcc: "Private", timezone: "Timezone", language: "Lang", logout: "Log Out", features: "Features", appInfo: "About", shareApp: "Share", rateApp: "Rate", help: "Help", editProfile: "Edit", editProfileFull: "Edit Profile", artist: "Artist", topResults: "Top", allSongs: "All", latestRelease: "New", popularSongs: "Hot", popularAlbums: "Albums", followers: "Followers", rewind: "Rewind", overwriteVibe: "Overwrite", alreadyPostedWarning: "Already posted. Overwrite?", favoriteArtists: "Favorites", postSuccess: "Success!", sendMessage: "Send", typeMessage: "Aa", vibeMatchAnalysis: "Analysis", topSharedArtists: "Shared Artists", sharedGenres: "Shared Genres", noPreview: "No audio", pass: "Skip", connect: "Like", friendsChat: "Friends", matchesChat: "Matches", groupsChat: "Groups", communityChat: "Lives", liveHistory: "History", hashtags: "Hashtags", deleteAcc: "Delete Account", deleteAccFull: "Delete Account Permanently", admin: "Admin", adminOnly: "Admin Only", adminDashboard: "Report Dashboard", musicSearch: "Search Music", follow: "Follow", following: "Following", block: "Block", report: "Report", myEchoes: "My Echoes", likedPosts: "Liked Posts", aiStart: "Start recording vibes to get AI recommendations.", aiRec: "inspired recommendations just for you.", aiAnalyzing: "Analyzing..." },
   "中文": { feed: "Global", discover: "发现", match: "匹配", diary: "日记", chat: "聊天", profile: "我的", searchPlaceholder: "搜索...", settings: "设置", cancel: "取消", postVibe: "记录", audio: "音频", notifications: "通知", privateAcc: "私密", timezone: "时区", language: "语言", logout: "登出", features: "功能", appInfo: "关于", shareApp: "分享", rateApp: "评价", help: "帮助", editProfile: "编辑", editProfileFull: "编辑个人资料", artist: "歌手", topResults: "最佳", allSongs: "所有", latestRelease: "最新", popularSongs: "热门", popularAlbums: "专辑", followers: "粉丝", rewind: "回顾", overwriteVibe: "覆盖", alreadyPostedWarning: "已记录。覆盖吗？", favoriteArtists: "喜欢", postSuccess: "成功！", sendMessage: "发送", typeMessage: "输入...", vibeMatchAnalysis: "分析", topSharedArtists: "共同歌手", sharedGenres: "共同类型", noPreview: "无试听", pass: "跳过", connect: "感兴趣", friendsChat: "好友", matchesChat: "匹配", groupsChat: "群组", communityChat: "社区", liveHistory: "参战历史", hashtags: "标签", deleteAcc: "注销", deleteAccFull: "永久注销账号", admin: "管理员", adminOnly: "Admin (管理员专用)", adminDashboard: "举报管理面板", musicSearch: "搜索音乐", follow: "关注", following: "已关注", block: "拉黑", report: "举报", myEchoes: "我的记录", likedPosts: "赞过的帖子", aiStart: "开始记录以获取 AI 推荐。", aiRec: "风格的专属推荐。", aiAnalyzing: "分析中..." }
 };
-const expandedMockCommunities: LiveCommunity[] = [
-  { id: "com1", name: "[5/3] VIVA LA ROCK 2026 - さいたまスーパーアリーナ", date: "2026-05-03", memberCount: 142, isJoined: false },
-  { id: "com2", name: "[5/4] VIVA LA ROCK 2026 - さいたまスーパーアリーナ", date: "2026-05-04", memberCount: 189, isJoined: false },
-  { id: "com3", name: "[6/10] Tele ツアー2026 - 東京Zepp公演", date: "2026-06-10", memberCount: 89, isJoined: false },
-  { id: "com4", name: "[6/15] Tele ツアー2026 - 仙台サンプラザ公演", date: "2026-06-15", memberCount: 45, isJoined: false },
-  { id: "com5", name: "[4/4] THE MUSIC STADIUM 2026 - 国立競技場", date: "2026-04-04", memberCount: 520, isJoined: false }
-];
-export default function Home() {
+function MainApp() {
   const searchParams = useSearchParams();
 
   const [showHeadingMenu, setShowHeadingMenu] = useState(false);
@@ -3713,5 +3706,13 @@ export default function Home() {
       {/* 💡 コンポーネント化したミニプレイヤー */}
       <MiniPlayer activeTrackInfo={activeTrackInfo} playingSong={playingSong} togglePlay={togglePlay} />
     </main>
+  );
+}
+
+export default function Home() {
+  return (
+    <React.Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><h1 className="text-5xl font-black italic text-white animate-pulse">Echoes.</h1></div>}>
+      <MainApp />
+    </React.Suspense>
   );
 }
