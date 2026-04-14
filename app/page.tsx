@@ -77,7 +77,6 @@ const localI18n: Record<string, any> = {
 };
 function MainApp() {
   const searchParams = useSearchParams();
-
   const [showHeadingMenu, setShowHeadingMenu] = useState(false);
   const [showAlignmentMenu, setShowAlignmentMenu] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -157,33 +156,29 @@ function MainApp() {
     }
   }, [articles]);
   const [viewingArticle, setViewingArticle] = useState<any>(null);
-
-  useEffect(() => {
-    if (!searchParams) return;
-    const articleId = searchParams.get('article');
-    if (articleId && articles.length > 0) {
-      const targetArticle = articles.find(a => a.id === articleId);
-      if (targetArticle) {
-        setViewingArticle(targetArticle);
-      }
-    }
-  }, [searchParams, articles]);
-
-  const [articleCommentInput, setArticleCommentInput] = useState("");
+  useEffect(() => {
+    if (!searchParams) return;
+    const articleId = searchParams.get('article');
+    if (articleId && articles.length > 0) {
+      const targetArticle = articles.find(a => a.id === articleId);
+      if (targetArticle) {
+        setViewingArticle(targetArticle);
+      }
+    }
+  }, [searchParams, articles]);
+  const [articleCommentInput, setArticleCommentInput] = useState("");
   // 💡 自分で記事を書くための箱
   const [showWriteArticleModal, setShowWriteArticleModal] = useState(false);
   const [newArticleTitle, setNewArticleTitle] = useState("");
   const [newArticleContent, setNewArticleContent] = useState("");
   const [newArticleCover, setNewArticleCover] = useState<string | null>(null);
   const [showElementMenu, setShowElementMenu] = useState(false);
-  
-  
   const [showListMenu, setShowListMenu] = useState(false);
-  const [showDraftSaveDialog, setShowDraftSaveDialog] = useState(false);
-  const [draftArticles, setDraftArticles] = useState<any[]>([]);
-  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
-  const [showEditorVoiceMenu, setShowEditorVoiceMenu] = useState(false);
-  const [showPastArticleModal, setShowPastArticleModal] = useState(false);
+  const [showDraftSaveDialog, setShowDraftSaveDialog] = useState(false);
+  const [draftArticles, setDraftArticles] = useState<any[]>([]);
+  const [currentDraftId, setCurrentDraftId] = useState<string | null>(null);
+  const [showEditorVoiceMenu, setShowEditorVoiceMenu] = useState(false);
+  const [showPastArticleModal, setShowPastArticleModal] = useState(false);
   const [isArticleUploading, setIsArticleUploading] = useState(false);
   const [editingArticleId, setEditingArticleId] = useState<string | null>(null);
   const articleTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -409,13 +404,11 @@ function MainApp() {
   const handleCloseModal = () => {
     const currentHtml = articleTextareaRef.current?.innerHTML || "";
     const plainText = currentHtml.replace(/<[^>]*>/g, '').trim();
-
     if (newArticleTitle.trim() || plainText) {
       const d = new Date();
       const now = d.getHours().toString().padStart(2, '0') + ":" + d.getMinutes().toString().padStart(2, '0');
       const draftId = currentDraftId || `draft_${Date.now()}`;
       const newDraft = { id: draftId, title: newArticleTitle, content: currentHtml, date: now };
-
       setDraftArticles(prev => {
         const exists = prev.some(d => d.id === draftId);
         const updated = exists ? prev.map(d => d.id === draftId ? newDraft : d) : [newDraft, ...prev];
@@ -423,7 +416,6 @@ function MainApp() {
         return updated;
       });
     }
-    
     setShowWriteArticleModal(false);
     setNewArticleTitle("");
     setNewArticleContent("");
@@ -433,28 +425,23 @@ function MainApp() {
     setLastSaved(null);
     setArticleTabMode('drafts');
   };
-
   const handleSaveDraft = () => {
     const currentHtml = articleTextareaRef.current?.innerHTML || "";
     const plainText = currentHtml.replace(/<[^>]*>/g, '').trim();
-    
     if (!newArticleTitle.trim() && !plainText) {
       showToast("保存する内容がありません", "error");
       return;
     }
-
     const d = new Date();
     const now = d.getHours().toString().padStart(2, '0') + ":" + d.getMinutes().toString().padStart(2, '0');
     const draftId = currentDraftId || `draft_${Date.now()}`;
     const newDraft = { id: draftId, title: newArticleTitle, content: currentHtml, date: now };
-
     setDraftArticles(prev => {
       const exists = prev.some(d => d.id === draftId);
       const updated = exists ? prev.map(d => d.id === draftId ? newDraft : d) : [newDraft, ...prev];
       localStorage.setItem('echoes_drafts_v2', JSON.stringify(updated));
       return updated;
     });
-
     setShowWriteArticleModal(false);
     setNewArticleTitle("");
     setNewArticleContent("");
@@ -462,7 +449,6 @@ function MainApp() {
     setEditingArticleId(null);
     setCurrentDraftId(null);
     setLastSaved(null);
-    
     setArticleTabMode('drafts');
     showToast("下書きを保存しました！", "success");
   };
@@ -677,7 +663,6 @@ function MainApp() {
       await supabase.from('notifications').insert([{ user_id: uid, sender_id: currentUser.id, type: 'follow', text: `${myProfile.name}さんにフォローされました` }]);
     }
   };
-
   const handleDragEnd = () => {
     setIsDragging(false);
     if (swipeOffset > 100) {
@@ -687,7 +672,6 @@ function MainApp() {
     }
     setSwipeOffset(0);
   };
-
   const filteredMatchUsers = useMemo(() => {
     return allProfiles.filter(u => {
       if (u.id === currentUser?.id || blockedUsers.has(u.id) || followedUsers.has(u.id)) return false;
@@ -699,7 +683,6 @@ function MainApp() {
       return true;
     });
   }, [matchFilter, allProfiles, currentUser, blockedUsers, followedUsers]);
-
   const [activeChatUserId, setActiveChatUserId] = useState<string | null>(null);
   const [chatMessageInput, setChatMessageInput] = useState("");
   const [showChatPlusMenu, setShowChatPlusMenu] = useState(false);
@@ -731,9 +714,24 @@ function MainApp() {
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupMembers, setNewGroupMembers] = useState<Set<string>>(new Set());
   const [showChatDetails, setShowChatDetails] = useState<boolean>(false);
-  const [chatDetailsTab, setChatDetailsTab] = useState<'members' | 'album' | 'notes'>('members');
+  const [chatDetailsTab, setChatDetailsTab] = useState<'menu' | 'members' | 'album' | 'notes'>('menu');
+  const [viewingChatImage, setViewingChatImage] = useState<any | null>(null);
+  const [isViewerUiHidden, setIsViewerUiHidden] = useState<boolean>(false);
+  const [jumpToMessageId, setJumpToMessageId] = useState<string | null>(null);
+  const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const [pendingAttachment, setPendingAttachment] = useState<{ type: 'image' | 'file', data: string, name: string, file: File } | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+
+  useEffect(() => {
+    if (jumpToMessageId && messageRefs.current[jumpToMessageId]) {
+      messageRefs.current[jumpToMessageId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      const timer = setTimeout(() => setJumpToMessageId(null), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [jumpToMessageId]);
+
   const unreadNotificationsCount = notifications.filter(n => !n.read).length;
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [showDrumrollModal, setShowDrumrollModal] = useState(false);
@@ -755,7 +753,8 @@ function MainApp() {
   const [editAvatar, setEditAvatar] = useState(myProfile.avatar);
   const [editHashtags, setEditHashtags] = useState(myProfile.hashtags?.join(', ') || "");
   const [editLiveHistory, setEditLiveHistory] = useState(myProfile.liveHistory?.join(', ') || "");
-  // 💡 他のユーザーの{t('follow')}数をリアルタイム取得する
+  const [editTwitter, setEditTwitter] = useState((myProfile as any).twitterUrl || "");
+  const [editInstagram, setEditInstagram] = useState((myProfile as any).instagramUrl || "");
   const [viewingUserStats, setViewingUserStats] = useState({ followers: 0, following: 0 });
   useEffect(() => {
     if (!viewingUser) return;
@@ -766,7 +765,6 @@ function MainApp() {
     };
     fetchStats();
   }, [viewingUser]);
-  // 💡 編集画面を開く時に、確実に「最新の自分のデータ」をセットする
   const openEditProfile = () => {
     setEditName(myProfile.name);
     setEditHandle(myProfile.handle);
@@ -775,6 +773,8 @@ function MainApp() {
     setEditHashtags(myProfile.hashtags?.join(', ') || "");
     setEditLiveHistory(myProfile.liveHistory?.join(', ') || "");
     setEditIsPrivate(myProfile.isPrivate);
+    setEditTwitter((myProfile as any).twitterUrl || "");
+    setEditInstagram((myProfile as any).instagramUrl || "");
     setIsEditingProfile(true);
   };
   const [activeCommentSongId, setActiveCommentSongId] = useState<string | null>(null);
@@ -1591,11 +1591,50 @@ function MainApp() {
   };
   const saveProfileChanges = async () => {
     if (!currentUser) return;
-    const { error } = await supabase.from('profiles').update({ name: editName, handle: editHandle, bio: editBio, avatar: editAvatar }).eq('id', currentUser.id);
-    if (error) { showToast("保存に失敗しました", "error"); return; }
-    setMyProfile(prev => ({ ...prev, name: editName, handle: editHandle, bio: editBio, avatar: editAvatar }));
-    // 💡 全体のユーザーリストも同時に更新して、画面全体のアイコンや名前を即座に変える
-    setAllProfiles(prev => prev.map(p => p.id === currentUser.id ? { ...p, name: editName, handle: editHandle, bio: editBio, avatar: editAvatar } : p));
+    const sanitizeUrl = (url: string) => {
+      if (!url) return "";
+      try {
+        const u = new URL(url.trim());
+        return u.origin + u.pathname;
+      } catch (e) {
+        return url.trim();
+      }
+    };
+    const cleanTwitter = sanitizeUrl(editTwitter);
+    const cleanInstagram = sanitizeUrl(editInstagram);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ 
+        name: editName, 
+        handle: editHandle, 
+        bio: editBio, 
+        avatar: editAvatar, 
+        twitterUrl: cleanTwitter, 
+        instagramUrl: cleanInstagram 
+      })
+      .eq('id', currentUser.id);
+    if (error) {
+      showToast("保存に失敗しました", "error");
+      return;
+    }
+    setMyProfile(prev => ({ 
+      ...prev, 
+      name: editName, 
+      handle: editHandle, 
+      bio: editBio, 
+      avatar: editAvatar, 
+      twitterUrl: cleanTwitter, 
+      instagramUrl: cleanInstagram 
+    } as any));
+    setAllProfiles(prev => prev.map(p => p.id === currentUser.id ? { 
+      ...p, 
+      name: editName, 
+      handle: editHandle, 
+      bio: editBio, 
+      avatar: editAvatar, 
+      twitterUrl: cleanTwitter, 
+      instagramUrl: cleanInstagram 
+    } as any : p));
     setIsEditingProfile(false);
     showToast("プロフィールを保存しました！", "success");
   };
@@ -2189,22 +2228,36 @@ function MainApp() {
       )}
       {activeChatUserId && (
         <div className="fixed inset-0 bg-black z-[900] animate-fade-in flex flex-col">
-          <div className="flex items-center p-4 bg-black/90 sticky top-0 border-b border-zinc-900 z-10">
-            <button onClick={handleGoBack}><IconChevronLeft /></button>
-            <h2 className="text-white font-bold text-lg mx-auto pl-4 truncate px-2">
-              {activeChatUserId.startsWith('com') ? chatCommunities.find(c => c.id === activeChatUserId)?.name : activeChatUserId.startsWith('g') ? chatGroups.find(g => g.id === activeChatUserId)?.name : allProfiles.find(u => u.id === activeChatUserId)?.name || "Chat"}
-            </h2>
+          <div className="flex items-center p-3 bg-[#0a0a0a]/95 backdrop-blur-md sticky top-0 border-b border-zinc-900 z-10">
+            <button onClick={handleGoBack} className="p-2 -ml-1 text-white hover:opacity-80 transition-opacity"><IconChevronLeft /></button>
+            <div className="flex-1 overflow-hidden px-2 flex flex-col">
+              <h2 className="text-white font-bold text-[16px] truncate flex items-center gap-1.5">
+                {activeChatUserId.startsWith('com') ? chatCommunities.find(c => c.id === activeChatUserId)?.name : activeChatUserId.startsWith('g') ? chatGroups.find(g => g.id === activeChatUserId)?.name : allProfiles.find(u => u.id === activeChatUserId)?.name || "Chat"}
+                {(activeChatUserId.startsWith('com') || activeChatUserId.startsWith('g')) && (
+                  <span className="text-[15px] font-normal text-zinc-400">
+                    ({activeChatUserId.startsWith('com') ? (chatCommunities.find(c => c.id === activeChatUserId)?.memberCount || 0) : (chatGroups.find(g => g.id === activeChatUserId)?.memberIds.length || 0)})
+                  </span>
+                )}
+              </h2>
+            </div>
             {(activeChatUserId.startsWith('com') || activeChatUserId.startsWith('g')) ? (
-              <button onClick={() => setShowChatDetails(true)} className="p-2 text-zinc-400 hover:text-white"><IconInfo /></button>
-            ) : <div className="w-8"></div>}
+              <button onClick={() => setShowChatDetails(true)} className="p-2 -mr-1 text-white hover:opacity-80 transition-opacity">
+                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+              </button>
+            ) : <div className="w-10"></div>}
           </div>
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
             {(chatHistory[activeChatUserId] || []).map((msg: any) => {
               const sender = allProfiles.find(u => u.id === msg.senderId);
               const isMe = msg.senderId === currentUser?.id || msg.senderId === 'me';
               const isGroup = activeChatUserId.startsWith('com') || activeChatUserId.startsWith('g');
+              const isHighlighted = jumpToMessageId === msg.id;
               return (
-                <div key={msg.id} className={`flex gap-2 max-w-[85%] ${isMe ? 'self-end' : 'self-start'}`}>
+                <div 
+                  key={msg.id} 
+                  ref={(el) => { messageRefs.current[msg.id] = el; }}
+                  className={`flex gap-2 max-w-[85%] transition-all duration-1000 ${isMe ? 'self-end' : 'self-start'} ${isHighlighted ? 'bg-[#1DB954]/20 p-2 rounded-2xl ring-2 ring-[#1DB954] shadow-[0_0_20px_rgba(29,185,84,0.3)] scale-[1.02] z-10' : ''}`}
+                >
                   {!isMe && sender && (
                     <img
                       src={sender.avatar}
@@ -2302,6 +2355,21 @@ function MainApp() {
           )}
           {/* LINE風の入力エリア（完成版） */}
           <div className="bg-[#0a0a0a] border-t border-zinc-900 flex flex-col relative z-30">
+            {pendingAttachment && (
+              <div className="flex items-center justify-between bg-[#1c1c1e] p-3 mx-3 mt-3 rounded-xl animate-fade-in border border-zinc-800">
+                <div className="flex items-center gap-3">
+                  <span className="text-[#1DB954]">
+                    {pendingAttachment.type === 'image' ? <IconImage /> : <IconFile />}
+                  </span>
+                  <span className="text-sm text-white font-bold truncate max-w-[200px]">
+                    {pendingAttachment.name}
+                  </span>
+                </div>
+                <button onClick={() => setPendingAttachment(null)} className="w-6 h-6 bg-zinc-700 rounded-full flex items-center justify-center text-zinc-300 hover:bg-zinc-600 transition-colors">
+                  <IconCross />
+                </button>
+              </div>
+            )}
             <div className="p-3 flex gap-3 items-center">
               <button onClick={() => { setShowChatPlusMenu(!showChatPlusMenu); setShowVoiceMenu(false); }} className={`w-7 h-7 flex items-center justify-center transition-colors flex-shrink-0 ${showChatPlusMenu ? 'text-white rotate-45' : 'text-zinc-400 hover:text-white'}`}>
                 <IconPlus />
@@ -2310,12 +2378,12 @@ function MainApp() {
                 <button className="w-full h-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors pointer-events-none">
                   <IconImage />
                 </button>
-                <input type="file" accept="image/*" onChange={handleChatFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                <input type="file" accept="image/*" onChange={(e) => { if(e.target.files?.[0]) setPendingAttachment({ type: 'image', data: URL.createObjectURL(e.target.files[0]), name: e.target.files[0].name, file: e.target.files[0] }); e.target.value = ''; }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
               </div>
               <div className="flex-1 bg-[#1c1c1e] rounded-full px-4 py-2 flex items-center">
                 <input type="text" placeholder="Aa" value={chatMessageInput} onChange={(e) => setChatMessageInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) submitChatMessage(activeChatUserId!); }} className="w-full bg-transparent text-[15px] text-white focus:outline-none" />
               </div>
-              {chatMessageInput.trim() ? (
+              {chatMessageInput.trim() || pendingAttachment ? (
                 <button onClick={() => submitChatMessage(activeChatUserId!)} className="w-8 h-8 rounded-full flex items-center justify-center bg-[#1DB954] text-black shadow-sm flex-shrink-0 transition-colors hover:scale-105">
                   <IconSend />
                 </button>
@@ -2327,42 +2395,166 @@ function MainApp() {
             </div>
           </div>
           {showChatDetails && (
-            <div className="absolute inset-0 bg-black/95 z-[950] flex flex-col animate-fade-in">
-              <div className="flex items-center p-4 border-b border-zinc-900 sticky top-0 bg-black/90">
-                <button onClick={() => setShowChatDetails(false)}><IconChevronLeft /></button>
-                <h2 className="text-white font-bold text-lg mx-auto pr-8">詳細設定</h2>
+            <div className="absolute inset-0 bg-[#0a0a0a] z-[950] flex flex-col animate-fade-in">
+              <div className="flex items-center p-4 border-b border-zinc-900 sticky top-0 bg-[#0a0a0a]">
+                <button onClick={() => chatDetailsTab === 'menu' ? setShowChatDetails(false) : setChatDetailsTab('menu')} className="p-2 -ml-2 text-white hover:opacity-80 transition-opacity"><IconChevronLeft /></button>
+                <h2 className="text-white font-bold text-lg mx-auto pr-8">
+                  {chatDetailsTab === 'menu' ? '詳細設定' : chatDetailsTab === 'members' ? 'メンバー' : chatDetailsTab === 'album' ? 'アルバム' : 'ノート'}
+                </h2>
               </div>
-              <div className="flex border-b border-zinc-900">
-                <button onClick={() => setChatDetailsTab('members')} className={`flex-1 py-4 text-sm font-bold ${chatDetailsTab === 'members' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>メンバー</button>
-                <button onClick={() => setChatDetailsTab('album')} className={`flex-1 py-4 text-sm font-bold flex items-center justify-center gap-2 ${chatDetailsTab === 'album' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}><IconImage /> アルバム</button>
-                <button onClick={() => setChatDetailsTab('notes')} className={`flex-1 py-4 text-sm font-bold flex items-center justify-center gap-2 ${chatDetailsTab === 'notes' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}><IconPin /> ノート</button>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4">
-                {chatDetailsTab === 'members' && (
-                  <div className="flex flex-col gap-4">
-                    {allProfiles.map(u => (
-                      <div key={u.id} className="flex items-center justify-between p-2 hover:bg-[#1c1c1e] rounded-xl cursor-pointer">
-                        <div className="flex items-center gap-3" onClick={() => { setViewingUser(u); setActiveTab('other_profile'); setShowChatDetails(false); setActiveChatUserId(null); }}>
-                          <img src={u.avatar} className="w-12 h-12 rounded-full object-cover" />
-                          <div><p className="font-bold text-sm">{u.name}</p><p className="text-xs text-zinc-500">@{u.handle}</p></div>
-                        </div>
-                        <button onClick={() => { setShowChatDetails(false); setActiveChatUserId(u.id); }} className="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center hover:bg-zinc-700 transition-colors"><IconMessagePlus /></button>
+              <div className="flex-1 overflow-y-auto pb-20">
+                {chatDetailsTab === 'menu' && (
+                  <div className="flex flex-col animate-fade-in">
+                    <div className="grid grid-cols-4 gap-4 p-6 border-b border-zinc-900/80">
+                      <div className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => showToast("通知をオフにしました")}>
+                        <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors"><IconBell /></div>
+                        <span className="text-[11px] font-bold text-zinc-400">通知オフ</span>
                       </div>
-                    ))}
+                      <div className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => setChatDetailsTab('members')}>
+                        <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors"><IconUsers /></div>
+                        <span className="text-[11px] font-bold text-zinc-400">メンバー</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => showToast("招待リンクをコピーしました")}>
+                        <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors"><IconUserPlus /></div>
+                        <span className="text-[11px] font-bold text-zinc-400">招待</span>
+                      </div>
+                      <div className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => { setShowChatDetails(false); showToast("グループを退会しました"); }}>
+                        <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-red-500 group-hover:bg-zinc-800 transition-colors">
+                          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" strokeWidth="2" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                        </div>
+                        <span className="text-[11px] font-bold text-zinc-400">退会</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col mt-2">
+                      <div className="flex items-center justify-between p-4 hover:bg-[#1c1c1e] cursor-pointer transition-colors" onClick={() => setChatDetailsTab('album')}>
+                        <div className="flex items-center gap-4 text-white"><IconImage /><span className="text-[15px] font-bold">写真・動画</span></div>
+                        <span className="text-zinc-600"><IconChevronRight /></span>
+                      </div>
+                      <div className="flex items-center justify-between p-4 hover:bg-[#1c1c1e] cursor-pointer transition-colors" onClick={() => setChatDetailsTab('notes')}>
+                        <div className="flex items-center gap-4 text-white"><IconPin /><span className="text-[15px] font-bold">ノート</span></div>
+                        <span className="text-zinc-600"><IconChevronRight /></span>
+                      </div>
+                      <div className="flex items-center justify-between p-4 hover:bg-[#1c1c1e] cursor-pointer transition-colors" onClick={() => showToast("近日公開予定です")}>
+                        <div className="flex items-center gap-4 text-white"><IconCalendar /><span className="text-[15px] font-bold">イベント</span></div>
+                        <span className="text-zinc-600"><IconChevronRight /></span>
+                      </div>
+                      <div className="flex items-center justify-between p-4 hover:bg-[#1c1c1e] cursor-pointer transition-colors" onClick={() => showToast("近日公開予定です")}>
+                        <div className="flex items-center gap-4 text-white"><IconFile /><span className="text-[15px] font-bold">ファイル</span></div>
+                        <span className="text-zinc-600"><IconChevronRight /></span>
+                      </div>
+                    </div>
                   </div>
                 )}
-                {chatDetailsTab === 'album' && (
-                  <div className="flex flex-col items-center justify-center h-full text-zinc-500">
-                    <IconImage /><p className="mt-4 text-sm font-bold">まだ写真はありません</p>
-                    <button className="mt-6 px-6 py-2 bg-[#1c1c1e] rounded-full text-white font-bold text-xs">写真をアップロード</button>
-                  </div>
-                )}
-                {chatDetailsTab === 'notes' && (
-                  <div className="flex flex-col items-center justify-center h-full text-zinc-500">
-                    <IconPin /><p className="mt-4 text-sm font-bold">ピン留めされたノートはありません</p>
-                    <button className="mt-6 px-6 py-2 bg-[#1c1c1e] rounded-full text-white font-bold text-xs">ノートを作成</button>
-                  </div>
-                )}
+                {chatDetailsTab === 'members' && (() => {
+                  const isCommunity = activeChatUserId.startsWith('com');
+                  const isChatGroup = activeChatUserId.startsWith('g');
+                  let memberList = allProfiles;
+                  if (isChatGroup) {
+                    const g = chatGroups.find(x => x.id === activeChatUserId);
+                    if (g) memberList = allProfiles.filter(u => g.memberIds.includes(u.id) || u.id === currentUser?.id);
+                  }
+                  const displayCount = isCommunity ? (chatCommunities.find(c => c.id === activeChatUserId)?.memberCount || 0) : memberList.length;
+                  
+                  return (
+                    <div className="flex flex-col animate-fade-in">
+                      <div className="p-4 flex items-center gap-4 cursor-pointer hover:bg-[#1c1c1e] transition-colors" onClick={() => showToast("招待リンクをコピーしました")}>
+                        <div className="w-12 h-12 rounded-full bg-[#1DB954]/10 text-[#1DB954] flex items-center justify-center border border-[#1DB954]/20"><IconUserPlus /></div>
+                        <span className="font-bold text-[15px] text-[#1DB954]">友だちを招待</span>
+                      </div>
+                      <div className="w-full h-2 bg-black"></div>
+                      <div className="px-4 py-3 text-xs font-bold text-zinc-500 bg-[#0a0a0a]">
+                        メンバー・参加者 ({displayCount})
+                      </div>
+                      <div className="flex flex-col p-2">
+                        {memberList.map(u => (
+                          <div key={u.id} className="flex items-center justify-between p-2 hover:bg-[#1c1c1e] rounded-2xl cursor-pointer transition-colors">
+                            <div className="flex items-center gap-4 flex-1" onClick={() => { setViewingUser(u); setActiveTab('other_profile'); setShowChatDetails(false); setActiveChatUserId(null); }}>
+                              <img src={u.avatar} className="w-12 h-12 rounded-full object-cover border border-zinc-800" />
+                              <div>
+                                <p className="font-bold text-[15px] text-white flex items-center gap-2">
+                                  {u.name} {u.id === currentUser?.id && <span className="bg-zinc-800 text-zinc-400 text-[9px] px-1.5 py-0.5 rounded-sm">あなた</span>}
+                                </p>
+                                <p className="text-xs text-zinc-500">@{u.handle}</p>
+                              </div>
+                            </div>
+                            {u.id !== currentUser?.id && (
+                              <button onClick={(e) => { e.stopPropagation(); setShowChatDetails(false); setActiveChatUserId(u.id); }} className="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center hover:bg-zinc-700 transition-colors text-white flex-shrink-0"><IconMessagePlus /></button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+                {chatDetailsTab === 'album' && (() => {
+                  const chatMsgs = chatHistory[activeChatUserId] || [];
+                  const images = chatMsgs.filter(m => m.text.startsWith('[IMAGE]'));
+                  return (
+                    <div className="p-2 animate-fade-in">
+                      {images.length > 0 ? (
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {images.map(imgMsg => {
+                            const sender = allProfiles.find(u => u.id === imgMsg.senderId) || (imgMsg.senderId === currentUser?.id ? myProfile : null);
+                            return (
+                              <div key={imgMsg.id} className="flex flex-col gap-1 cursor-pointer group" onClick={() => setViewingChatImage({ ...imgMsg, sender })}>
+                                <div className="aspect-square w-full relative overflow-hidden rounded-md border border-zinc-800/50">
+                                  <img src={imgMsg.text.replace('[IMAGE]', '')} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                                </div>
+                                {sender && (
+                                  <div className="flex items-center gap-1.5 px-0.5">
+                                    <img src={sender.avatar} className="w-4 h-4 rounded-full object-cover" />
+                                    <span className="text-[10px] text-zinc-400 truncate flex-1">{sender.name}</span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-[50vh] text-zinc-500">
+                          <IconImage /><p className="mt-4 text-sm font-bold">まだ写真はありません</p>
+                        </div>
+                      )}
+                      
+                      {/* 全画面ビューア */}
+                      {viewingChatImage && (
+                        <div className="fixed inset-0 bg-black z-[1000] flex flex-col animate-fade-in">
+                          <div className={`flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent absolute top-0 w-full z-10 transition-opacity duration-300 ${isViewerUiHidden ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                            <div className="flex items-center gap-4">
+                              <button onClick={() => setViewingChatImage(null)} className="p-2 -ml-2 text-white hover:opacity-80"><IconChevronLeft /></button>
+                              {viewingChatImage.sender && (
+                                <div className="flex items-center gap-2 cursor-pointer hover:opacity-80" onClick={() => {
+                                  setJumpToMessageId(viewingChatImage.id);
+                                  setShowChatDetails(false);
+                                  setViewingChatImage(null);
+                                }}>
+                                  <img src={viewingChatImage.sender.avatar} className="w-8 h-8 rounded-full object-cover border border-zinc-800" />
+                                  <div className="flex flex-col">
+                                    <span className="text-sm font-bold text-white leading-tight">{viewingChatImage.sender.name}</span>
+                                    <span className="text-[10px] text-zinc-400">元のメッセージへ</span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex-1 flex items-center justify-center overflow-hidden relative cursor-pointer" onClick={() => setIsViewerUiHidden(!isViewerUiHidden)}>
+                            <img src={viewingChatImage.text.replace('[IMAGE]', '')} className="max-w-full max-h-full object-contain" onClick={(e) => e.stopPropagation()} />
+                          </div>
+                          
+                          <div className={`flex items-center justify-around p-6 bg-gradient-to-t from-black/80 to-transparent absolute bottom-0 w-full z-10 transition-opacity duration-300 ${isViewerUiHidden ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                            <button onClick={() => showToast("画像を保存しました", "success")} className="flex flex-col items-center gap-2 text-white hover:opacity-80">
+                              <IconPlus /> <span className="text-[10px] font-bold">保存</span>
+                            </button>
+                            <button onClick={() => showToast("共有リンクをコピーしました", "success")} className="flex flex-col items-center gap-2 text-white hover:opacity-80">
+                              <IconShareExternal /> <span className="text-[10px] font-bold">共有</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           )}
@@ -2688,8 +2880,10 @@ function MainApp() {
               <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="自己紹介" className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none min-h-[60px]" />
               <div><label className="text-[10px] text-zinc-500 ml-1 mb-1 block">ハッシュタグ (カンマ区切り)</label><input type="text" value={editHashtags} onChange={(e) => setEditHashtags(e.target.value)} placeholder="例: 邦ロック, Vaundy" className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none" /></div>
               <div><label className="text-[10px] text-zinc-500 ml-1 mb-1 block">ライブ参戦履歴 (カンマ区切り)</label><input type="text" value={editLiveHistory} onChange={(e) => setEditLiveHistory(e.target.value)} placeholder="例: Tele 2026ツアー, VIVA LA ROCK" className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none" /></div>
+              <div><label className="text-[10px] text-zinc-500 ml-1 mb-1 block">X (旧Twitter) のリンク</label><input type="text" value={editTwitter} onChange={(e) => setEditTwitter(e.target.value)} placeholder="例: https://x.com/username" className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none" /></div>
+              <div><label className="text-[10px] text-zinc-500 ml-1 mb-1 block">Instagram のリンク</label><input type="text" value={editInstagram} onChange={(e) => setEditInstagram(e.target.value)} placeholder="例: https://instagram.com/username" className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none" /></div>
             </div>
-            <div className="flex gap-3 mt-4 sticky bottom-0 bg-[#1c1c1e] pt-2"><button onClick={() => setIsEditingProfile(false)} className="flex-1 py-3.5 border border-zinc-800 rounded-xl text-xs font-bold uppercase">{t('cancel')}</button><button onClick={saveProfileChanges} className="flex-1 py-3.5 bg-white text-black rounded-xl text-xs font-bold uppercase">保存</button></div>
+            <div className="flex gap-3 mt-4 sticky bottom-0 bg-[#1c1c1e] pt-2"><button onClick={() => setIsEditingProfile(false)} className="flex-1 py-3.5 border border-zinc-800 rounded-xl text-xs font-bold uppercase hover:bg-zinc-800 transition-colors">{t('cancel')}</button><button onClick={saveProfileChanges} className="flex-1 py-3.5 bg-white text-black rounded-xl text-xs font-bold uppercase hover:bg-gray-200 transition-colors">保存</button></div>
           </div>
         </div>
       )}
@@ -2991,7 +3185,6 @@ function MainApp() {
                       <span className="text-[10px] font-bold text-zinc-400 bg-zinc-900 px-2 py-1 rounded-md shrink-0">{draft.date}</span>
                     </div>
                     <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">{draft.content.replace(/<[^>]*>/g, '') || "本文がありません"}</p>
-                    
                     <button onClick={(e) => {
                       e.stopPropagation();
                       if(window.confirm("この下書きを削除しますか？")) {
@@ -3196,6 +3389,18 @@ function MainApp() {
             )}
             <p className="text-zinc-300 text-sm mt-4 text-center max-w-xs">{activeTab === 'profile' ? myProfile.bio : viewingUser?.bio}</p>
             <div className="flex flex-col items-center mt-3 gap-2 w-full max-w-xs"><div className="flex flex-wrap justify-center gap-1.5">{(activeTab === 'profile' ? myProfile.hashtags : viewingUser?.hashtags)?.map((h, i) => (<span key={i} className="px-2 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded text-[10px]">#{h}</span>))}</div></div>
+           <div className="flex gap-4 mt-4">
+              {(activeTab === 'profile' ? (myProfile as any).twitterUrl : (viewingUser as any)?.twitterUrl) && (
+                <a href={activeTab === 'profile' ? (myProfile as any).twitterUrl : (viewingUser as any)?.twitterUrl} target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-black border border-zinc-800 flex items-center justify-center text-white hover:scale-105 transition-transform shadow-md">
+                  <svg viewBox="0 0 24 24" className="w-[22px] h-[22px]" fill="currentColor"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"></path></svg>
+                </a>
+              )}
+              {(activeTab === 'profile' ? (myProfile as any).instagramUrl : (viewingUser as any)?.instagramUrl) && (
+                <a href={activeTab === 'profile' ? (myProfile as any).instagramUrl : (viewingUser as any)?.instagramUrl} target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 flex items-center justify-center text-white hover:scale-105 transition-transform shadow-md">
+                  <svg viewBox="0 0 24 24" className="w-6 h-6" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
+                </a>
+              )}
+            </div>
             {activeTab === 'profile' && favoriteArtists.length > 0 && (
               <div className="w-full mt-10">
                 <p className="text-[13px] font-bold text-white mb-4 w-full text-left">{t('favoriteArtists')}</p>
@@ -3361,15 +3566,12 @@ function MainApp() {
                     if (curr.nodeName === 'LI') { isInsideList = true; break; }
                     curr = curr.parentNode;
                   }
-                  
                   // 💡 手動で「1. 」「・ 」と打った場合も自動で次を続ける魔法の処理
                   if (!isInsideList && node && node.nodeType === Node.TEXT_NODE) {
                     const text = node.textContent || '';
                     if (selection.focusOffset !== text.length) return; // 行の途中でEnterを押した場合は除外
-
                     const bulletMatch = text.match(/^([・\-*])\s(.*)$/);
                     const numberMatch = text.match(/^(\d+)\.\s(.*)$/);
-                    
                     // 空のままEnterを押したらリストから抜け出す処理
                     const isEmptyBullet = /^([・\-*])\s$/.test(text) || /^(\d+)\.\s$/.test(text);
                     if (isEmptyBullet) {
@@ -3382,7 +3584,6 @@ function MainApp() {
                       document.execCommand('insertHTML', false, '<br/><br/>');
                       return;
                     }
-
                     if (bulletMatch) {
                       e.preventDefault();
                       document.execCommand('insertHTML', false, '<br/>' + bulletMatch[1] + ' ');
@@ -3708,7 +3909,6 @@ function MainApp() {
     </main>
   );
 }
-
 export default function Home() {
   return (
     <React.Suspense fallback={<div className="min-h-screen bg-black flex items-center justify-center"><h1 className="text-5xl font-black italic text-white animate-pulse">Echoes.</h1></div>}>

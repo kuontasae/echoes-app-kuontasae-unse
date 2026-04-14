@@ -24,3 +24,15 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@layer base {
+  button {
+    @apply active:scale-95 transition-transform;
+  }
+}
+
+@layer base {
+  button {
+    @apply active:opacity-50 active:scale-95 transition-all;
+  }
+}
