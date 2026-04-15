@@ -714,13 +714,16 @@ function MainApp() {
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupMembers, setNewGroupMembers] = useState<Set<string>>(new Set());
   const [showChatDetails, setShowChatDetails] = useState<boolean>(false);
-  const [chatDetailsTab, setChatDetailsTab] = useState<'menu' | 'members' | 'album' | 'notes'>('menu');
+  const [chatDetailsTab, setChatDetailsTab] = useState<'menu' | 'members' | 'album' | 'notes' | 'files'>('menu');
   const [viewingChatImage, setViewingChatImage] = useState<any | null>(null);
   const [isViewerUiHidden, setIsViewerUiHidden] = useState<boolean>(false);
   const [jumpToMessageId, setJumpToMessageId] = useState<string | null>(null);
   const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const chatEndRef = useRef<HTMLDivElement | null>(null);
-  const [pendingAttachment, setPendingAttachment] = useState<{ type: 'image' | 'file', data: string, name: string, file: File } | null>(null);
+  const [pendingAttachments, setPendingAttachments] = useState<{ type: 'image' | 'file', data: string, name: string, file: File }[]>([]);
+  const [showChatMusicSelector, setShowChatMusicSelector] = useState(false);
+  const [selectedChatSong, setSelectedChatSong] = useState<any>(null);
+  const [chatMusicComment, setChatMusicComment] = useState("");
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
@@ -731,6 +734,17 @@ function MainApp() {
       return () => clearTimeout(timer);
     }
   }, [jumpToMessageId]);
+
+  // 💡 チャットを開いた時＆新着メッセージが来た時に一番下へ自動スクロールするエンジン
+  useEffect(() => {
+    if (activeChatUserId && chatHistory[activeChatUserId]) {
+      // ほんの少しだけ遅らせることで、画像などの描画が完了してから正確に一番下へ移動させる
+      const timer = setTimeout(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [activeChatUserId, chatHistory]);
 
   const unreadNotificationsCount = notifications.filter(n => !n.read).length;
   const [calendarDate, setCalendarDate] = useState(new Date());
@@ -1310,29 +1324,73 @@ function MainApp() {
       setVibes(vibes.filter(v => v.id !== id)); setCommunityVibes(communityVibes.filter(v => v.id !== id));
     }
   };
-  // 💡 送信時に本物のIDを取得する（既読を即座に反映させるため）
+  // 💡 送信時に本物のIDを取得し、画像やファイルも同時に送れるように強化
   const submitChatMessage = async (targetId: string) => {
-    if (!chatMessageInput.trim() || !currentUser) return;
-    const text = chatMessageInput;
-    setChatMessageInput("");
-    // 1. サクサク感を出すために仮のIDで即座に表示
-    const tempId = Date.now().toString();
-    const newMsg = { id: tempId, senderId: currentUser.id, text: text, timestamp: Date.now(), isRead: false };
-    setChatHistory(prev => ({ ...prev, [targetId]: [...(prev[targetId] || []), newMsg as any] }));
-    // 2. DBに保存し、本物のデータを受け取る
-    const { data, error } = await supabase
-      .from('chat_messages')
-      .insert([{ sender_id: currentUser.id, target_id: targetId, text: text }])
-      .select()
-      .single();
-    if (error) {
-      showToast("送信エラー", "error");
-    } else if (data) {
-      // 3. 画面上の仮IDを本物のIDに書き換える
-      setChatHistory(prev => {
-        const history = prev[targetId] || [];
-        return { ...prev, [targetId]: history.map(m => m.id === tempId ? { ...m, id: data.id } as any : m) };
-      });
+    if ((!chatMessageInput.trim() && pendingAttachments.length === 0) || !currentUser) return;
+    
+    // 1. まずテキストメッセージがあれば送信
+    if (chatMessageInput.trim()) {
+      const text = chatMessageInput;
+      setChatMessageInput("");
+      const tempId = Date.now().toString();
+      const newMsg = { id: tempId, senderId: currentUser.id, text: text, timestamp: Date.now(), isRead: false };
+      setChatHistory(prev => ({ ...prev, [targetId]: [...(prev[targetId] || []), newMsg as any] }));
+      
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .insert([{ sender_id: currentUser.id, target_id: targetId, text: text }])
+        .select()
+        .single();
+        
+      if (!error && data) {
+        setChatHistory(prev => {
+          const history = prev[targetId] || [];
+          return { ...prev, [targetId]: history.map(m => m.id === tempId ? { ...m, id: data.id } as any : m) };
+        });
+      }
+    }
+
+    // 2. 添付ファイルがあれば連続でアップロードして送信
+    if (pendingAttachments.length > 0) {
+      const attachmentsToSend = [...pendingAttachments];
+      setPendingAttachments([]); // UIをすぐにクリアしてサクサク感アップ
+      
+      for (const att of attachmentsToSend) {
+        const isImage = att.type === 'image';
+        try {
+          const fileExt = att.name.split('.').pop() || "jpeg";
+          const fileName = `chat-${currentUser.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          
+          // ストレージにアップロード
+          const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, att.file);
+          if (uploadError) throw uploadError;
+          
+          // 公開URLを取得
+          const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+          const fileText = isImage ? `[IMAGE]${urlData.publicUrl}` : `[FILE]${att.name}|${urlData.publicUrl}`;
+          
+          // 一時的に画面に表示
+          const tempFileId = Date.now().toString() + Math.random().toString(36).substring(7);
+          const newFileMsg = { id: tempFileId, senderId: currentUser.id, text: fileText, timestamp: Date.now(), isRead: false };
+          setChatHistory(prev => ({ ...prev, [targetId]: [...(prev[targetId] || []), newFileMsg as any] }));
+          
+          // DBに保存
+          const { data: dbData } = await supabase
+            .from('chat_messages')
+            .insert([{ sender_id: currentUser.id, target_id: targetId, text: fileText }])
+            .select()
+            .single();
+            
+          if (dbData) {
+            setChatHistory(prev => {
+              const history = prev[targetId] || [];
+              return { ...prev, [targetId]: history.map(m => m.id === tempFileId ? { ...m, id: dbData.id } as any : m) };
+            });
+          }
+        } catch (err) {
+          showToast(`${att.name}の送信に失敗しました`, "error");
+        }
+      }
     }
   };
   // 💡 送信取り消し（削除）機能
@@ -1988,7 +2046,7 @@ function MainApp() {
         </div>
       )}
       {activeArtistProfile && (
-        <div className="fixed inset-0 bg-black z-[700] animate-fade-in flex flex-col overflow-y-auto">
+        <div className="fixed inset-0 bg-black z-[1000] animate-fade-in flex flex-col overflow-y-auto">
           <div className="absolute top-0 w-full h-[50vh] z-0 pointer-events-none">
             <img src={activeArtistProfile.artworkUrl} className="w-full h-full object-cover opacity-60" />
             <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/60 to-black"></div>
@@ -2028,6 +2086,15 @@ function MainApp() {
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100"><IconPlay /></div>
                       </div>
                       <div className="flex-1 overflow-hidden"><p className="font-bold text-base truncate">{latestReleaseSong.trackName}</p><p className="text-xs text-[#1DB954] font-bold mt-1">NEW</p></div>
+                      {activeTab === 'chat' && activeChatUserId ? (
+                        <button onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedChatSong(latestReleaseSong);
+                          setShowChatMusicSelector(true);
+                        }} className="w-10 h-10 rounded-full bg-zinc-800/80 flex items-center justify-center text-white hover:bg-[#1DB954] hover:text-black transition-colors shrink-0 shadow-md">
+                          <IconSend />
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                 )}
@@ -2039,6 +2106,15 @@ function MainApp() {
                       <div className="w-4 hidden group-hover:block text-[#1DB954]"><IconPlay /></div>
                       <img src={s.artworkUrl60} className="w-10 h-10 rounded object-cover shadow-sm" />
                       <div className="flex-1 overflow-hidden"><p className="font-bold text-sm truncate group-hover:text-[#1DB954] transition-colors">{s.trackName}</p></div>
+                      {activeTab === 'chat' && activeChatUserId ? (
+                        <button onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedChatSong(s);
+                          setShowChatMusicSelector(true);
+                        }} className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 hover:bg-[#1DB954] hover:text-black transition-colors shrink-0 opacity-0 group-hover:opacity-100">
+                          <IconSend />
+                        </button>
+                      ) : null}
                     </div>
                   ))}
                 </div>
@@ -2074,9 +2150,19 @@ function MainApp() {
             {isAlbumLoading ? <p className="text-center text-zinc-500 py-12">Loading tracks...</p> : (
               <div className="flex flex-col gap-2">
                 {albumSongs.map((tItem, i) => (
-                  <div key={i} onClick={() => setDraftSong(tItem)} className="flex items-center gap-4 py-3 px-2 hover:bg-zinc-800/50 rounded-xl cursor-pointer border-b border-zinc-900/50 last:border-0">
-                    <p className="text-zinc-500 font-bold text-sm w-6 text-right">{i + 1}</p>
-                    <div className="flex-1 overflow-hidden"><p className="font-bold text-sm truncate hover:text-[#1DB954] transition-colors">{tItem.trackName}</p></div>
+                  <div key={i} onClick={() => setDraftSong(tItem)} className="flex items-center gap-4 py-3 px-2 hover:bg-zinc-800/50 rounded-xl cursor-pointer border-b border-zinc-900/50 last:border-0 group">
+                    <p className="text-zinc-500 font-bold text-sm w-6 text-right group-hover:hidden">{i + 1}</p>
+                    <div className="w-6 hidden group-hover:flex justify-end text-[#1DB954]"><IconPlay /></div>
+                    <div className="flex-1 overflow-hidden"><p className="font-bold text-sm truncate group-hover:text-[#1DB954] transition-colors">{tItem.trackName}</p></div>
+                    {activeTab === 'chat' && activeChatUserId ? (
+                      <button onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedChatSong(tItem);
+                        setShowChatMusicSelector(true);
+                      }} className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 hover:bg-[#1DB954] hover:text-black transition-colors shrink-0 opacity-0 group-hover:opacity-100">
+                        <IconSend />
+                      </button>
+                    ) : null}
                   </div>
                 ))}
               </div>
@@ -2276,7 +2362,7 @@ function MainApp() {
                     {/* 💡 自分のメッセージならクリックで送信取り消しできるようにする */}
                     <div
                       onClick={() => isMe ? deleteChatMessage(msg.id, activeChatUserId!) : null}
-                      className={`px-3.5 py-2 w-fit h-fit break-words shadow-sm ${isMe ? 'bg-[#8de055] text-black rounded-[20px] rounded-br-[4px] cursor-pointer hover:opacity-80' : 'bg-[#2c2c2e] text-white rounded-[20px] rounded-bl-[4px]'}`}
+                      className={`w-fit h-fit break-words shadow-sm ${msg.text.startsWith('[MUSIC]') ? `bg-[#1c1c1e] text-white p-3 rounded-2xl border border-zinc-800/50 ${isMe ? 'rounded-br-[4px]' : 'rounded-bl-[4px]'} cursor-pointer hover:opacity-80` : `px-3.5 py-2 ${isMe ? 'bg-[#8de055] text-black rounded-[20px] rounded-br-[4px] cursor-pointer hover:opacity-80' : 'bg-[#2c2c2e] text-white rounded-[20px] rounded-bl-[4px]'}`}`}
                     >
                       {msg.text.startsWith('[VOICE]') ? (
                         <audio controls src={msg.text.replace('[VOICE]', '')} className="max-w-[200px] h-10" />
@@ -2286,6 +2372,24 @@ function MainApp() {
                         <a href={msg.text.split('|')[1]} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl hover:bg-black/20 transition-colors" onClick={(e) => e.stopPropagation()}>
                           <span className="text-[15px] font-bold underline truncate max-w-[150px] text-current">📁 {msg.text.replace('[FILE]', '').split('|')[0]}</span>
                         </a>
+                      ) : msg.text.startsWith('[MUSIC]') ? (
+                        (() => {
+                          const [trackId, trackName, artistName, artworkUrl, previewUrl] = msg.text.replace('[MUSIC]', '').split('|');
+                          return (
+                            <div className="flex items-center gap-4 w-[240px]" onClick={(e) => e.stopPropagation()}>
+                              <div className="relative w-14 h-14 rounded-full overflow-hidden shrink-0 shadow-md cursor-pointer border border-zinc-800 hover:opacity-80 transition-opacity" onClick={() => togglePlay(previewUrl, { title: trackName, artist: artistName, imgUrl: artworkUrl })}>
+                                <img src={artworkUrl} className={`w-full h-full object-cover ${playingSong === previewUrl ? 'opacity-40 animate-[spin_4s_linear_infinite]' : ''}`} />
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-white">
+                                  {playingSong === previewUrl ? <IconStop /> : <IconPlay />}
+                                </div>
+                              </div>
+                              <div className="flex-1 overflow-hidden">
+                                <p className="font-bold text-[15px] text-white truncate leading-tight">{trackName}</p>
+                                <p onClick={(e) => handleArtistClick(e, parseInt(trackId) || 0, artistName, artworkUrl)} className="text-[11px] text-zinc-400 truncate mt-1 cursor-pointer hover:underline hover:text-[#1DB954] transition-colors relative z-10 inline-block">{artistName}</p>
+                              </div>
+                            </div>
+                          );
+                        })()
                       ) : (
                         <p className="text-[15px] font-medium leading-snug">{msg.text}</p>
                       )}
@@ -2298,6 +2402,7 @@ function MainApp() {
                 </div>
               );
             })}
+            <div ref={chatEndRef} />
           </div>
           {/* 💡 ＋ボタンを押した時に開くメニュー */}
           {showChatPlusMenu && (
@@ -2307,9 +2412,70 @@ function MainApp() {
                 <span className="text-[11px] font-bold text-zinc-400">ファイル</span>
                 <input type="file" onChange={(e) => { handleChatFileUpload(e); setShowChatPlusMenu(false); }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
               </div>
-              <div className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80" onClick={() => { showToast("音楽送信機能は開発中です"); setShowChatPlusMenu(false); }}>
+              <div className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80" onClick={() => { setShowChatMusicSelector(true); setShowChatPlusMenu(false); }}>
                 <div className="w-12 h-12 bg-zinc-800 rounded-[18px] flex items-center justify-center text-white"><IconMusic /></div>
                 <span className="text-[11px] font-bold text-zinc-400">音楽</span>
+              </div>
+            </div>
+          )}
+
+          {/* 💡 音楽選択モーダル */}
+          {showChatMusicSelector && (
+            <div className="absolute inset-0 z-50 flex flex-col justify-end animate-fade-in">
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowChatMusicSelector(false)}></div>
+              <div className="bg-[#1c1c1e] rounded-t-[32px] w-full pb-10 pt-4 px-4 relative z-10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] h-[70vh] flex flex-col">
+                <div className="w-12 h-1.5 bg-zinc-700 rounded-full mx-auto mb-4 cursor-pointer" onClick={() => setShowChatMusicSelector(false)}></div>
+                <div className="flex justify-between items-center mb-4 px-2 shrink-0">
+                  <div className="w-8"></div>
+                  <h3 className="text-[15px] font-bold text-white flex items-center gap-2"><IconMusic /> 音楽をシェア</h3>
+                  <button onClick={() => setShowChatMusicSelector(false)} className="w-8 h-8 bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors"><IconCross /></button>
+                </div>
+                <div className="relative mb-4 px-2 shrink-0">
+                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-500"><IconSearch /></div>
+                  <input type="text" placeholder="楽曲やアーティストを検索..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none" />
+                </div>
+                <div className="flex-1 overflow-y-auto px-2 pb-4 scrollbar-hide flex flex-col gap-2">
+                  {searchQuery && searchArtistInfo && (
+                    <>
+                      <div className="p-3 border border-zinc-800 flex items-center gap-4 cursor-pointer hover:bg-zinc-800/50 rounded-2xl mb-2" onMouseDown={e => {
+                        handleArtistClick(e, searchArtistInfo.artistId, searchArtistInfo.artistName, searchArtistInfo.artworkUrl);
+                        setShowChatMusicSelector(false);
+                      }}>
+                        <img src={searchArtistInfo.artworkUrl} className="w-12 h-12 rounded-full object-cover" />
+                        <div className="flex-1"><p className="font-bold text-sm text-white">{searchArtistInfo.artistName}</p><p className="text-[10px] text-zinc-400 mt-0.5">アーティスト</p></div>
+                        <IconChevronRight />
+                      </div>
+                      {searchResults.length > 0 && <p className="text-[10px] font-bold text-zinc-500 uppercase px-2 pt-2 pb-1">ヒット</p>}
+                    </>
+                  )}
+                  {!searchQuery && trendingSongs.length > 0 && <p className="text-[10px] font-bold text-zinc-500 uppercase px-2 pt-2 pb-1 flex items-center"><IconTrend />Trending Now</p>}
+                  
+                  {(searchQuery && searchResults.length > 0 ? searchResults : trendingSongs).map((song, i) => (
+                    <div key={i} className="flex items-center gap-3 p-3 bg-zinc-800/30 hover:bg-zinc-800 rounded-2xl cursor-pointer transition-colors group" onClick={async () => {
+                      const fileText = `[MUSIC]${song.trackId}|${song.trackName}|${song.artistName}|${song.artworkUrl100}|${song.previewUrl}`;
+                      const tempId = Date.now().toString();
+                      const newMsg = { id: tempId, senderId: currentUser?.id, text: fileText, timestamp: Date.now(), isRead: false };
+                      setChatHistory(prev => ({ ...prev, [activeChatUserId!]: [...(prev[activeChatUserId!] || []), newMsg as any] }));
+                      setShowChatMusicSelector(false);
+                      setSearchQuery("");
+                      if(currentUser && activeChatUserId) {
+                        const { data } = await supabase.from('chat_messages').insert([{ sender_id: currentUser.id, target_id: activeChatUserId, text: fileText }]).select().single();
+                        if (data) {
+                          setChatHistory(prev => ({ ...prev, [activeChatUserId]: (prev[activeChatUserId] || []).map(m => m.id === tempId ? { ...m, id: data.id } as any : m) }));
+                        }
+                      }
+                    }}>
+                      <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-zinc-800">
+                        <img src={song.artworkUrl60.replace('60x60', '100x100')} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><IconSend /></div>
+                      </div>
+                      <div className="flex-1 overflow-hidden">
+                        <p className="font-bold text-sm text-white truncate">{song.trackName}</p>
+                        <p className="text-[10px] text-zinc-400 mt-1 truncate">{song.artistName}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -2355,19 +2521,25 @@ function MainApp() {
           )}
           {/* LINE風の入力エリア（完成版） */}
           <div className="bg-[#0a0a0a] border-t border-zinc-900 flex flex-col relative z-30">
-            {pendingAttachment && (
-              <div className="flex items-center justify-between bg-[#1c1c1e] p-3 mx-3 mt-3 rounded-xl animate-fade-in border border-zinc-800">
-                <div className="flex items-center gap-3">
-                  <span className="text-[#1DB954]">
-                    {pendingAttachment.type === 'image' ? <IconImage /> : <IconFile />}
-                  </span>
-                  <span className="text-sm text-white font-bold truncate max-w-[200px]">
-                    {pendingAttachment.name}
-                  </span>
-                </div>
-                <button onClick={() => setPendingAttachment(null)} className="w-6 h-6 bg-zinc-700 rounded-full flex items-center justify-center text-zinc-300 hover:bg-zinc-600 transition-colors">
-                  <IconCross />
-                </button>
+            {pendingAttachments.length > 0 && (
+              <div className="flex flex-col gap-2 p-3 mx-3 mt-3 bg-[#1c1c1e] rounded-xl border border-zinc-800 animate-fade-in max-h-[150px] overflow-y-auto scrollbar-hide">
+                {pendingAttachments.map((att, idx) => (
+                  <div key={idx} className="flex items-center justify-between bg-black/50 p-2 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      {att.type === 'image' ? (
+                        <img src={att.data} className="w-8 h-8 rounded object-cover" />
+                      ) : (
+                        <span className="text-[#1DB954]"><IconFile /></span>
+                      )}
+                      <span className="text-xs text-white font-bold truncate max-w-[180px]">
+                        {att.name}
+                      </span>
+                    </div>
+                    <button onClick={() => setPendingAttachments(prev => prev.filter((_, i) => i !== idx))} className="w-6 h-6 bg-zinc-800 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors shrink-0">
+                      <IconCross />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
             <div className="p-3 flex gap-3 items-center">
@@ -2378,12 +2550,18 @@ function MainApp() {
                 <button className="w-full h-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors pointer-events-none">
                   <IconImage />
                 </button>
-                <input type="file" accept="image/*" onChange={(e) => { if(e.target.files?.[0]) setPendingAttachment({ type: 'image', data: URL.createObjectURL(e.target.files[0]), name: e.target.files[0].name, file: e.target.files[0] }); e.target.value = ''; }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
+                <input type="file" accept="image/*" multiple onChange={(e) => {
+                  if(e.target.files) {
+                    const newFiles = Array.from(e.target.files).map(f => ({ type: 'image' as const, data: URL.createObjectURL(f), name: f.name, file: f }));
+                    setPendingAttachments(prev => [...prev, ...newFiles]);
+                  }
+                  e.target.value = '';
+                }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
               </div>
               <div className="flex-1 bg-[#1c1c1e] rounded-full px-4 py-2 flex items-center">
                 <input type="text" placeholder="Aa" value={chatMessageInput} onChange={(e) => setChatMessageInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) submitChatMessage(activeChatUserId!); }} className="w-full bg-transparent text-[15px] text-white focus:outline-none" />
               </div>
-              {chatMessageInput.trim() || pendingAttachment ? (
+              {chatMessageInput.trim() || pendingAttachments.length > 0 ? (
                 <button onClick={() => submitChatMessage(activeChatUserId!)} className="w-8 h-8 rounded-full flex items-center justify-center bg-[#1DB954] text-black shadow-sm flex-shrink-0 transition-colors hover:scale-105">
                   <IconSend />
                 </button>
@@ -2438,7 +2616,7 @@ function MainApp() {
                         <div className="flex items-center gap-4 text-white"><IconCalendar /><span className="text-[15px] font-bold">イベント</span></div>
                         <span className="text-zinc-600"><IconChevronRight /></span>
                       </div>
-                      <div className="flex items-center justify-between p-4 hover:bg-[#1c1c1e] cursor-pointer transition-colors" onClick={() => showToast("近日公開予定です")}>
+                      <div className="flex items-center justify-between p-4 hover:bg-[#1c1c1e] cursor-pointer transition-colors" onClick={() => setChatDetailsTab('files')}>
                         <div className="flex items-center gap-4 text-white"><IconFile /><span className="text-[15px] font-bold">ファイル</span></div>
                         <span className="text-zinc-600"><IconChevronRight /></span>
                       </div>
@@ -2550,6 +2728,43 @@ function MainApp() {
                               <IconShareExternal /> <span className="text-[10px] font-bold">共有</span>
                             </button>
                           </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+                {chatDetailsTab === 'files' && (() => {
+                  const chatMsgs = chatHistory[activeChatUserId] || [];
+                  const files = chatMsgs.filter(m => m.text.startsWith('[FILE]'));
+                  return (
+                    <div className="p-4 animate-fade-in flex flex-col gap-2">
+                      {files.length > 0 ? (
+                        files.map(fileMsg => {
+                          const [fileName, fileUrl] = fileMsg.text.replace('[FILE]', '').split('|');
+                          const sender = allProfiles.find(u => u.id === fileMsg.senderId) || (fileMsg.senderId === currentUser?.id ? myProfile : null);
+                          return (
+                            <a key={fileMsg.id} href={fileUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-4 p-3 bg-[#1c1c1e] hover:bg-zinc-800 rounded-xl transition-colors border border-zinc-800/50 group">
+                              <div className="w-12 h-12 bg-zinc-800/50 rounded-lg flex items-center justify-center text-[#1DB954] group-hover:bg-zinc-700 transition-colors shrink-0">
+                                <IconFile />
+                              </div>
+                              <div className="flex-1 overflow-hidden">
+                                <p className="font-bold text-sm text-white truncate">{fileName}</p>
+                                <div className="flex items-center gap-2 mt-1">
+                                  {sender && <img src={sender.avatar} className="w-3.5 h-3.5 rounded-full object-cover border border-zinc-700" />}
+                                  <span className="text-[10px] text-zinc-500 truncate">{sender?.name || 'Unknown'}</span>
+                                  <span className="text-[10px] text-zinc-500">• {displayLocalTime(fileMsg.timestamp, timeZone)}</span>
+                                </div>
+                              </div>
+                              <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 group-hover:text-white transition-colors shrink-0">
+                                <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                              </div>
+                            </a>
+                          );
+                        })
+                      ) : (
+                        <div className="flex flex-col items-center justify-center h-[50vh] text-zinc-500">
+                          <IconFile />
+                          <p className="mt-4 text-sm font-bold">まだファイルはありません</p>
                         </div>
                       )}
                     </div>
