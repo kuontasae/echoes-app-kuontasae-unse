@@ -1328,17 +1328,22 @@ function MainApp() {
   const submitChatMessage = async (targetId: string) => {
     if ((!chatMessageInput.trim() && pendingAttachments.length === 0) || !currentUser) return;
     
+    const textToSend = chatMessageInput.trim();
+    const attachmentsToSend = [...pendingAttachments];
+    
+    // 💡 UIを即座にリセットしてサクサク感を出す
+    setChatMessageInput("");
+    setPendingAttachments([]);
+    
     // 1. まずテキストメッセージがあれば送信
-    if (chatMessageInput.trim()) {
-      const text = chatMessageInput;
-      setChatMessageInput("");
+    if (textToSend) {
       const tempId = Date.now().toString();
-      const newMsg = { id: tempId, senderId: currentUser.id, text: text, timestamp: Date.now(), isRead: false };
+      const newMsg = { id: tempId, senderId: currentUser.id, text: textToSend, timestamp: Date.now(), isRead: false };
       setChatHistory(prev => ({ ...prev, [targetId]: [...(prev[targetId] || []), newMsg as any] }));
       
       const { data, error } = await supabase
         .from('chat_messages')
-        .insert([{ sender_id: currentUser.id, target_id: targetId, text: text }])
+        .insert([{ sender_id: currentUser.id, target_id: targetId, text: textToSend }])
         .select()
         .single();
         
@@ -1351,15 +1356,21 @@ function MainApp() {
     }
 
     // 2. 添付ファイルがあれば連続でアップロードして送信
-    if (pendingAttachments.length > 0) {
-      const attachmentsToSend = [...pendingAttachments];
-      setPendingAttachments([]); // UIをすぐにクリアしてサクサク感アップ
+    if (attachmentsToSend.length > 0) {
+      showToast("ファイルを送信中...", "success");
       
       for (const att of attachmentsToSend) {
         const isImage = att.type === 'image';
+        
+        // 💡 【重要】アップロードを待たずに、画面に「仮の画像」を即座に表示して安心させる（UX向上）
+        const tempFileId = Date.now().toString() + Math.random().toString(36).substring(7);
+        const tempFileText = isImage ? `[IMAGE]${att.data}` : `[FILE]${att.name}|${att.data}`;
+        const newTempMsg = { id: tempFileId, senderId: currentUser.id, text: tempFileText, timestamp: Date.now(), isRead: false };
+        setChatHistory(prev => ({ ...prev, [targetId]: [...(prev[targetId] || []), newTempMsg as any] }));
+        
         try {
           let uploadFile = att.file;
-          // 💡 画像の場合、圧縮を試みるが、失敗した場合は元のファイルのまま強制的に送信を続行する
+          // 画像の場合、圧縮を試みるが、失敗した場合は元のファイルのまま強制的に送信を続行する
           if (isImage) {
             try {
               uploadFile = await compressImage(att.file);
@@ -1369,7 +1380,8 @@ function MainApp() {
           }
           
           const fileExt = uploadFile.name.split('.').pop() || "jpeg";
-          const fileName = `chat-${currentUser.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+          // 💡 念のためRLS（セキュリティ）に引っかからないよう、必ずユーザーIDから始まるファイル名にする
+          const fileName = `${currentUser.id}-chat-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
           
           // ストレージにアップロード
           const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, uploadFile);
@@ -1377,28 +1389,26 @@ function MainApp() {
           
           // 公開URLを取得
           const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-          const fileText = isImage ? `[IMAGE]${urlData.publicUrl}` : `[FILE]${att.name}|${urlData.publicUrl}`;
-          
-          // 一時的に画面に表示
-          const tempFileId = Date.now().toString() + Math.random().toString(36).substring(7);
-          const newFileMsg = { id: tempFileId, senderId: currentUser.id, text: fileText, timestamp: Date.now(), isRead: false };
-          setChatHistory(prev => ({ ...prev, [targetId]: [...(prev[targetId] || []), newFileMsg as any] }));
+          const realFileText = isImage ? `[IMAGE]${urlData.publicUrl}` : `[FILE]${att.name}|${urlData.publicUrl}`;
           
           // DBに保存
           const { data: dbData } = await supabase
             .from('chat_messages')
-            .insert([{ sender_id: currentUser.id, target_id: targetId, text: fileText }])
+            .insert([{ sender_id: currentUser.id, target_id: targetId, text: realFileText }])
             .select()
             .single();
             
           if (dbData) {
             setChatHistory(prev => {
               const history = prev[targetId] || [];
-              return { ...prev, [targetId]: history.map(m => m.id === tempFileId ? { ...m, id: dbData.id } as any : m) };
+              // 仮のメッセージを本物のIDとURLに静かに差し替える
+              return { ...prev, [targetId]: history.map(m => m.id === tempFileId ? { ...m, id: dbData.id, text: realFileText } as any : m) };
             });
           }
         } catch (err) {
           showToast(`${att.name}の送信に失敗しました`, "error");
+          // 失敗した場合は仮の表示を消す
+          setChatHistory(prev => ({ ...prev, [targetId]: prev[targetId].filter(m => m.id !== tempFileId) }));
         }
       }
     }
@@ -2420,11 +2430,18 @@ function MainApp() {
           {/* 💡 ＋ボタンを押した時に開くメニュー */}
           {showChatPlusMenu && (
             <div className="bg-[#1c1c1e] p-6 grid grid-cols-4 gap-4 border-t border-zinc-900 animate-fade-in absolute bottom-[68px] w-full z-20">
-              <div className="flex flex-col items-center gap-2 cursor-pointer relative hover:opacity-80">
+              <label className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80">
                 <div className="w-12 h-12 bg-zinc-800 rounded-[18px] flex items-center justify-center text-white"><IconFile /></div>
                 <span className="text-[11px] font-bold text-zinc-400">ファイル</span>
-                <input type="file" onChange={(e) => { handleChatFileUpload(e); setShowChatPlusMenu(false); }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-              </div>
+                <input type="file" multiple onChange={(e) => {
+                  if(e.target.files) {
+                    const newFiles = Array.from(e.target.files).map(f => ({ type: 'file' as const, data: URL.createObjectURL(f), name: f.name, file: f }));
+                    setPendingAttachments(prev => [...prev, ...newFiles]);
+                  }
+                  e.target.value = '';
+                  setShowChatPlusMenu(false);
+                }} className="absolute opacity-0 w-0 h-0 overflow-hidden" />
+              </label>
               <div className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80" onClick={() => { setShowChatMusicSelector(true); setShowChatPlusMenu(false); }}>
                 <div className="w-12 h-12 bg-zinc-800 rounded-[18px] flex items-center justify-center text-white"><IconMusic /></div>
                 <span className="text-[11px] font-bold text-zinc-400">音楽</span>
@@ -2618,18 +2635,16 @@ function MainApp() {
               <button onClick={() => { setShowChatPlusMenu(!showChatPlusMenu); setShowVoiceMenu(false); }} className={`w-7 h-7 flex items-center justify-center transition-colors flex-shrink-0 ${showChatPlusMenu ? 'text-white rotate-45' : 'text-zinc-400 hover:text-white'}`}>
                 <IconPlus />
               </button>
-              <div className="relative w-7 h-7 flex-shrink-0">
-                <button className="w-full h-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors pointer-events-none">
-                  <IconImage />
-                </button>
+              <label className="relative w-7 h-7 flex-shrink-0 flex items-center justify-center text-zinc-400 hover:text-white transition-colors cursor-pointer">
+                <IconImage />
                 <input type="file" accept="image/*" multiple onChange={(e) => {
                   if(e.target.files) {
                     const newFiles = Array.from(e.target.files).map(f => ({ type: 'image' as const, data: URL.createObjectURL(f), name: f.name, file: f }));
                     setPendingAttachments(prev => [...prev, ...newFiles]);
                   }
                   e.target.value = '';
-                }} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
-              </div>
+                }} className="absolute opacity-0 w-0 h-0 overflow-hidden" />
+              </label>
               <div className="flex-1 bg-[#1c1c1e] rounded-full px-4 py-2 flex items-center">
                 <input type="text" placeholder="Aa" value={chatMessageInput} onChange={(e) => setChatMessageInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) submitChatMessage(activeChatUserId!); }} className="w-full bg-transparent text-[15px] text-white focus:outline-none" />
               </div>
