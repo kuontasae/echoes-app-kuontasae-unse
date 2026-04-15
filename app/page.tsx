@@ -1324,7 +1324,7 @@ function MainApp() {
       setVibes(vibes.filter(v => v.id !== id)); setCommunityVibes(communityVibes.filter(v => v.id !== id));
     }
   };
-  // 💡 送信時に本物のIDを取得し、画像やファイルも同時に送れるように強化
+ // 💡 送信時に本物のIDを取得し、画像やファイルも同時に送れるように強化
   const submitChatMessage = async (targetId: string) => {
     if ((!chatMessageInput.trim() && pendingAttachments.length === 0) || !currentUser) return;
     
@@ -1358,11 +1358,21 @@ function MainApp() {
       for (const att of attachmentsToSend) {
         const isImage = att.type === 'image';
         try {
-          const fileExt = att.name.split('.').pop() || "jpeg";
+          let uploadFile = att.file;
+          // 💡 画像の場合、圧縮を試みるが、失敗した場合は元のファイルのまま強制的に送信を続行する
+          if (isImage) {
+            try {
+              uploadFile = await compressImage(att.file);
+            } catch (compressErr) {
+              console.log("画像圧縮をスキップし、オリジナルを送信します");
+            }
+          }
+          
+          const fileExt = uploadFile.name.split('.').pop() || "jpeg";
           const fileName = `chat-${currentUser.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
           
           // ストレージにアップロード
-          const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, att.file);
+          const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, uploadFile);
           if (uploadError) throw uploadError;
           
           // 公開URLを取得
@@ -2019,7 +2029,7 @@ function MainApp() {
         </div>
       )}
       {draftSong && !showPostOverrideConfirm && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[900] flex items-center justify-center p-6 animate-fade-in" onClick={cancelDraft}>
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[1200] flex items-center justify-center p-6 animate-fade-in" onClick={cancelDraft}>
           <div className="bg-[#1c1c1e] border border-zinc-800 p-8 rounded-[32px] w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
             <div className="relative w-24 h-24 mx-auto mb-6">
               <img src={draftSong.artworkUrl100.replace('100x100bb', '300x300bb')} className={`w-full h-full rounded-full shadow-lg border-2 border-zinc-800 object-cover ${playingSong === draftSong.previewUrl ? 'animate-[spin_10s_linear_infinite]' : ''}`} />
@@ -2035,7 +2045,7 @@ function MainApp() {
         </div>
       )}
       {showPostOverrideConfirm && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-2xl z-[950] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowPostOverrideConfirm(null)}>
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-2xl z-[1200] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowPostOverrideConfirm(null)}>
           <div className="bg-[#1c1c1e] border border-zinc-800 p-8 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
             <p className="text-center font-bold text-lg mb-6 leading-relaxed">今日はすでに投稿しています。<br />上書きして記録しますか？</p>
             <div className="flex gap-4">
@@ -2080,15 +2090,16 @@ function MainApp() {
                 {latestReleaseSong && (
                   <div className="mb-10">
                     <h3 className="text-lg font-bold mb-4 px-2">{t('latestRelease')}</h3>
-                    <div onClick={() => setDraftSong(latestReleaseSong)} className="flex items-center gap-4 bg-[#1c1c1e] p-4 rounded-2xl cursor-pointer hover:bg-zinc-800 transition-colors group">
-                      <div className="relative w-16 h-16 rounded overflow-hidden shadow-md flex-shrink-0">
+                    <div onClick={() => { if ((activeTab === 'chat' && activeChatUserId) || (activeTab === 'other_profile' && viewingUser)) { if (activeTab === 'other_profile' && viewingUser) setActiveChatUserId(viewingUser.id); setSelectedChatSong(latestReleaseSong); setShowChatMusicSelector(true); } else { setDraftSong(latestReleaseSong); } }} className="flex items-center gap-4 bg-[#1c1c1e] p-4 rounded-2xl cursor-pointer hover:bg-zinc-800 transition-colors group">
+                      <div className="relative w-16 h-16 rounded overflow-hidden shadow-md flex-shrink-0 z-10 hover:scale-105 transition-transform" onClick={(e) => { e.stopPropagation(); togglePlay(latestReleaseSong.previewUrl, { title: latestReleaseSong.trackName, artist: latestReleaseSong.artistName, imgUrl: latestReleaseSong.artworkUrl100 }); }}>
                         <img src={latestReleaseSong.artworkUrl60.replace('60x60bb', '300x300bb')} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100"><IconPlay /></div>
                       </div>
                       <div className="flex-1 overflow-hidden"><p className="font-bold text-base truncate">{latestReleaseSong.trackName}</p><p className="text-xs text-[#1DB954] font-bold mt-1">NEW</p></div>
-                      {activeTab === 'chat' && activeChatUserId ? (
+                      {(activeTab === 'chat' && activeChatUserId) || (activeTab === 'other_profile' && viewingUser) ? (
                         <button onClick={(e) => {
                           e.stopPropagation();
+                          if (activeTab === 'other_profile' && viewingUser) setActiveChatUserId(viewingUser.id);
                           setSelectedChatSong(latestReleaseSong);
                           setShowChatMusicSelector(true);
                         }} className="w-10 h-10 rounded-full bg-zinc-800/80 flex items-center justify-center text-white hover:bg-[#1DB954] hover:text-black transition-colors shrink-0 shadow-md">
@@ -2101,14 +2112,15 @@ function MainApp() {
                 <h3 className="text-lg font-bold mb-4 px-2">{t('popularSongs')}</h3>
                 <div className="flex flex-col gap-1 mb-10">
                   {artistSongs.slice(0, 10).map((s, i) => (
-                    <div key={i} onClick={() => setDraftSong(s)} className="flex items-center gap-4 py-3 px-2 hover:bg-zinc-800/50 rounded-xl cursor-pointer group">
+                    <div key={i} onClick={() => { if ((activeTab === 'chat' && activeChatUserId) || (activeTab === 'other_profile' && viewingUser)) { if (activeTab === 'other_profile' && viewingUser) setActiveChatUserId(viewingUser.id); setSelectedChatSong(s); setShowChatMusicSelector(true); } else { setDraftSong(s); } }} className="flex items-center gap-4 py-3 px-2 hover:bg-zinc-800/50 rounded-xl cursor-pointer group">
                       <p className="text-zinc-500 font-bold text-sm w-4 text-right group-hover:hidden">{i + 1}</p>
                       <div className="w-4 hidden group-hover:block text-[#1DB954]"><IconPlay /></div>
-                      <img src={s.artworkUrl60} className="w-10 h-10 rounded object-cover shadow-sm" />
+                      <img src={s.artworkUrl60} className="w-10 h-10 rounded object-cover shadow-sm z-10 relative hover:scale-105 transition-transform cursor-pointer" onClick={(e) => { e.stopPropagation(); togglePlay(s.previewUrl, { title: s.trackName, artist: s.artistName, imgUrl: s.artworkUrl100 }); }} />
                       <div className="flex-1 overflow-hidden"><p className="font-bold text-sm truncate group-hover:text-[#1DB954] transition-colors">{s.trackName}</p></div>
-                      {activeTab === 'chat' && activeChatUserId ? (
+                      {(activeTab === 'chat' && activeChatUserId) || (activeTab === 'other_profile' && viewingUser) ? (
                         <button onClick={(e) => {
                           e.stopPropagation();
+                          if (activeTab === 'other_profile' && viewingUser) setActiveChatUserId(viewingUser.id);
                           setSelectedChatSong(s);
                           setShowChatMusicSelector(true);
                         }} className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 hover:bg-[#1DB954] hover:text-black transition-colors shrink-0 opacity-0 group-hover:opacity-100">
@@ -2137,7 +2149,7 @@ function MainApp() {
         </div>
       )}
       {activeAlbumProfile && (
-        <div className="fixed inset-0 bg-black z-[750] animate-fade-in flex flex-col overflow-y-auto">
+        <div className="fixed inset-0 bg-black z-[1000] animate-fade-in flex flex-col overflow-y-auto">
           <div className="flex items-center p-4 sticky top-0 bg-gradient-to-b from-black/90 to-transparent z-10 pb-12">
             <button onClick={() => { setAlbumSongs([]); setPlayingSong(null); audioRef.current?.pause(); handleGoBack(); }} className="text-white bg-black/40 backdrop-blur p-2 rounded-full"><IconChevronLeft /></button>
           </div>
@@ -2150,13 +2162,14 @@ function MainApp() {
             {isAlbumLoading ? <p className="text-center text-zinc-500 py-12">Loading tracks...</p> : (
               <div className="flex flex-col gap-2">
                 {albumSongs.map((tItem, i) => (
-                  <div key={i} onClick={() => setDraftSong(tItem)} className="flex items-center gap-4 py-3 px-2 hover:bg-zinc-800/50 rounded-xl cursor-pointer border-b border-zinc-900/50 last:border-0 group">
+                  <div key={i} onClick={() => { if ((activeTab === 'chat' && activeChatUserId) || (activeTab === 'other_profile' && viewingUser)) { if (activeTab === 'other_profile' && viewingUser) setActiveChatUserId(viewingUser.id); setSelectedChatSong(tItem); setShowChatMusicSelector(true); } else { setDraftSong(tItem); } }} className="flex items-center gap-4 py-3 px-2 hover:bg-zinc-800/50 rounded-xl cursor-pointer border-b border-zinc-900/50 last:border-0 group">
                     <p className="text-zinc-500 font-bold text-sm w-6 text-right group-hover:hidden">{i + 1}</p>
                     <div className="w-6 hidden group-hover:flex justify-end text-[#1DB954]"><IconPlay /></div>
                     <div className="flex-1 overflow-hidden"><p className="font-bold text-sm truncate group-hover:text-[#1DB954] transition-colors">{tItem.trackName}</p></div>
-                    {activeTab === 'chat' && activeChatUserId ? (
+                    {(activeTab === 'chat' && activeChatUserId) || (activeTab === 'other_profile' && viewingUser) ? (
                       <button onClick={(e) => {
                         e.stopPropagation();
+                        if (activeTab === 'other_profile' && viewingUser) setActiveChatUserId(viewingUser.id);
                         setSelectedChatSong(tItem);
                         setShowChatMusicSelector(true);
                       }} className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 hover:bg-[#1DB954] hover:text-black transition-colors shrink-0 opacity-0 group-hover:opacity-100">
@@ -2313,7 +2326,7 @@ function MainApp() {
         </div>
       )}
       {activeChatUserId && (
-        <div className="fixed inset-0 bg-black z-[900] animate-fade-in flex flex-col">
+        <div className={`fixed inset-0 bg-black animate-fade-in flex flex-col ${showChatMusicSelector ? 'z-[1200]' : 'z-[900]'}`}>
           <div className="flex items-center p-3 bg-[#0a0a0a]/95 backdrop-blur-md sticky top-0 border-b border-zinc-900 z-10">
             <button onClick={handleGoBack} className="p-2 -ml-1 text-white hover:opacity-80 transition-opacity"><IconChevronLeft /></button>
             <div className="flex-1 overflow-hidden px-2 flex flex-col">
@@ -2419,64 +2432,123 @@ function MainApp() {
             </div>
           )}
 
-          {/* 💡 音楽選択モーダル */}
+          {/* 💡 音楽選択モーダル（投稿作成画面風UI・最前面表示） */}
           {showChatMusicSelector && (
-            <div className="absolute inset-0 z-50 flex flex-col justify-end animate-fade-in">
-              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowChatMusicSelector(false)}></div>
-              <div className="bg-[#1c1c1e] rounded-t-[32px] w-full pb-10 pt-4 px-4 relative z-10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] h-[70vh] flex flex-col">
-                <div className="w-12 h-1.5 bg-zinc-700 rounded-full mx-auto mb-4 cursor-pointer" onClick={() => setShowChatMusicSelector(false)}></div>
+            <div className="fixed inset-0 z-[1200] flex flex-col justify-end animate-fade-in">
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setShowChatMusicSelector(false); setSelectedChatSong(null); setChatMusicComment(""); }}></div>
+              <div className={`bg-[#1c1c1e] rounded-t-[32px] w-full pb-10 pt-4 px-4 relative z-10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-all duration-300 ${selectedChatSong ? 'h-[85vh]' : 'h-[70vh]'} flex flex-col`}>
+                <div className="w-12 h-1.5 bg-zinc-700 rounded-full mx-auto mb-4 cursor-pointer" onClick={() => { setShowChatMusicSelector(false); setSelectedChatSong(null); setChatMusicComment(""); }}></div>
+                
                 <div className="flex justify-between items-center mb-4 px-2 shrink-0">
                   <div className="w-8"></div>
-                  <h3 className="text-[15px] font-bold text-white flex items-center gap-2"><IconMusic /> 音楽をシェア</h3>
-                  <button onClick={() => setShowChatMusicSelector(false)} className="w-8 h-8 bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors"><IconCross /></button>
+                  <h3 className="text-[15px] font-bold text-white flex items-center gap-2"><IconMusic /> {selectedChatSong ? '音楽を確認' : '音楽をシェア'}</h3>
+                  <button onClick={() => { setShowChatMusicSelector(false); setSelectedChatSong(null); setChatMusicComment(""); }} className="w-8 h-8 bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors"><IconCross /></button>
                 </div>
-                <div className="relative mb-4 px-2 shrink-0">
-                  <div className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-500"><IconSearch /></div>
-                  <input type="text" placeholder="楽曲やアーティストを検索..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none" />
-                </div>
-                <div className="flex-1 overflow-y-auto px-2 pb-4 scrollbar-hide flex flex-col gap-2">
-                  {searchQuery && searchArtistInfo && (
-                    <>
-                      <div className="p-3 border border-zinc-800 flex items-center gap-4 cursor-pointer hover:bg-zinc-800/50 rounded-2xl mb-2" onMouseDown={e => {
-                        handleArtistClick(e, searchArtistInfo.artistId, searchArtistInfo.artistName, searchArtistInfo.artworkUrl);
-                        setShowChatMusicSelector(false);
-                      }}>
-                        <img src={searchArtistInfo.artworkUrl} className="w-12 h-12 rounded-full object-cover" />
-                        <div className="flex-1"><p className="font-bold text-sm text-white">{searchArtistInfo.artistName}</p><p className="text-[10px] text-zinc-400 mt-0.5">アーティスト</p></div>
-                        <IconChevronRight />
-                      </div>
-                      {searchResults.length > 0 && <p className="text-[10px] font-bold text-zinc-500 uppercase px-2 pt-2 pb-1">ヒット</p>}
-                    </>
-                  )}
-                  {!searchQuery && trendingSongs.length > 0 && <p className="text-[10px] font-bold text-zinc-500 uppercase px-2 pt-2 pb-1 flex items-center"><IconTrend />Trending Now</p>}
-                  
-                  {(searchQuery && searchResults.length > 0 ? searchResults : trendingSongs).map((song, i) => (
-                    <div key={i} className="flex items-center gap-3 p-3 bg-zinc-800/30 hover:bg-zinc-800 rounded-2xl cursor-pointer transition-colors group" onClick={async () => {
-                      const fileText = `[MUSIC]${song.trackId}|${song.trackName}|${song.artistName}|${song.artworkUrl100}|${song.previewUrl}`;
-                      const tempId = Date.now().toString();
-                      const newMsg = { id: tempId, senderId: currentUser?.id, text: fileText, timestamp: Date.now(), isRead: false };
-                      setChatHistory(prev => ({ ...prev, [activeChatUserId!]: [...(prev[activeChatUserId!] || []), newMsg as any] }));
-                      setShowChatMusicSelector(false);
-                      setSearchQuery("");
-                      if(currentUser && activeChatUserId) {
-                        const { data } = await supabase.from('chat_messages').insert([{ sender_id: currentUser.id, target_id: activeChatUserId, text: fileText }]).select().single();
+
+                {!selectedChatSong ? (
+                  // 曲選択モード（検索UI）
+                  <>
+                    <div className="relative mb-4 px-2 shrink-0">
+                      <div className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-500"><IconSearch /></div>
+                      <input type="text" placeholder="楽曲やアーティストを検索..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none" />
+                    </div>
+                    <div className="flex-1 overflow-y-auto px-2 pb-4 scrollbar-hide flex flex-col gap-2">
+                      {searchQuery && searchArtistInfo && (
+                        <>
+                          <div className="p-3 border border-zinc-800 flex items-center gap-4 cursor-pointer hover:bg-zinc-800/50 rounded-2xl mb-2" onMouseDown={e => {
+                            handleArtistClick(e, searchArtistInfo.artistId, searchArtistInfo.artistName, searchArtistInfo.artworkUrl);
+                            setShowChatMusicSelector(false);
+                          }}>
+                            <img src={searchArtistInfo.artworkUrl} className="w-12 h-12 rounded-full object-cover" />
+                            <div className="flex-1"><p className="font-bold text-sm text-white">{searchArtistInfo.artistName}</p><p className="text-[10px] text-zinc-400 mt-0.5">アーティスト</p></div>
+                            <IconChevronRight />
+                          </div>
+                          {searchResults.length > 0 && <p className="text-[10px] font-bold text-zinc-500 uppercase px-2 pt-2 pb-1">ヒット</p>}
+                        </>
+                      )}
+                      {!searchQuery && trendingSongs.length > 0 && <p className="text-[10px] font-bold text-zinc-500 uppercase px-2 pt-2 pb-1 flex items-center"><IconTrend />Trending Now</p>}
+                      
+                      {(searchQuery && searchResults.length > 0 ? searchResults : trendingSongs).map((song, i) => (
+                        <div key={i} className="flex items-center gap-3 p-3 bg-zinc-800/30 hover:bg-zinc-800 rounded-2xl cursor-pointer transition-colors group" onClick={() => setSelectedChatSong(song)}>
+                          <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-zinc-800">
+                            <img src={song.artworkUrl60.replace('60x60', '100x100')} className="w-full h-full object-cover" />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><IconPlus /></div>
+                          </div>
+                          <div className="flex-1 overflow-hidden">
+                            <p className="font-bold text-sm text-white truncate">{song.trackName}</p>
+                            <p className="text-[10px] text-zinc-400 mt-1 truncate">{song.artistName}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                ) : (
+                  // 曲確認・送信モード（投稿作成画面風UI）
+                  (() => {
+                    const handleSendMusicShare = () => {
+                      if (!activeChatUserId || !currentUser) return;
+                      const now = Date.now();
+                      
+                      // 1. 音楽カードを先に送信
+                      const fileText = `[MUSIC]${selectedChatSong.trackId}|${selectedChatSong.trackName}|${selectedChatSong.artistName}|${selectedChatSong.artworkUrl100}|${selectedChatSong.previewUrl}`;
+                      const tempId = now.toString() + "_music";
+                      setChatHistory(prev => ({ ...prev, [activeChatUserId]: [...(prev[activeChatUserId] || []), { id: tempId, senderId: currentUser.id, text: fileText, timestamp: now, isRead: false } as any] }));
+                      
+                      supabase.from('chat_messages').insert([{ sender_id: currentUser.id, target_id: activeChatUserId, text: fileText }]).select().single().then(({data}) => {
                         if (data) {
                           setChatHistory(prev => ({ ...prev, [activeChatUserId]: (prev[activeChatUserId] || []).map(m => m.id === tempId ? { ...m, id: data.id } as any : m) }));
                         }
+                      });
+
+                      // 2. テキストがあれば後に送信
+                      if (chatMusicComment.trim()) {
+                        const text = chatMusicComment;
+                        const tempTextId = (now + 1).toString() + "_text";
+                        setChatHistory(prev => ({ ...prev, [activeChatUserId]: [...(prev[activeChatUserId] || []), { id: tempTextId, senderId: currentUser.id, text: text, timestamp: now + 1, isRead: false } as any] }));
+                        supabase.from('chat_messages').insert([{ sender_id: currentUser.id, target_id: activeChatUserId, text: text }]).select().single().then(({data}) => {
+                          if (data) setChatHistory(prev => ({ ...prev, [activeChatUserId]: prev[activeChatUserId].map(m => m.id === tempTextId ? { ...m, id: data.id } as any : m) }));
+                        });
                       }
-                    }}>
-                      <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-zinc-800">
-                        <img src={song.artworkUrl60.replace('60x60', '100x100')} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><IconSend /></div>
+                      
+                      // モーダルや裏の画面を全て閉じてチャットに戻る
+                      setShowChatMusicSelector(false);
+                      setSelectedChatSong(null);
+                      setChatMusicComment("");
+                      setSearchQuery("");
+                      setActiveArtistProfile(null);
+                      setActiveAlbumProfile(null);
+                    };
+
+                    return (
+                      <div className="flex-1 flex flex-col gap-6 animate-fade-in p-2">
+                        <div className="flex items-center gap-4 bg-black p-4 rounded-2xl border border-zinc-800">
+                          <img src={selectedChatSong.artworkUrl100} className="w-20 h-20 rounded-xl object-cover shadow-md" />
+                          <div className="flex-1 overflow-hidden">
+                            <p className="font-bold text-lg text-white truncate">{selectedChatSong.trackName}</p>
+                            <p className="text-sm text-zinc-400 mt-1 truncate">{selectedChatSong.artistName}</p>
+                          </div>
+                          <button onClick={() => setSelectedChatSong(null)} className="text-zinc-600 hover:text-white transition-colors"><IconCross /></button>
+                        </div>
+
+                        <div className="flex-1 bg-black rounded-2xl border border-zinc-800 p-4 flex flex-col relative">
+                          {currentUser && (
+                            <div className="flex items-center gap-2 mb-3">
+                              <img src={myProfile.avatar} className="w-6 h-6 rounded-full object-cover" />
+                              <span className="text-xs font-bold text-zinc-400">メッセージを追加...</span>
+                            </div>
+                          )}
+                          <textarea value={chatMusicComment} onChange={e => setChatMusicComment(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); handleSendMusicShare(); } }} placeholder="この曲について話そう..." className="w-full flex-1 bg-transparent text-white text-sm resize-none focus:outline-none scrollbar-hide" />
+                          <div className="absolute bottom-3 right-3 text-xs text-zinc-600">{chatMusicComment.length}/100</div>
+                        </div>
+
+                        <button onClick={handleSendMusicShare} className="w-full bg-[#1DB954] text-black font-bold rounded-full py-4 flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shadow-lg">
+                          <IconSend /> チャットに送信
+                        </button>
                       </div>
-                      <div className="flex-1 overflow-hidden">
-                        <p className="font-bold text-sm text-white truncate">{song.trackName}</p>
-                        <p className="text-[10px] text-zinc-400 mt-1 truncate">{song.artistName}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+                    );
+                  })()
+                )}
+              </div>ss
             </div>
           )}
           {/* 💡 マイクボタンを押した時に開く録音パネル (LINE風) */}
