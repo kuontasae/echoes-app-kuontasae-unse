@@ -728,23 +728,34 @@ function MainApp() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   useEffect(() => {
-    if (jumpToMessageId && messageRefs.current[jumpToMessageId]) {
-      messageRefs.current[jumpToMessageId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      const timer = setTimeout(() => setJumpToMessageId(null), 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [jumpToMessageId]);
+            if (jumpToMessageId && messageRefs.current[jumpToMessageId]) {
+              messageRefs.current[jumpToMessageId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              const timer = setTimeout(() => setJumpToMessageId(null), 3000);
+              return () => clearTimeout(timer);
+            }
+          }, [jumpToMessageId]);
 
-  // 💡 チャットを開いた時＆新着メッセージが来た時に一番下へ自動スクロールするエンジン
-  useEffect(() => {
-    if (activeChatUserId && chatHistory[activeChatUserId]) {
-      // ほんの少しだけ遅らせることで、画像などの描画が完了してから正確に一番下へ移動させる
-      const timer = setTimeout(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [activeChatUserId, chatHistory]);
+          const prevChatLengthRef = useRef(0);
+
+          // 💡 チャットを開いた時＆新着メッセージが来た時に一番下へ自動スクロールするエンジン
+          useEffect(() => {
+            if (activeChatUserId && chatHistory[activeChatUserId]) {
+              const currentLength = chatHistory[activeChatUserId].length;
+              if (currentLength > prevChatLengthRef.current || prevChatLengthRef.current === 0) {
+                const timer = setTimeout(() => {
+                  chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+                prevChatLengthRef.current = currentLength;
+                return () => clearTimeout(timer);
+              } else {
+                prevChatLengthRef.current = currentLength;
+              }
+            } else {
+              prevChatLengthRef.current = 0;
+            }
+          }, [activeChatUserId, chatHistory]);
+
+          
 
   const unreadNotificationsCount = notifications.filter(n => !n.read).length;
   const [calendarDate, setCalendarDate] = useState(new Date());
@@ -1362,9 +1373,12 @@ function MainApp() {
       for (const att of attachmentsToSend) {
         const isImage = att.type === 'image';
         
+        // 💡 ファイルサイズを計算（MB単位に変換）して記憶させる
+        const sizeMB = att.file ? (att.file.size / (1024 * 1024)).toFixed(2) + " MB" : "不明";
+        
         // 💡 【重要】アップロードを待たずに、画面に「仮の画像」を即座に表示して安心させる（UX向上）
         const tempFileId = Date.now().toString() + Math.random().toString(36).substring(7);
-        const tempFileText = isImage ? `[IMAGE]${att.data}` : `[FILE]${att.name}|${att.data}`;
+        const tempFileText = isImage ? `[IMAGE]${att.data}` : `[FILE]${att.name}|${att.data}|${sizeMB}`;
         const newTempMsg = { id: tempFileId, senderId: currentUser.id, text: tempFileText, timestamp: Date.now(), isRead: false };
         setChatHistory(prev => ({ ...prev, [targetId]: [...(prev[targetId] || []), newTempMsg as any] }));
         
@@ -1389,7 +1403,7 @@ function MainApp() {
           
           // 公開URLを取得
           const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-          const realFileText = isImage ? `[IMAGE]${urlData.publicUrl}` : `[FILE]${att.name}|${urlData.publicUrl}`;
+          const realFileText = isImage ? `[IMAGE]${urlData.publicUrl}` : `[FILE]${att.name}|${urlData.publicUrl}|${sizeMB}`;
           
           // DBに保存
           const { data: dbData } = await supabase
@@ -1413,15 +1427,14 @@ function MainApp() {
       }
     }
   };
-  // 💡 送信取り消し（削除）機能
   const deleteChatMessage = async (msgId: string, partnerId: string) => {
-    if (confirm("このメッセージを送信取り消ししますか？")) {
-      const { error } = await supabase.from('chat_messages').delete().eq('id', msgId).eq('sender_id', currentUser.id);
-      if (!error) {
-        setChatHistory(prev => ({ ...prev, [partnerId]: prev[partnerId].filter(m => m.id !== msgId) }));
-        showToast("送信を取り消しました");
-      }
-    }
+    if (!currentUser) return;
+    setChatHistory(prev => {
+      const currentHistory = prev[partnerId] || [];
+      return { ...prev, [partnerId]: currentHistory.filter(m => m.id !== msgId) };
+    });
+    showToast("送信を取り消しました");
+    await supabase.from('chat_messages').delete().eq('id', msgId).eq('sender_id', currentUser.id);
   };
   const handleCreateGroup = () => { if (!newGroupName.trim() || newGroupMembers.size === 0) { showToast("グループ名とメンバーを指定", "error"); return; } const ng: ChatGroup = { id: `g${Date.now()}`, name: newGroupName, memberIds: Array.from(newGroupMembers), avatar: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80" }; setChatGroups([...chatGroups, ng]); setShowCreateGroupModal(false); setNewGroupName(""); setNewGroupMembers(new Set()); showToast("グループ作成完了！"); };
   const joinCommunity = (c: LiveCommunity) => { setChatCommunities(p => p.some(x => x.id === c.id) ? p : [...p, { ...c, isJoined: true }]); setActiveCommunityDetail(null); setChatTabMode('community'); setActiveTab('chat'); setActiveChatUserId(c.id); showToast(`${c.name} に参加！`); };
@@ -2373,7 +2386,7 @@ function MainApp() {
                       className="w-8 h-8 rounded-full object-cover self-end flex-shrink-0 cursor-pointer hover:opacity-80"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setProfileBackTarget({ tab: 'chat', chatUserId: activeChatUserId }); // 💡 このチャットルームから来たと記憶させる
+                        setProfileBackTarget({ tab: 'chat', chatUserId: activeChatUserId });
                         setViewingUser(sender);
                         setActiveTab('other_profile');
                         setActiveChatUserId(null);
@@ -2382,25 +2395,47 @@ function MainApp() {
                   )}
                   <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                     {!isMe && sender && <span className="text-[10px] text-zinc-500 mb-1 ml-1">{sender.name}</span>}
-                    {/* 💡 自分のメッセージならクリックで送信取り消しできるようにする */}
+                    
+                    {/* 💡 長押し（スマホ）＆右クリック（PC）で送信取り消しメニューを出す */}
                     <div
-                      onClick={() => isMe ? deleteChatMessage(msg.id, activeChatUserId!) : null}
-                      className={`w-fit h-fit break-words shadow-sm ${msg.text.startsWith('[MUSIC]') ? `bg-[#1c1c1e] text-white p-3 rounded-2xl border border-zinc-800/50 ${isMe ? 'rounded-br-[4px]' : 'rounded-bl-[4px]'} cursor-pointer hover:opacity-80` : `px-3.5 py-2 ${isMe ? 'bg-[#8de055] text-black rounded-[20px] rounded-br-[4px] cursor-pointer hover:opacity-80' : 'bg-[#2c2c2e] text-white rounded-[20px] rounded-bl-[4px]'}`}`}
+                      onContextMenu={(e) => { e.preventDefault(); if (isMe) setActiveCommentSongId(msg.id); }}
+                      style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
+                      className={`w-fit h-fit break-words shadow-sm relative ${msg.text.startsWith('[IMAGE]') ? 'p-0 bg-transparent cursor-pointer' : msg.text.startsWith('[MUSIC]') || msg.text.startsWith('[FILE]') ? `bg-[#1c1c1e] text-white p-3 rounded-2xl border border-zinc-800/50 ${isMe ? 'rounded-br-[4px]' : 'rounded-bl-[4px]'} cursor-pointer` : `px-3.5 py-2 cursor-pointer ${isMe ? 'bg-[#8de055] text-black rounded-[20px] rounded-br-[4px]' : 'bg-[#2c2c2e] text-white rounded-[20px] rounded-bl-[4px]'}`}`}
                     >
                       {msg.text.startsWith('[VOICE]') ? (
                         <audio controls src={msg.text.replace('[VOICE]', '')} className="max-w-[200px] h-10" />
                       ) : msg.text.startsWith('[IMAGE]') ? (
-                        <img src={msg.text.replace('[IMAGE]', '')} className="max-w-[200px] rounded-lg border border-black/10" alt="chat image" />
+                        <img src={msg.text.replace('[IMAGE]', '')} onClick={(e) => { e.stopPropagation(); setViewingChatImage({ ...msg, sender }); }} className="max-w-[240px] max-h-[300px] object-cover rounded-2xl hover:opacity-90 transition-opacity shadow-sm" alt="chat image" />
                       ) : msg.text.startsWith('[FILE]') ? (
-                        <a href={msg.text.split('|')[1]} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 p-2 bg-black/10 rounded-xl hover:bg-black/20 transition-colors" onClick={(e) => e.stopPropagation()}>
-                          <span className="text-[15px] font-bold underline truncate max-w-[150px] text-current">📁 {msg.text.replace('[FILE]', '').split('|')[0]}</span>
-                        </a>
+                        (() => {
+                          const parts = msg.text.replace('[FILE]', '').split('|');
+                          const fileName = parts[0] || "不明なファイル";
+                          const fileUrl = parts[1] || "#";
+                          const fileSize = parts[2] ? `サイズ: ${parts[2]}` : "サイズ不明";
+                          const extMatch = fileName.match(/\.([a-zA-Z0-9]+)$/);
+                          const ext = extMatch ? extMatch[1].toUpperCase() : 'FILE';
+                          return (
+                            <a href={fileUrl} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-3 w-[240px] p-2 hover:opacity-80 transition-opacity ${isMe ? 'bg-black/10' : 'bg-black/20'} rounded-xl`} onClick={(e) => e.stopPropagation()}>
+                              <div className="w-10 h-10 flex items-center justify-center flex-shrink-0 bg-white rounded-lg text-red-500 shadow-sm">
+                                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                              </div>
+                              <div className="flex-1 overflow-hidden flex flex-col justify-center">
+                                <span className="text-[14px] font-bold truncate leading-tight text-white mb-0.5">
+                                  {fileName}
+                                </span>
+                                <span className="text-[10px] font-bold text-zinc-400">
+                                  {ext} • {parts[2] ? `サイズ: ${parts[2]}` : "サイズ情報なし"}
+                                </span>
+                              </div>
+                            </a>
+                          );
+                        })()
                       ) : msg.text.startsWith('[MUSIC]') ? (
                         (() => {
                           const [trackId, trackName, artistName, artworkUrl, previewUrl] = msg.text.replace('[MUSIC]', '').split('|');
                           return (
                             <div className="flex items-center gap-4 w-[240px]" onClick={(e) => e.stopPropagation()}>
-                              <div className="relative w-14 h-14 rounded-full overflow-hidden shrink-0 shadow-md cursor-pointer border border-zinc-800 hover:opacity-80 transition-opacity" onClick={() => togglePlay(previewUrl, { title: trackName, artist: artistName, imgUrl: artworkUrl })}>
+                              <div className="relative w-14 h-14 rounded-full overflow-hidden shrink-0 shadow-md border border-zinc-800 hover:opacity-80 transition-opacity" onClick={() => togglePlay(previewUrl, { title: trackName, artist: artistName, imgUrl: artworkUrl })}>
                                 <img src={artworkUrl} className={`w-full h-full object-cover ${playingSong === previewUrl ? 'opacity-40 animate-[spin_4s_linear_infinite]' : ''}`} />
                                 <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-white">
                                   {playingSong === previewUrl ? <IconStop /> : <IconPlay />}
@@ -2408,13 +2443,45 @@ function MainApp() {
                               </div>
                               <div className="flex-1 overflow-hidden">
                                 <p className="font-bold text-[15px] text-white truncate leading-tight">{trackName}</p>
-                                <p onClick={(e) => handleArtistClick(e, parseInt(trackId) || 0, artistName, artworkUrl)} className="text-[11px] text-zinc-400 truncate mt-1 cursor-pointer hover:underline hover:text-[#1DB954] transition-colors relative z-10 inline-block">{artistName}</p>
+                                <p onClick={(e) => handleArtistClick(e, parseInt(trackId) || 0, artistName, artworkUrl)} className="text-[11px] text-zinc-400 truncate mt-1 hover:underline hover:text-[#1DB954] transition-colors relative z-10 inline-block">{artistName}</p>
                               </div>
                             </div>
                           );
                         })()
                       ) : (
                         <p className="text-[15px] font-medium leading-snug">{msg.text}</p>
+                      )}
+
+                      {/* 💡 コンテキストメニュー（右クリック・長押しで出現） */}
+                      {activeCommentSongId === msg.id && isMe && (
+                        <>
+                          <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setActiveCommentSongId(null); }}></div>
+                          <div className={`absolute top-full ${isMe ? 'right-0' : 'left-0'} mt-2 bg-[#2c2c2e] border border-zinc-700 rounded-xl shadow-2xl z-50 overflow-hidden min-w-[160px] animate-fade-in flex flex-col`}>
+                            <button onClick={(e) => { e.stopPropagation(); setActiveCommentSongId(msg.id + '_confirm'); }} className="w-full text-left px-4 py-3 text-sm text-red-500 font-bold hover:bg-zinc-700 transition-colors flex items-center gap-2">
+                              <IconTrash /> 送信取消
+                            </button>
+                            <button onClick={(e) => { e.stopPropagation(); setActiveCommentSongId(null); }} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-zinc-700 transition-colors border-t border-zinc-700">
+                              キャンセル
+                            </button>
+                          </div>
+                        </>
+                      )}
+
+                      {/* 💡 送信取消の美しい確認モーダル */}
+                      {activeCommentSongId === msg.id + '_confirm' && isMe && (
+                        <div className="fixed inset-0 z-[1300] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={(e) => { e.stopPropagation(); setActiveCommentSongId(null); }}>
+                          <div className="bg-[#1c1c1e] rounded-3xl p-6 w-full max-w-xs shadow-2xl border border-zinc-800 flex flex-col items-center text-center" onClick={(e) => e.stopPropagation()}>
+                            <div className="w-14 h-14 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mb-4">
+                              <IconTrash />
+                            </div>
+                            <h3 className="text-lg font-bold text-white mb-2">送信を取り消しますか？</h3>
+                            <p className="text-xs text-zinc-400 mb-6 leading-relaxed">相手の画面からもこのメッセージや写真が<br/>完全に削除されます。</p>
+                            <div className="flex gap-3 w-full">
+                              <button onClick={(e) => { e.stopPropagation(); setActiveCommentSongId(null); }} className="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition-colors">キャンセル</button>
+                              <button onClick={(e) => { e.stopPropagation(); deleteChatMessage(msg.id, activeChatUserId!); setActiveCommentSongId(null); }} className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-bold transition-colors shadow-lg">取り消す</button>
+                            </div>
+                          </div>
+                        </div>
                       )}
                     </div>
                     <div className="flex items-center gap-1 mt-1">
@@ -2780,43 +2847,6 @@ function MainApp() {
                           <IconImage /><p className="mt-4 text-sm font-bold">まだ写真はありません</p>
                         </div>
                       )}
-                      
-                      {/* 全画面ビューア */}
-                      {viewingChatImage && (
-                        <div className="fixed inset-0 bg-black z-[1000] flex flex-col animate-fade-in">
-                          <div className={`flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent absolute top-0 w-full z-10 transition-opacity duration-300 ${isViewerUiHidden ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-                            <div className="flex items-center gap-4">
-                              <button onClick={() => setViewingChatImage(null)} className="p-2 -ml-2 text-white hover:opacity-80"><IconChevronLeft /></button>
-                              {viewingChatImage.sender && (
-                                <div className="flex items-center gap-2 cursor-pointer hover:opacity-80" onClick={() => {
-                                  setJumpToMessageId(viewingChatImage.id);
-                                  setShowChatDetails(false);
-                                  setViewingChatImage(null);
-                                }}>
-                                  <img src={viewingChatImage.sender.avatar} className="w-8 h-8 rounded-full object-cover border border-zinc-800" />
-                                  <div className="flex flex-col">
-                                    <span className="text-sm font-bold text-white leading-tight">{viewingChatImage.sender.name}</span>
-                                    <span className="text-[10px] text-zinc-400">元のメッセージへ</span>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                          
-                          <div className="flex-1 flex items-center justify-center overflow-hidden relative cursor-pointer" onClick={() => setIsViewerUiHidden(!isViewerUiHidden)}>
-                            <img src={viewingChatImage.text.replace('[IMAGE]', '')} className="max-w-full max-h-full object-contain" onClick={(e) => e.stopPropagation()} />
-                          </div>
-                          
-                          <div className={`flex items-center justify-around p-6 bg-gradient-to-t from-black/80 to-transparent absolute bottom-0 w-full z-10 transition-opacity duration-300 ${isViewerUiHidden ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-                            <button onClick={() => showToast("画像を保存しました", "success")} className="flex flex-col items-center gap-2 text-white hover:opacity-80">
-                              <IconPlus /> <span className="text-[10px] font-bold">保存</span>
-                            </button>
-                            <button onClick={() => showToast("共有リンクをコピーしました", "success")} className="flex flex-col items-center gap-2 text-white hover:opacity-80">
-                              <IconShareExternal /> <span className="text-[10px] font-bold">共有</span>
-                            </button>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   );
                 })()}
@@ -2857,6 +2887,75 @@ function MainApp() {
                     </div>
                   );
                 })()}
+              </div>
+            </div>
+          )}
+
+          {/* 全画面ビューア (チャット全体で使えるように移動) */}
+          {viewingChatImage && (
+            <div className="fixed inset-0 bg-black z-[1300] flex flex-col animate-fade-in">
+              <div className={`flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent absolute top-0 w-full z-10 transition-opacity duration-300 ${isViewerUiHidden ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                <div className="flex items-center gap-4">
+                  <button onClick={() => setViewingChatImage(null)} className="p-2 -ml-2 text-white hover:opacity-80"><IconChevronLeft /></button>
+                  {viewingChatImage.sender && (
+                    <div className="flex items-center gap-2 cursor-pointer hover:opacity-80" onClick={() => {
+                      setJumpToMessageId(viewingChatImage.id);
+                      setShowChatDetails(false);
+                      setViewingChatImage(null);
+                    }}>
+                      <img src={viewingChatImage.sender.avatar} className="w-8 h-8 rounded-full object-cover border border-zinc-800" />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-white leading-tight">{viewingChatImage.sender.name}</span>
+                        <span className="text-[10px] text-zinc-400">元のメッセージへ</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex-1 flex items-center justify-center overflow-hidden relative cursor-pointer" onClick={() => setIsViewerUiHidden(!isViewerUiHidden)}>
+                <img src={viewingChatImage.text.replace('[IMAGE]', '')} className="max-w-full max-h-full object-contain" onClick={(e) => e.stopPropagation()} />
+              </div>
+              
+              <div className={`flex items-center justify-around p-6 bg-gradient-to-t from-black/80 to-transparent absolute bottom-0 w-full z-10 transition-opacity duration-300 ${isViewerUiHidden ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                <button onClick={async (e) => {
+                  e.stopPropagation();
+                  try {
+                    const imgUrl = viewingChatImage.text.replace('[IMAGE]', '');
+                    const response = await fetch(imgUrl);
+                    const blob = await response.blob();
+                    const objectUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = objectUrl;
+                    a.download = `echoes_image_${Date.now()}.jpg`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(objectUrl);
+                  } catch (err) {
+                    showToast("画像の保存に失敗しました", "error");
+                  }
+                }} className="flex flex-col items-center gap-2 text-white hover:opacity-80">
+                  <IconPlus /> <span className="text-[10px] font-bold">保存</span>
+                </button>
+                <button onClick={async (e) => {
+                  e.stopPropagation();
+                  const imgUrl = viewingChatImage.text.replace('[IMAGE]', '');
+                  if (navigator.share) {
+                    try {
+                      await navigator.share({
+                        title: 'Echoes Image',
+                        text: 'Echoesの画像をシェアします',
+                        url: imgUrl
+                      });
+                    } catch (err) {}
+                  } else {
+                    navigator.clipboard.writeText(imgUrl);
+                    showToast("画像のURLをコピーしました！", "success");
+                  }
+                }} className="flex flex-col items-center gap-2 text-white hover:opacity-80">
+                  <IconShareExternal /> <span className="text-[10px] font-bold">共有</span>
+                </button>
               </div>
             </div>
           )}
