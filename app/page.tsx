@@ -1,10 +1,19 @@
 "use client";
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import DOMPurify from "isomorphic-dompurify";
+import useSWR from 'swr';
 import { User, Comment, Song, FavoriteArtist, Notification, ChatMessage, ChatGroup, LiveCommunity } from './types';
 import { IconHeart, IconComment, IconLock, IconPlay, IconStop, IconChevronLeft, IconChevronRight, IconChevronDown, IconSearch, IconShareBox, IconVerified, IconCross, IconGear, IconTrend, IconSparkles, IconMusic, IconMusicSmall, IconBell, IconGlobe, IconClock, IconShareExternal, IconStar, IconInfo, IconHelp, IconLockSetting, IconCamera, IconShuffle, IconDots, IconFlame, IconRewind, IconCheck, IconWarning, IconMatchTab, IconChatTab, IconSend, IconUserPlus, IconUser, IconMessagePlus, IconFilter, IconTicket, IconCrown, IconUsers, IconCalendar } from './Icons';
 import { supabase } from './supabase';
 import { MiniPlayer } from './components/MiniPlayer';
 import { useSearchParams } from 'next/navigation';
+
+const fetcher = async (url: string) => {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("NetworkError");
+  return res.json();
+};
+
 // 💡 本物の歯車アイコン
 const IconSettings = () => <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>;
 const IconPlus = () => <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
@@ -117,17 +126,16 @@ function MainApp() {
   const [showDeleteAccountConfirm, setShowDeleteAccountConfirm] = useState(false); // 💡 退会確認モーダル用の箱
   const [myFollowers, setMyFollowers] = useState<Set<string>>(new Set());
   const [myProfile, setMyProfile] = useState<User>({
-    id: "me", handle: "guest", name: "ゲスト", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80",
-    bio: "よろしくお願いします！", followers: 0, following: 0, isPrivate: false, category: 'suggested',
+    id: "", handle: "", name: "", avatar: "",
+    bio: "", followers: 0, following: 0, isPrivate: false, category: "suggested",
     hashtags: [], liveHistory: [], age: 20, gender: "other"
   });
   const [vibes, setVibes] = useState<Song[]>([]);
   const [communityVibes, setCommunityVibes] = useState<Song[]>([]);
   const allFeedVibes = useMemo(() => {
-    // 💡 ブロックしたユーザーの投稿を完全に除外する
     let list = [...vibes, ...communityVibes].filter(v => !blockedUsers.has(v.user.id));
     if (homeFeedMode === 'following') {
-      list = list.filter(v => followedUsers.has(v.user.id) || v.user.id === currentUser?.id || v.user.id === 'me');
+      list = list.filter(v => followedUsers.has(v.user.id) || v.user.id === currentUser?.id);
     }
     return list.sort((a, b) => b.timestamp - a.timestamp);
   }, [vibes, communityVibes, homeFeedMode, followedUsers, currentUser, blockedUsers]);
@@ -136,25 +144,45 @@ function MainApp() {
   // 💡 記事機能のデータと画面状態の箱（エラー回避のため、vibesの下に配置）
   const [articleTabMode, setArticleTabMode] = useState<'global' | 'trend' | 'following' | 'liked' | 'my_posts' | 'drafts'>('trend');
   // 💡 リロードしても消えないようにブラウザの保存領域（localStorage）を使うss
-  const [articles, setArticles] = useState<any[]>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('echoes_articles_v1');
-      if (saved) {
-        try {
-          return JSON.parse(saved);
-        } catch (e) {
-          console.error("記事の読み込みに失敗しました", e);
-        }
-      }
-    }
-    return [];
-  });
-  // 💡 記事が追加・更新（いいねやコメント）されたら自動でブラウザに保存する
+  const [articles, setArticles] = useState<any[]>([]);
+
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('echoes_articles_v1', JSON.stringify(articles));
+    const fetchArticlesFromDB = async () => {
+      try {
+        const { data, error } = await supabase.from('articles').select('*').order('created_at', { ascending: false });
+        
+        if (data) {
+          const formatted = data.map((a: any) => {
+            const authorProfile = allProfiles.find(p => p.id === a.author_id);
+            return {
+              id: a.id,
+              title: a.title,
+              content: a.content,
+              coverUrl: a.cover_url,
+              author: authorProfile || {
+                id: 'unknown',
+                name: 'Unknown',
+                handle: 'unknown',
+                avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80'
+              },
+              likes: 0,
+              isLiked: false,
+              comments: [],
+              date: new Date(a.created_at).toLocaleDateString('ja-JP'),
+              readTime: '2 min read'
+            };
+          });
+          setArticles(formatted);
+        }
+      } catch (e) {
+        console.warn(e);
+      }
+    };
+    
+    if (allProfiles.length > 0) {
+      fetchArticlesFromDB();
     }
-  }, [articles]);
+  }, [allProfiles.length]);
   const [viewingArticle, setViewingArticle] = useState<any>(null);
   useEffect(() => {
     if (!searchParams) return;
@@ -349,44 +377,105 @@ function MainApp() {
           showToast("ファイルの挿入に失敗しました", "error");
         }
       };
-      // 💡 記事の投稿（新規作成と編集の両方に対応）
-      const handlePostArticle = () => {
-    if (!newArticleTitle.trim() || !newArticleContent.trim()) {
+      const handlePostArticle = async () => {
+    const trimmedTitle = newArticleTitle.trim();
+    const trimmedContent = newArticleContent.trim();
+    
+    if (!trimmedTitle || !trimmedContent || !currentUser) {
       showToast("タイトルと本文を入力してください", "error");
       return;
     }
-    if (editingArticleId) {
-      setArticles(articles.map(a => a.id === editingArticleId ? {
-        ...a,
-        title: newArticleTitle,
-        content: newArticleContent,
-        coverUrl: newArticleCover || a.coverUrl
-      } : a));
-      showToast("記事を更新しました！", "success");
-    } else {
-      const newArticle = {
-        id: `article_${Date.now()}`,
-        title: newArticleTitle,
-        content: newArticleContent,
-        coverUrl: newArticleCover || 'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=600&q=80',
-        author: myProfile,
-        likes: 0,
-        isLiked: false,
-        comments: [],
-        date: 'たった今',
-        readTime: '1 min read'
-      };
-      setArticles([newArticle, ...articles]);
-      showToast("新しい記事を投稿しました！", "success");
+    
+    if (trimmedTitle.length > 100) {
+      showToast("タイトルは100文字以内で入力してください", "error");
+      return;
     }
-    localStorage.removeItem('article_draft');
-    setDraftArticles([]);
-    setLastSaved(null);
-    setShowWriteArticleModal(false);
-    setNewArticleTitle("");
-    setNewArticleContent("");
-    setNewArticleCover(null);
-    setEditingArticleId(null);
+
+    const articleId = editingArticleId || `article_${Date.now()}`;
+    const articleData = {
+      id: articleId,
+      title: trimmedTitle,
+      content: trimmedContent,
+      cover_url: newArticleCover || 'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=600&q=80',
+      author_id: currentUser.id
+    };
+
+    const previousArticles = [...articles];
+
+    const optimisticArticle = {
+      id: articleId,
+      title: trimmedTitle,
+      content: trimmedContent,
+      coverUrl: articleData.cover_url,
+      author: myProfile,
+      likes: 0,
+      isLiked: false,
+      comments: [],
+      date: 'たった今',
+      readTime: '1 min read'
+    };
+
+    if (editingArticleId) {
+      setArticles(articles.map(a => a.id === editingArticleId ? { ...a, ...optimisticArticle } : a));
+    } else {
+      setArticles([optimisticArticle, ...articles]);
+    }
+
+    try {
+      if (editingArticleId) {
+        const { error } = await supabase
+          .from('articles')
+          .update(articleData)
+          .eq('id', editingArticleId)
+          .eq('author_id', currentUser.id);
+        
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from('articles').insert([articleData]);
+        if (error) throw error;
+      }
+
+      const { data: refreshedData, error: fetchError } = await supabase
+        .from('articles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (fetchError) throw fetchError;
+
+      if (refreshedData) {
+        const formatted = refreshedData.map((a: any) => {
+          const authorProfile = allProfiles.find(p => p.id === a.author_id) || myProfile;
+          return {
+            id: a.id,
+            title: a.title,
+            content: a.content,
+            coverUrl: a.cover_url,
+            author: authorProfile,
+            likes: 0,
+            isLiked: false,
+            comments: [],
+            date: new Date(a.created_at).toLocaleDateString('ja-JP'),
+            readTime: '2 min read'
+          };
+        });
+        setArticles(formatted);
+      }
+
+      localStorage.removeItem('article_draft');
+      setDraftArticles([]);
+      setLastSaved(null);
+      setShowWriteArticleModal(false);
+      setNewArticleTitle("");
+      setNewArticleContent("");
+      setNewArticleCover(null);
+      setEditingArticleId(null);
+      showToast(editingArticleId ? "記事を更新しました！" : "新しい記事を投稿しました！", "success");
+
+    } catch (err: any) {
+      console.error("データベース保存エラー:", err);
+      setArticles(previousArticles);
+      showToast(`保存失敗: ${err.message || '通信エラー'}`, "error");
+    }
   };
   // 💡 記事の編集を開始する（画像もセットする）
   const startEditingArticle = (article: any) => {
@@ -428,14 +517,20 @@ function MainApp() {
   const handleSaveDraft = () => {
     const currentHtml = articleTextareaRef.current?.innerHTML || "";
     const plainText = currentHtml.replace(/<[^>]*>/g, '').trim();
-    if (!newArticleTitle.trim() && !plainText) {
+    if (!newArticleTitle.trim() && !plainText && !newArticleCover) {
       showToast("保存する内容がありません", "error");
       return;
     }
     const d = new Date();
     const now = d.getHours().toString().padStart(2, '0') + ":" + d.getMinutes().toString().padStart(2, '0');
     const draftId = currentDraftId || `draft_${Date.now()}`;
-    const newDraft = { id: draftId, title: newArticleTitle, content: currentHtml, date: now };
+    const newDraft = { 
+      id: draftId, 
+      title: newArticleTitle, 
+      content: currentHtml, 
+      coverUrl: newArticleCover,
+      date: now 
+    };
     setDraftArticles(prev => {
       const exists = prev.some(d => d.id === draftId);
       const updated = exists ? prev.map(d => d.id === draftId ? newDraft : d) : [newDraft, ...prev];
@@ -454,16 +549,15 @@ function MainApp() {
   };
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedDraft = localStorage.getItem('article_draft');
-      if (savedDraft) {
+      const savedDrafts = localStorage.getItem('echoes_drafts_v2');
+      if (savedDrafts) {
         try {
-          const parsed = JSON.parse(savedDraft);
-          if (parsed.title || parsed.content) {
-            setNewArticleTitle(parsed.title || "");
-            setNewArticleContent(parsed.content || "");
-            setLastSaved(parsed.date);
+          const parsed = JSON.parse(savedDrafts);
+          if (Array.isArray(parsed)) {
+            setDraftArticles(parsed);
           }
         } catch (e) {
+          console.warn(e);
         }
       }
     }
@@ -531,14 +625,37 @@ function MainApp() {
     }));
     showToast("コメントを送信しました！", "success");
   };
-  // 💡 記事の削除機能
-  const deleteArticle = (id: string) => {
+  const deleteArticle = async (id: string) => {
+    if (!currentUser) return;
+    const targetArticle = articles.find(a => a.id === id);
+    
+    if (!targetArticle || targetArticle.author.id !== currentUser.id) {
+      showToast("他人の記事は削除できません", "error");
+      return;
+    }
+
     if (window.confirm("本当にこの記事を削除しますか？\n（この操作は取り消せません）")) {
+      const originalArticles = [...articles];
+      
       setArticles(prev => prev.filter(a => a.id !== id));
       if (viewingArticle?.id === id) {
         setViewingArticle(null);
       }
-      showToast("記事を削除しました！", "success");
+
+      try {
+        const { error } = await supabase
+          .from('articles')
+          .delete()
+          .eq('id', id)
+          .eq('author_id', currentUser.id);
+        
+        if (error) throw error;
+        showToast("記事を削除しました！", "success");
+      } catch (err) {
+        console.warn("削除エラー:", err);
+        setArticles(originalArticles);
+        showToast("サーバーでの削除に失敗しました", "error");
+      }
     }
   };
   const [searchQuery, setSearchQuery] = useState("");
@@ -589,51 +706,102 @@ function MainApp() {
   const dayInputRef = useRef<HTMLInputElement>(null);
   // 💡 カレンダー表示用の箱
   const [showCommCalendar, setShowCommCalendar] = useState(false);
-  const [commCalDate, setCommCalDate] = useState(new Date(2026, 6, 1));
+  // 💡 カレンダーの初期表示を「今日」のリアルタイムな日時にする
+  const [commCalDate, setCommCalDate] = useState(new Date());
   const [selectedModalDate, setSelectedModalDate] = useState<string | null>(null); // カレンダー内でタップした日付を記憶
-  const [showCommDrumroll, setShowCommDrumroll] = useState(false); // ドラムロールを開く箱
+  const [showCommDrumroll, setShowCommDrumroll] = useState(false);
   const [realCommunities, setRealCommunities] = useState<LiveCommunity[]>([]);
   useEffect(() => {
     const fetchLiveSchedules = async () => {
+      let apiLives: LiveCommunity[] = [];
+      const fallbackLives: LiveCommunity[] = [
+        { id: "fb1", name: "ROCK IN JAPAN FESTIVAL 2026", date: "2026-08-01", memberCount: 0, isJoined: false, isVerified: true, reportedBy: [] },
+        { id: "fb2", name: "ROCK IN JAPAN FESTIVAL 2026", date: "2026-08-02", memberCount: 0, isJoined: false, isVerified: true, reportedBy: [] },
+        { id: "fb3", name: "SUMMER SONIC 2026 TOKYO", date: "2026-08-15", memberCount: 0, isJoined: false, isVerified: true, reportedBy: [] },
+        { id: "fb4", name: "SUMMER SONIC 2026 OSAKA", date: "2026-08-16", memberCount: 0, isJoined: false, isVerified: true, reportedBy: [] },
+        { id: "fb5", name: "SWEET LOVE SHOWER 2026", date: "2026-08-29", memberCount: 0, isJoined: false, isVerified: true, reportedBy: [] },
+        { id: "fb6", name: "Vaundy one man live ARENA tour 2026", date: "2026-09-10", memberCount: 0, isJoined: false, isVerified: true, reportedBy: [] },
+        { id: "fb7", name: "King Gnu Live Tour 2026", date: "2026-10-05", memberCount: 0, isJoined: false, isVerified: true, reportedBy: [] },
+        { id: "fb8", name: "COUNTDOWN JAPAN 26/27", date: "2026-12-28", memberCount: 0, isJoined: false, isVerified: true, reportedBy: [] }
+      ];
+
       try {
-        // 💡 金庫（.env.local）からAPIキーを安全に呼び出す
         const apiKey = process.env.NEXT_PUBLIC_TICKETMASTER_API_KEY;
-        const today = new Date();
-        const nextYear = new Date(today.setFullYear(today.getFullYear() + 1));
         const startDateTime = new Date().toISOString().split('.')[0] + 'Z';
-        const endDateTime = nextYear.toISOString().split('.')[0] + 'Z';
-        const res = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?classificationName=music&countryCode=JP&size=200&startDateTime=${startDateTime}&endDateTime=${endDateTime}&sort=date,asc&apikey=${apiKey}`);
-        const data = await res.json();
-        if (data._embedded && data._embedded.events && data._embedded.events.length > 0) {
-          const liveData: LiveCommunity[] = data._embedded.events.map((event: any) => ({
+        const response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?classificationName=music&countryCode=JP&size=200&startDateTime=${startDateTime}&sort=date,asc&apikey=${apiKey}`);
+        
+        if (!response.ok) {
+          throw new Error("NetworkError");
+        }
+        
+        const data = await response.json();
+        if (data._embedded && data._embedded.events) {
+          apiLives = data._embedded.events.map((event: any) => ({
             id: event.id,
             name: event.name,
             date: event.dates?.start?.localDate || "日程未定",
             memberCount: 0,
             isJoined: false,
             isVerified: true,
-            reportedBy: [] // 💡 ここを修正
+            reportedBy: []
           }));
-          setRealCommunities(liveData);
         } else {
-          const fallbackData: LiveCommunity[] = [
-            { id: "fb1", name: "ROCK IN JAPAN FESTIVAL 2026", date: "2026-08-01", memberCount: 0, isJoined: false, isVerified: true, reportedBy: [] },
-            { id: "fb2", name: "ROCK IN JAPAN FESTIVAL 2026", date: "2026-08-02", memberCount: 0, isJoined: false, isVerified: true, reportedBy: [] },
-            { id: "fb3", name: "SUMMER SONIC 2026 TOKYO", date: "2026-08-15", memberCount: 0, isJoined: false, isVerified: true, reportedBy: [] },
-            { id: "fb4", name: "SUMMER SONIC 2026 OSAKA", date: "2026-08-16", memberCount: 0, isJoined: false, isVerified: true, reportedBy: [] },
-            { id: "fb5", name: "SWEET LOVE SHOWER 2026", date: "2026-08-29", memberCount: 0, isJoined: false, isVerified: true, reportedBy: [] },
-            { id: "fb6", name: "Vaundy one man live ARENA tour 2026", date: "2026-09-10", memberCount: 0, isJoined: false, isVerified: true, reportedBy: [] },
-            { id: "fb7", name: "King Gnu Live Tour 2026", date: "2026-10-05", memberCount: 0, isJoined: false, isVerified: true, reportedBy: [] },
-            { id: "fb8", name: "COUNTDOWN JAPAN 26/27", date: "2026-12-28", memberCount: 0, isJoined: false, isVerified: true, reportedBy: [] }
-          ];
-          setRealCommunities(fallbackData);
+          apiLives = fallbackLives;
         }
-      } catch (e) {
-        console.error("ライブ情報の取得に失敗しました:", e);
+      } catch (error) {
+        showToast("公式ライブの取得に失敗しました。標準データを表示します", "error");
+        apiLives = fallbackLives;
       }
+
+      let customLives: LiveCommunity[] = [];
+      try {
+        const { data: dbData, error: dbError } = await supabase.from('custom_communities').select('*');
+        if (dbError) {
+          throw dbError;
+        }
+        if (dbData) {
+          customLives = dbData.map((c: any) => ({
+            id: c.id,
+            name: c.name,
+            date: c.date,
+            memberCount: 0,
+            isJoined: false,
+            isVerified: false,
+            reportedBy: []
+          }));
+        }
+      } catch (dbErr) {
+        showToast("ユーザー作成ライブの取得に失敗しました", "error");
+      }
+
+      setRealCommunities([...apiLives, ...customLives]);
     };
     fetchLiveSchedules();
   }, []);
+
+  useEffect(() => {
+    if (!currentUser || realCommunities.length === 0) return;
+    const fetchJoinedCommunities = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('community_members')
+          .select('community_id')
+          .eq('user_id', currentUser.id);
+        
+        if (data && !error) {
+          const joinedIds = new Set(data.map((d: any) => d.community_id));
+          const joined = realCommunities
+            .filter(c => joinedIds.has(c.id))
+            .map(c => ({ ...c, isJoined: true }));
+          setChatCommunities(joined);
+        }
+      } catch (err) {
+        console.warn(err);
+      }
+    };
+    fetchJoinedCommunities();
+  }, [currentUser, realCommunities]);
+
   const [matchIndex, setMatchIndex] = useState(0);
   const [showMatchFilterModal, setShowMatchFilterModal] = useState(false);
   const [matchFilter, setMatchFilter] = useState({ artists: [] as any[], hashtags: [] as string[], liveHistories: [] as string[], ageMin: 18, ageMax: 100, gender: "All" });
@@ -686,6 +854,15 @@ function MainApp() {
   const [activeChatUserId, setActiveChatUserId] = useState<string | null>(null);
   const [chatMessageInput, setChatMessageInput] = useState("");
   const [showChatPlusMenu, setShowChatPlusMenu] = useState(false);
+
+  const { data: activeCommunityMemberIds } = useSWR(
+    activeChatUserId?.startsWith('com') ? ['community_members', activeChatUserId] : null,
+    async ([_, commId]) => {
+      const { data, error } = await supabase.from('community_members').select('user_id').eq('community_id', commId);
+      if (error) throw error;
+      return data.map((d: any) => d.user_id);
+    }
+  );
   const [showVoiceMenu, setShowVoiceMenu] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
@@ -1012,8 +1189,11 @@ function MainApp() {
   useEffect(() => { try { setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone); } catch (e) { setTimeZone("Asia/Tokyo"); } }, []);
   useEffect(() => { if (audioRef.current) audioRef.current.muted = !settings.audio; }, [settings.audio]);
   useEffect(() => { if (draftSong && draftSong.previewUrl && audioRef.current && settings.audio) { audioRef.current.src = draftSong.previewUrl; audioRef.current.play().then(() => setPlayingSong(draftSong.previewUrl)).catch(() => { }); } }, [draftSong]);
-  useEffect(() => { const fetchT = async () => { try { const res = await fetch(`https://itunes.apple.com/search?term=jpop+top&entity=song&country=jp&limit=5`); const d = await res.json(); setTrendingSongs(d.results); } catch (e) { } }; fetchT(); }, []);
-  // 💡 無限スクロール用の箱（状態）を追加
+  const { data: trendingData, error: trendingError } = useSWR("https://itunes.apple.com/search?term=jpop+top&entity=song&country=jp&limit=5", fetcher);
+  useEffect(() => {
+    if (trendingData) setTrendingSongs(trendingData.results);
+    if (trendingError) showToast("Network Error", "error");
+  }, [trendingData, trendingError]);
   const [vibePage, setVibePage] = useState(0);
   const [hasMoreVibes, setHasMoreVibes] = useState(true);
   const [isLoadingVibes, setIsLoadingVibes] = useState(false);
@@ -1021,47 +1201,57 @@ function MainApp() {
   const fetchVibes = async (pageNumber = 0, isRefresh = false) => {
     if (isLoadingVibes || (!hasMoreVibes && !isRefresh)) return;
     setIsLoadingVibes(true);
-    const from = pageNumber * VIBES_PER_PAGE;
-    const to = from + VIBES_PER_PAGE - 1;
-    const { data: vibesData, error: vibesError } = await supabase.from('vibes').select('*').order('created_at', { ascending: false }).range(from, to);
-    const { data: profilesData, error: profilesError } = await supabase.from('profiles').select('*');
-    const { data: likesData } = await supabase.from('likes').select('*');
-    const { data: commentsData } = await supabase.from('comments').select('*');
-    if (vibesError || profilesError) {
-      setIsLoadingVibes(false);
-      return;
-    }
-    if (vibesData && profilesData) {
-      const currentUserId = (await supabase.auth.getUser()).data.user?.id;
-      // 💡 復活！プロフィールが存在する（退会していない）本物のユーザーの投稿だけを残す強力フィルター
-      const validVibesData = vibesData.filter((v: any) => profilesData.some((p: any) => p.id === v.user_id));
-      const formatted = validVibesData.map((v: any) => {
-        const authorProfile = profilesData.find((p: any) => p.id === v.user_id);
-        const postUser = authorProfile ? { id: authorProfile.id, name: authorProfile.name, handle: authorProfile.handle, avatar: authorProfile.avatar, bio: authorProfile.bio, followers: 0, following: 0, isPrivate: false, category: 'suggested' } : myProfile;
-        const postLikes = likesData ? likesData.filter((l: any) => l.vibe_id === v.id) : [];
-        const postComments = commentsData ? commentsData.filter((c: any) => c.vibe_id === v.id) : [];
-        const isLikedByMe = currentUserId ? postLikes.some((l: any) => l.user_id === currentUserId) : false;
-        const formattedComments = postComments.map((c: any) => {
-          const commenterProfile = profilesData.find((p: any) => p.id === c.user_id);
-          return { id: c.id, text: c.text, user: commenterProfile ? { id: commenterProfile.id, handle: commenterProfile.handle, name: commenterProfile.name, avatar: commenterProfile.avatar } : myProfile };
+    try {
+      const from = pageNumber * VIBES_PER_PAGE;
+      const to = from + VIBES_PER_PAGE - 1;
+      const { data: vibesData, error: vibesError } = await supabase.from('vibes').select('*').order('created_at', { ascending: false }).range(from, to);
+      const { data: profilesData, error: profilesError } = await supabase.from('profiles').select('*');
+      const { data: likesData, error: likesError } = await supabase.from('likes').select('*');
+      const { data: commentsData, error: commentsError } = await supabase.from('comments').select('*');
+      if (vibesError) throw vibesError;
+      if (profilesError) throw profilesError;
+      if (likesError) throw likesError;
+      if (commentsError) throw commentsError;
+      if (vibesData && profilesData) {
+        const currentUserId = currentUser?.id;
+        const validVibesData = vibesData.filter((v: any) => profilesData.some((p: any) => p.id === v.user_id));
+        const formatted = validVibesData.map((v: any) => {
+          const authorProfile = profilesData.find((p: any) => p.id === v.user_id);
+          const postUser = authorProfile ? { id: authorProfile.id, name: authorProfile.name, handle: authorProfile.handle, avatar: authorProfile.avatar, bio: authorProfile.bio, followers: 0, following: 0, isPrivate: false, category: 'suggested' } : myProfile;
+          const postLikes = likesData ? likesData.filter((l: any) => l.vibe_id === v.id) : [];
+          const postComments = commentsData ? commentsData.filter((c: any) => c.vibe_id === v.id) : [];
+          const isLikedByMe = currentUserId ? postLikes.some((l: any) => l.user_id === currentUserId) : false;
+          const formattedComments = postComments.map((c: any) => {
+            const commenterProfile = profilesData.find((p: any) => p.id === c.user_id);
+            return { id: c.id, text: c.text, user: commenterProfile ? { id: commenterProfile.id, handle: commenterProfile.handle, name: commenterProfile.name, avatar: commenterProfile.avatar } : myProfile };
+          });
+          return { id: v.id, trackId: parseInt(v.track_id) || 0, title: v.title, artist: v.artist, artistId: 0, imgUrl: v.img_url, previewUrl: v.preview_url, date: new Date(v.created_at).toLocaleDateString('ja-JP'), year: new Date(v.created_at).getFullYear(), month: new Date(v.created_at).getMonth() + 1, dayIndex: new Date(v.created_at).getDate(), timestamp: new Date(v.created_at).getTime(), time: new Date(v.created_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }), caption: v.caption || "", user: postUser, likes: postLikes.length, isLiked: isLikedByMe, comments: formattedComments };
         });
-        return { id: v.id, trackId: parseInt(v.track_id) || 0, title: v.title, artist: v.artist, artistId: 0, imgUrl: v.img_url, previewUrl: v.preview_url, date: new Date(v.created_at).toLocaleDateString('ja-JP'), year: new Date(v.created_at).getFullYear(), month: new Date(v.created_at).getMonth() + 1, dayIndex: new Date(v.created_at).getDate(), timestamp: new Date(v.created_at).getTime(), time: new Date(v.created_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }), caption: v.caption || "", user: postUser, likes: postLikes.length, isLiked: isLikedByMe, comments: formattedComments };
-      });
-      if (isRefresh || pageNumber === 0) {
-        setVibes(formatted as Song[]);
-      } else {
-        setVibes(prev => {
-          const existingIds = new Set(prev.map(p => p.id));
-          const newItems = formatted.filter(f => !existingIds.has(f.id));
-          return [...prev, ...newItems] as Song[];
-        });
+        if (isRefresh || pageNumber === 0) {
+          setVibes(formatted as Song[]);
+        } else {
+          setVibes(prev => {
+            const existingIds = new Set(prev.map(p => p.id));
+            const newItems = formatted.filter(f => !existingIds.has(f.id));
+            return [...prev, ...newItems] as Song[];
+          });
+        }
+        setHasMoreVibes(vibesData.length === VIBES_PER_PAGE);
+        setVibePage(pageNumber);
       }
-      setHasMoreVibes(vibesData.length === VIBES_PER_PAGE);
-      setVibePage(pageNumber);
+    } catch (error) {
+      showToast("タイムラインの読み込みに失敗しました", "error");
+    } finally {
+      setIsLoadingVibes(false);
     }
-    setIsLoadingVibes(false);
   };
-  useEffect(() => { fetchVibes(0, true); }, []);
+
+        useEffect(() => {
+          if (!isInitializing) {
+            fetchVibes(0, true);
+          }
+        }, [isInitializing]);
+
   // 💡 画面の最下部を検知して次のデータを読み込むシステム
   const observerTarget = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -1088,7 +1278,17 @@ function MainApp() {
           const isGroup = msg.target_id.startsWith('g') || msg.target_id.startsWith('com');
           const partnerId = isGroup ? msg.target_id : (msg.sender_id === currentUser.id ? msg.target_id : msg.sender_id);
           if (!history[partnerId]) history[partnerId] = [];
-          history[partnerId].push({ id: msg.id, senderId: msg.sender_id, text: msg.text, timestamp: new Date(msg.created_at).getTime(), isRead: msg.is_read } as any);
+          
+          const calculatedReadCount = isGroup ? (msg.read_count || (msg.is_read ? 1 : 0)) : 0;
+          
+          history[partnerId].push({ 
+            id: msg.id, 
+            senderId: msg.sender_id, 
+            text: msg.text, 
+            timestamp: new Date(msg.created_at).getTime(), 
+            isRead: msg.is_read,
+            readCount: calculatedReadCount
+          } as any);
         });
         setChatHistory(history);
       }
@@ -1163,56 +1363,166 @@ function MainApp() {
     markAsRead();
   }, [activeChatUserId, currentUser]);
   const [realUserSearchResults, setRealUserSearchResults] = useState<User[]>([]);
+  const [debouncedUserSearchQuery, setDebouncedUserSearchQuery] = useState("");
+
   useEffect(() => {
-    if (!userSearchQuery.trim()) { setRealUserSearchResults([]); return; }
-    const fetchUsers = async () => {
-      const cleanQuery = userSearchQuery.trim().replace(/^@/, '');
-      const { data } = await supabase.from('profiles').select('*').or(`handle.ilike.%${cleanQuery}%,name.ilike.%${cleanQuery}%`).limit(10);
-      if (data) setRealUserSearchResults(data as User[]);
-    };
-    const timer = setTimeout(fetchUsers, 300);
+    const timer = setTimeout(() => setDebouncedUserSearchQuery(userSearchQuery), 300);
     return () => clearTimeout(timer);
   }, [userSearchQuery]);
+
+  const cleanUserQuery = debouncedUserSearchQuery.trim().replace(/^@/, '');
+  
+  const { data: userData, error: userError } = useSWR(
+    cleanUserQuery ? `profiles_search_${cleanUserQuery}` : null,
+    async () => {
+      const { data, error } = await supabase.from('profiles').select('*').or(`handle.ilike.%${cleanUserQuery}%,name.ilike.%${cleanUserQuery}%`).limit(10);
+      if (error) throw error;
+      return data;
+    }
+  );
+
   useEffect(() => {
-    if (!searchQuery.trim()) { setSearchResults([]); setSearchArtistInfo(null); return; }
-    const timer = setTimeout(async () => {
-      try { const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(searchQuery)}&entity=song&country=jp&limit=5`); const d = await res.json(); setSearchResults(d.results); if (d.results.length > 0) { setSearchArtistInfo({ artistId: d.results[0].artistId, artistName: d.results[0].artistName, artworkUrl: d.results[0].artworkUrl100.replace('100x100bb', '300x300bb') }); } else { setSearchArtistInfo(null); } } catch (e) { }
-    }, 500); return () => clearTimeout(timer);
+    if (!cleanUserQuery) {
+      setRealUserSearchResults([]);
+      return;
+    }
+    if (userData) {
+      setRealUserSearchResults(userData as User[]);
+    }
+    if (userError) {
+      showToast("ユーザー検索に失敗しました", "error");
+      setRealUserSearchResults([]);
+    }
+  }, [cleanUserQuery, userData, userError]);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchQuery(searchQuery), 500);
+    return () => clearTimeout(timer);
   }, [searchQuery]);
+
+  const { data: searchData, error: searchError } = useSWR(
+    debouncedSearchQuery.trim() ? `https://itunes.apple.com/search?term=${encodeURIComponent(debouncedSearchQuery)}&entity=song&country=jp&limit=5` : null,
+    fetcher
+  );
+
   useEffect(() => {
-    if (!filterArtistInput.trim()) { setFilterArtistSuggestions([]); return; }
-    const timer = setTimeout(async () => {
-      try { const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(filterArtistInput)}&entity=song&country=jp&limit=10`); const d = await res.json(); const unique: any[] = []; const seen = new Set(); d.results.forEach((r: any) => { if (!seen.has(r.artistId)) { seen.add(r.artistId); unique.push({ artistId: r.artistId, artistName: r.artistName, artworkUrl: r.artworkUrl60 }); } }); setFilterArtistSuggestions(unique.slice(0, 5)); } catch (e) { }
-    }, 500); return () => clearTimeout(timer);
+    if (!debouncedSearchQuery.trim()) {
+      setSearchResults([]);
+      setSearchArtistInfo(null);
+      return;
+    }
+    if (searchData) {
+      setSearchResults(searchData.results);
+      if (searchData.results.length > 0) {
+        setSearchArtistInfo({
+          artistId: searchData.results[0].artistId,
+          artistName: searchData.results[0].artistName,
+          artworkUrl: searchData.results[0].artworkUrl100.replace('100x100bb', '300x300bb')
+        });
+      } else {
+        setSearchArtistInfo(null);
+      }
+    }
+    if (searchError) {
+      showToast("Search Error", "error");
+      setSearchResults([]);
+      setSearchArtistInfo(null);
+    }
+  }, [debouncedSearchQuery, searchData, searchError]);
+  const [debouncedFilterArtistInput, setDebouncedFilterArtistInput] = useState("");
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedFilterArtistInput(filterArtistInput), 500);
+    return () => clearTimeout(timer);
   }, [filterArtistInput]);
+
+  const { data: filterArtistData, error: filterArtistError } = useSWR(
+    debouncedFilterArtistInput.trim() ? `https://itunes.apple.com/search?term=${encodeURIComponent(debouncedFilterArtistInput)}&entity=song&country=jp&limit=10` : null,
+    fetcher
+  );
+
+  useEffect(() => {
+    if (!debouncedFilterArtistInput.trim()) {
+      setFilterArtistSuggestions([]);
+      return;
+    }
+    if (filterArtistData) {
+      const unique: any[] = [];
+      const seen = new Set();
+      filterArtistData.results.forEach((r: any) => {
+        if (!seen.has(r.artistId)) {
+          seen.add(r.artistId);
+          unique.push({ artistId: r.artistId, artistName: r.artistName, artworkUrl: r.artworkUrl60 });
+        }
+      });
+      setFilterArtistSuggestions(unique.slice(0, 5));
+    }
+    if (filterArtistError) {
+      showToast("Artist Search Error", "error");
+      setFilterArtistSuggestions([]);
+    }
+  }, [debouncedFilterArtistInput, filterArtistData, filterArtistError]);
+  const { data: artistData, error: artistError } = useSWR(
+    activeArtistProfile ? `https://itunes.apple.com/search?term=${encodeURIComponent(activeArtistProfile.artistName)}&entity=song&country=jp&limit=50` : null,
+    fetcher
+  );
+
   useEffect(() => {
     if (!activeArtistProfile) return;
-    setIsArtistLoading(true);
-    const f = async () => {
-      try {
-        const term = activeArtistProfile.artistName;
-        const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(term)}&entity=song&country=jp&limit=50`);
-        const d = await res.json();
-        const filtered = d.results.filter((i: any) => i.wrapperType === 'track' && i.artistName.toLowerCase().includes(term.toLowerCase()));
-        const sortedSongs = filtered.sort((a: any, b: any) => new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime());
-        setArtistSongs(sortedSongs);
-        if (sortedSongs.length > 0 && !activeArtistProfile.isVerifiedReal) {
-          setActiveArtistProfile((prev: any) => ({ ...prev, artistId: sortedSongs[0].artistId, artworkUrl: sortedSongs[0].artworkUrl100.replace('100x100bb', '600x600bb'), isVerifiedReal: true }));
-        }
-      } catch (e) { } finally { setIsArtistLoading(false); }
-    }; f();
-  }, [activeArtistProfile]);
+
+    if (!artistData && !artistError) {
+      setIsArtistLoading(true);
+      return;
+    }
+
+    if (artistData) {
+      const term = activeArtistProfile.artistName;
+      const filtered = artistData.results.filter((i: any) => i.wrapperType === 'track' && i.artistName.toLowerCase().includes(term.toLowerCase()));
+      const sortedSongs = filtered.sort((a: any, b: any) => new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime());
+      setArtistSongs(sortedSongs);
+
+      if (sortedSongs.length > 0 && !activeArtistProfile.isVerifiedReal) {
+        setActiveArtistProfile((prev: any) => ({
+          ...prev,
+          artistId: sortedSongs[0].artistId,
+          artworkUrl: sortedSongs[0].artworkUrl100.replace('100x100bb', '600x600bb'),
+          isVerifiedReal: true
+        }));
+      }
+    }
+
+    if (artistError) {
+      showToast("アーティスト情報の取得に失敗しました", "error");
+      setArtistSongs([]);
+    }
+
+    setIsArtistLoading(false);
+  }, [activeArtistProfile?.artistName, artistData, artistError]);
+  const { data: albumData, error: albumError } = useSWR(
+    activeAlbumProfile ? `https://itunes.apple.com/lookup?id=${activeAlbumProfile.collectionId}&entity=song&country=jp` : null,
+    fetcher
+  );
+
   useEffect(() => {
     if (!activeAlbumProfile) return;
-    setIsAlbumLoading(true);
-    const f = async () => {
-      try {
-        const res = await fetch(`https://itunes.apple.com/lookup?id=${activeAlbumProfile.collectionId}&entity=song&country=jp`);
-        const d = await res.json();
-        setAlbumSongs(d.results.filter((i: any) => i.wrapperType === 'track'));
-      } catch (e) { } finally { setIsAlbumLoading(false); }
-    }; f();
-  }, [activeAlbumProfile]);
+
+    if (!albumData && !albumError) {
+      setIsAlbumLoading(true);
+      return;
+    }
+
+    if (albumData) {
+      setAlbumSongs(albumData.results.filter((i: any) => i.wrapperType === 'track'));
+    }
+
+    if (albumError) {
+      showToast("アルバム情報の取得に失敗しました", "error");
+      setAlbumSongs([]);
+    }
+
+    setIsAlbumLoading(false);
+  }, [activeAlbumProfile?.collectionId, albumData, albumError]);
   const allAvailableHashtags = useMemo(() => { const s = new Set<string>(); allProfiles.forEach(u => u.hashtags?.forEach(h => s.add(h))); return Array.from(s); }, [allProfiles]);
   const allAvailableLiveHistories = useMemo(() => { const s = new Set<string>(); allProfiles.forEach(u => u.liveHistory?.forEach(l => s.add(l))); return Array.from(s); }, [allProfiles]);
   const vibeMatchData = useMemo(() => {
@@ -1255,11 +1565,10 @@ function MainApp() {
   };
   // 💡 二重投稿を完全に防止する処理を追加
   const executePost = async (now: Date) => {
-    if (!draftSong || isPosting) return;
+    if (!draftSong || isPosting || !currentUser) return;
     setIsPosting(true);
     try {
-      const { data: authData } = await supabase.auth.getUser();
-      const currentUserId = authData.user ? authData.user.id : 'me';
+      const currentUserId = currentUser.id;
       const existingPost = isAlreadyPostedToday();
       if (existingPost) { await supabase.from('vibes').delete().eq('id', existingPost.id); }
       const newId = Date.now().toString();
@@ -1437,15 +1746,68 @@ function MainApp() {
     await supabase.from('chat_messages').delete().eq('id', msgId).eq('sender_id', currentUser.id);
   };
   const handleCreateGroup = () => { if (!newGroupName.trim() || newGroupMembers.size === 0) { showToast("グループ名とメンバーを指定", "error"); return; } const ng: ChatGroup = { id: `g${Date.now()}`, name: newGroupName, memberIds: Array.from(newGroupMembers), avatar: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80" }; setChatGroups([...chatGroups, ng]); setShowCreateGroupModal(false); setNewGroupName(""); setNewGroupMembers(new Set()); showToast("グループ作成完了！"); };
-  const joinCommunity = (c: LiveCommunity) => { setChatCommunities(p => p.some(x => x.id === c.id) ? p : [...p, { ...c, isJoined: true }]); setActiveCommunityDetail(null); setChatTabMode('community'); setActiveTab('chat'); setActiveChatUserId(c.id); showToast(`${c.name} に参加！`); };
-  // 💡 ユーザーが手動で新しいライブコミュニティを作成する機能
-  const handleCreateCommunity = () => {
+  const joinCommunity = async (c: LiveCommunity) => {
+    if (!currentUser) {
+      showToast("ログインが必要です", "error");
+      return;
+    }
+
+    setChatCommunities(p => p.some(x => x.id === c.id) ? p : [...p, { ...c, isJoined: true }]);
+    setActiveCommunityDetail(null);
+    setChatTabMode('community');
+    setActiveTab('chat');
+    setActiveChatUserId(c.id);
+
+    try {
+      const { error } = await supabase.from('community_members').insert([{
+        community_id: c.id,
+        user_id: currentUser.id
+      }]);
+      
+      if (error) {
+        throw error;
+      }
+      showToast(`${c.name} に参加しました！`, "success");
+    } catch (err) {
+      console.error(err);
+      setChatCommunities(p => p.filter(x => x.id !== c.id));
+      setActiveTab('search');
+      showToast("参加処理に失敗しました", "error");
+    }
+  };
+  const handleCreateCommunity = async () => {
     if (!newCommName.trim() || newCommYear.length !== 4 || !newCommMonth || !newCommDay) {
       showToast("ライブ名と正しい日程(YYYY/MM/DD)を入力してください", "error");
       return;
     }
     const formattedDate = `${newCommYear}-${newCommMonth.padStart(2, '0')}-${newCommDay.padStart(2, '0')}`;
-    const newComm: LiveCommunity = { id: `com_new_${Date.now()}`, name: newCommName, date: formattedDate, memberCount: 1, isJoined: true, isVerified: false, reportedBy: [] };
+    const commId = `com_new_${Date.now()}`;
+    // 💡 自分が参加するので初期人数は必ず「1」に戻す
+    const newComm: LiveCommunity = { id: commId, name: newCommName, date: formattedDate, memberCount: 1, isJoined: true, isVerified: false, reportedBy: [] };
+    
+    if (currentUser) {
+      try {
+        const { error: commError } = await supabase.from('custom_communities').insert([{
+          id: commId,
+          name: newCommName,
+          date: formattedDate,
+          creator_id: currentUser.id
+        }]);
+
+        if (commError) {
+          console.warn("コミュニティ作成エラー:", commError);
+        } else {
+          const { error: memberError } = await supabase.from('community_members').insert([{
+            community_id: commId,
+            user_id: currentUser.id
+          }]);
+          if (memberError) console.warn("参加情報の自動保存エラー:", memberError);
+        }
+      } catch (e) {
+        console.warn("通信エラー(無視して続行します):", e);
+      }
+    }
+
     setRealCommunities(prev => [...prev, newComm]);
     setChatCommunities(prev => [...prev, newComm]);
     setShowCreateCommunityModal(false);
@@ -1623,42 +1985,161 @@ function MainApp() {
   };
   const toggleFollow = async (targetUserId: string) => {
     if (!currentUser || !currentUser.id) return;
+    
     const isFollowing = followedUsers.has(targetUserId);
-    if (isFollowing) {
-      const { error } = await supabase.from('follows').delete().eq('follower_id', currentUser.id).eq('following_id', targetUserId);
-      if (!error) { setFollowedUsers(prev => { const next = new Set(prev); next.delete(targetUserId); return next; }); showToast("{t('follow')}を解除しました"); }
-    } else {
-      const { error } = await supabase.from('follows').insert([{ follower_id: currentUser.id, following_id: targetUserId }]);
-      if (!error) { setFollowedUsers(prev => { const next = new Set(prev); next.add(targetUserId); return next; }); showToast("{t('follow')}しました！", "success"); }
+
+    setFollowedUsers(prev => {
+      const next = new Set(prev);
+      if (isFollowing) {
+        next.delete(targetUserId);
+      } else {
+        next.add(targetUserId);
+      }
+      return next;
+    });
+
+    setAllFollows(prev => {
+      if (isFollowing) {
+        return prev.filter(f => !(f.follower_id === currentUser.id && f.following_id === targetUserId));
+      } else {
+        return [...prev, { follower_id: currentUser.id, following_id: targetUserId }];
+      }
+    });
+
+    try {
+      if (isFollowing) {
+        const { error } = await supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', currentUser.id)
+          .eq('following_id', targetUserId);
+        
+        if (error) throw error;
+        showToast(`${t('follow')}を解除しました`, "success");
+      } else {
+        const { error } = await supabase
+          .from('follows')
+          .insert([{ follower_id: currentUser.id, following_id: targetUserId }]);
+          
+        if (error) throw error;
+        showToast(`${t('follow')}しました！`, "success");
+      }
+    } catch (err) {
+      setFollowedUsers(prev => {
+        const next = new Set(prev);
+        if (isFollowing) {
+          next.add(targetUserId);
+        } else {
+          next.delete(targetUserId);
+        }
+        return next;
+      });
+      
+      setAllFollows(prev => {
+        if (isFollowing) {
+          return [...prev, { follower_id: currentUser.id, following_id: targetUserId }];
+        } else {
+          return prev.filter(f => !(f.follower_id === currentUser.id && f.following_id === targetUserId));
+        }
+      });
+      
+      showToast("処理に失敗しました", "error");
     }
   };
   const handleBlockUser = async (userId: string) => {
-    if (confirm("このユーザーをブロックしますか？\n（投稿やプロフィールがお互いに見えなくなります）")) {
-      setBlockedUsers(prev => new Set(prev).add(userId));
+    if (!currentUser) return;
+    if (window.confirm("このユーザーをブロックしますか？\n（投稿やプロフィールがお互いに見えなくなります）")) {
+      setBlockedUsers(prev => {
+        const next = new Set(prev);
+        next.add(userId);
+        return next;
+      });
       handleGoBack();
-      showToast("ユーザーをブロックしました", "success");
-      // 💡 Supabaseのblocksテーブルに記録を書き込む
-      if (currentUser) {
-        await supabase.from('blocks').insert([{ blocker_id: currentUser.id, blocked_id: userId }]);
+
+      try {
+        const { error } = await supabase
+          .from('blocks')
+          .insert([{ blocker_id: currentUser.id, blocked_id: userId }]);
+        
+        if (error) throw error;
+        showToast("ユーザーをブロックしました", "success");
+      } catch (err) {
+        console.error(err);
+        const errorMsg = err instanceof Error ? err.message : "通信エラーが発生しました";
+        setBlockedUsers(prev => {
+          const next = new Set(prev);
+          next.delete(userId);
+          return next;
+        });
+        showToast(`ブロック失敗: ${errorMsg}`, "error");
       }
     }
   };
-  // 💡 ブロックリスト画面用の状態と解除機能
+
   const [showBlockedUsersModal, setShowBlockedUsersModal] = useState(false);
   const displayBlockedUsers = useMemo(() => allProfiles.filter(u => blockedUsers.has(u.id)), [allProfiles, blockedUsers]);
+
   const handleUnblockUser = async (userId: string) => {
     if (!currentUser) return;
-    const { error } = await supabase.from('blocks').delete().eq('blocker_id', currentUser.id).eq('blocked_id', userId);
-    if (!error) {
-      setBlockedUsers(prev => { const next = new Set(prev); next.delete(userId); return next; });
+    
+    setBlockedUsers(prev => {
+      const next = new Set(prev);
+      next.delete(userId);
+      return next;
+    });
+
+    try {
+      const { error } = await supabase
+        .from('blocks')
+        .delete()
+        .eq('blocker_id', currentUser.id)
+        .eq('blocked_id', userId);
+        
+      if (error) throw error;
       showToast("ブロックを解除しました", "success");
-    } else {
-      showToast("ブロック解除に失敗しました", "error");
+    } catch (err) {
+      console.warn(err);
+      setBlockedUsers(prev => {
+        const next = new Set(prev);
+        next.add(userId);
+        return next;
+      });
+      showToast("通信エラーが発生しました", "error");
     }
   };
-  const handleReportUser = (userId: string) => {
-    if (confirm("このユーザーを通報しますか？\n（運営が内容を確認し、適切な対応を行います）")) {
-      showToast("通報が完了しました。ご協力ありがとうございます。", "success");
+
+  useEffect(() => {
+    if (!currentUser) return;
+    const fetchBlockedUsers = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('blocks')
+          .select('blocked_id')
+          .eq('blocker_id', currentUser.id);
+        
+        if (data && !error) {
+          setBlockedUsers(new Set(data.map((d: any) => d.blocked_id)));
+        }
+      } catch (err) {
+        console.warn(err);
+      }
+    };
+    fetchBlockedUsers();
+  }, [currentUser]);
+  const handleReportUser = async (userId: string) => {
+    if (!currentUser) return;
+    if (window.confirm("このユーザーを通報しますか？\n（運営が内容を確認し、適切な対応を行います）")) {
+      try {
+        const { error } = await supabase
+          .from('reports')
+          .insert([{ reporter_id: currentUser.id, reported_id: userId, type: 'user' }]);
+        
+        if (error) throw error;
+        showToast("通報が完了しました。ご協力ありがとうございます。", "success");
+      } catch (err: any) {
+        console.error("通報エラー:", err);
+        showToast(`エラー: ${err.message || "テーブルが存在しません"}`, "error");
+      }
     }
   };
   const saveProfile = () => {
@@ -1693,41 +2174,48 @@ function MainApp() {
     };
     const cleanTwitter = sanitizeUrl(editTwitter);
     const cleanInstagram = sanitizeUrl(editInstagram);
-    const { error } = await supabase
-      .from('profiles')
-      .update({ 
+    const newHashtags = (editHashtags || "").split(',').map(s => s.trim()).filter(s => s);
+    const newLiveHistory = (editLiveHistory || "").split(',').map(s => s.trim()).filter(s => s);
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ 
+          name: editName, 
+          handle: editHandle, 
+          bio: editBio, 
+          avatar: editAvatar, 
+          twitterUrl: cleanTwitter, 
+          instagramUrl: cleanInstagram,
+          is_private: editIsPrivate,
+          hashtags: newHashtags,
+          liveHistory: newLiveHistory
+        })
+        .eq('id', currentUser.id);
+
+      if (error) throw error;
+
+      const updatedProfileData = {
         name: editName, 
         handle: editHandle, 
         bio: editBio, 
         avatar: editAvatar, 
         twitterUrl: cleanTwitter, 
-        instagramUrl: cleanInstagram 
-      })
-      .eq('id', currentUser.id);
-    if (error) {
-      showToast("保存に失敗しました", "error");
-      return;
+        instagramUrl: cleanInstagram,
+        isPrivate: editIsPrivate,
+        hashtags: newHashtags,
+        liveHistory: newLiveHistory
+      };
+
+      setMyProfile(prev => ({ ...prev, ...updatedProfileData } as any));
+      setAllProfiles(prev => prev.map(p => p.id === currentUser.id ? { ...p, ...updatedProfileData } as any : p));
+      
+      setIsEditingProfile(false);
+      showToast("プロフィールを保存しました！", "success");
+    } catch (err: any) {
+      console.error(err);
+      showToast("保存に失敗しました: " + (err.message || "通信エラー"), "error");
     }
-    setMyProfile(prev => ({ 
-      ...prev, 
-      name: editName, 
-      handle: editHandle, 
-      bio: editBio, 
-      avatar: editAvatar, 
-      twitterUrl: cleanTwitter, 
-      instagramUrl: cleanInstagram 
-    } as any));
-    setAllProfiles(prev => prev.map(p => p.id === currentUser.id ? { 
-      ...p, 
-      name: editName, 
-      handle: editHandle, 
-      bio: editBio, 
-      avatar: editAvatar, 
-      twitterUrl: cleanTwitter, 
-      instagramUrl: cleanInstagram 
-    } as any : p));
-    setIsEditingProfile(false);
-    showToast("プロフィールを保存しました！", "success");
   };
   const handleSignUp = async () => {
     const pwRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
@@ -1949,7 +2437,7 @@ function MainApp() {
     <div key={s.id} className="bg-[#1c1c1e] border border-zinc-800/50 rounded-[24px] p-5 shadow-lg relative z-0">
       <div className="flex justify-between items-start mb-5">
         <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => { if (s.user.id !== 'me') { setViewingUser(s.user); setActiveTab('other_profile'); } else { setActiveTab('profile'); } }}>
-          <img src={s.user.avatar} className="w-10 h-10 rounded-full object-cover" />
+          <img src={s.user.avatar} loading="lazy" decoding="async" alt="avatar" className="w-10 h-10 rounded-full object-cover" />
           <div>
             <p className="text-sm font-bold">{s.user.name}</p>
             <p className="text-[10px] text-zinc-500">@{s.user.handle} • {displayLocalTime(s.timestamp, timeZone)}</p>
@@ -1957,13 +2445,12 @@ function MainApp() {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleShareVibe(s); }} className="text-zinc-500 hover:text-white p-1"><IconShareExternal /></button>
-          {/* 💡 本番環境のIDでも削除ボタンが出るように修正 */}
           {(s.user.id === myProfile.id || s.user.id === currentUser?.id || s.user.id === 'me') && <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteVibe(s.id); }} className="text-[10px] font-bold text-zinc-600 hover:text-red-500 uppercase tracking-widest p-1">削除</button>}
         </div>
       </div>
       <div className="flex items-center gap-4 mb-5">
         <div className="relative w-20 h-20 rounded-full overflow-hidden border border-zinc-700 group flex-shrink-0">
-          <img src={s.imgUrl} className={`w-full h-full object-cover ${playingSong === s.previewUrl ? 'animate-[spin_4s_linear_infinite]' : ''}`} />
+          <img src={s.imgUrl} loading="lazy" decoding="async" alt="cover" className={`w-full h-full object-cover ${playingSong === s.previewUrl ? 'animate-[spin_4s_linear_infinite]' : ''}`} />
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
             <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePlay(s.previewUrl); }} className="w-10 h-10 bg-black/60 rounded-full flex items-center justify-center text-white pointer-events-auto shadow-lg hover:scale-105 transition-transform relative z-50">
               {playingSong === s.previewUrl ? <IconStop /> : <IconPlay />}
@@ -2237,8 +2724,8 @@ function MainApp() {
       )}
       {/* 💡 カレンダーモーダル（タップしてリストを表示するUI ＆ ドラムロール対応 ＆ 10人以上制限） */}
       {showCommCalendar && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[950] flex flex-col justify-end animate-fade-in" onClick={() => { setShowCommCalendar(false); setSelectedModalDate(null); }}>
-          <div className="bg-[#1c1c1e] rounded-t-[32px] p-6 shadow-2xl relative flex flex-col h-[85vh]" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[950] flex justify-center items-end md:items-center animate-fade-in" onClick={() => { setShowCommCalendar(false); setSelectedModalDate(null); }}>
+          <div className="bg-[#1c1c1e] w-full md:max-w-[420px] h-[85vh] md:max-h-[80vh] rounded-t-[32px] md:rounded-[32px] p-6 shadow-2xl relative flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6 shrink-0">
               <h3 className="font-bold text-lg">ライブを探す</h3>
               <button onClick={() => { setShowCommCalendar(false); setSelectedModalDate(null); }} className="text-zinc-500 hover:text-white"><IconCross /></button>
@@ -2257,11 +2744,11 @@ function MainApp() {
             <div className="grid grid-cols-7 gap-2 mb-4 shrink-0">
               {['日', '月', '火', '水', '木', '金', '土'].map(d => <div key={d} className="text-center text-[10px] text-zinc-500 font-bold mb-2">{d}</div>)}
               {Array.from({ length: new Date(commCalDate.getFullYear(), commCalDate.getMonth(), 1).getDay() }).map((_, i) => <div key={`empty-${i}`} />)}
-              {Array.from({ length: new Date(commCalDate.getFullYear(), commCalDate.getMonth() + 1, 0).getDate() }).map((_, i) => {
+             　{Array.from({ length: new Date(commCalDate.getFullYear(), commCalDate.getMonth() + 1, 0).getDate() }).map((_, i) => {
                 const day = i + 1;
                 const dateStr = `${commCalDate.getFullYear()}-${(commCalDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                // 💡 参加人数が10人以上のコミュニティだけをカウント・表示対象にする
-                const eventsToday = realCommunities.filter(c => c.date === dateStr && c.memberCount >= 10);
+                
+                const eventsToday = realCommunities.filter(c => c.date === dateStr && (c.memberCount >= 10 || c.isJoined));
                 const isSelected = selectedModalDate === dateStr;
                 return (
                   <div
@@ -2277,12 +2764,12 @@ function MainApp() {
                 );
               })}
             </div>
-            {/* 💡 タップした日付のライブをカレンダーの下に表示する */}
+            
             <div className="flex-1 overflow-y-auto scrollbar-hide mt-4 border-t border-zinc-800 pt-4">
               {selectedModalDate ? (
                 <div className="flex flex-col gap-3 animate-fade-in">
                   <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">{selectedModalDate.replace(/-/g, '/')} の公演</p>
-                  {realCommunities.filter(c => c.date === selectedModalDate && c.memberCount >= 10).map(c => (
+                  {realCommunities.filter(c => c.date === selectedModalDate && (c.memberCount >= 10 || c.isJoined)).map(c => (
                     <div key={c.id} onClick={() => { setActiveCommunityDetail(c); setShowCommCalendar(false); setSelectedModalDate(null); }} className="bg-black p-4 rounded-xl flex items-center justify-between cursor-pointer hover:bg-zinc-800 border border-zinc-800 transition-colors">
                       <div className="flex items-center gap-3 overflow-hidden">
                         <div className="w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center text-[#1DB954] flex-shrink-0"><IconTicket /></div>
@@ -2333,12 +2820,31 @@ function MainApp() {
               </h2>
               <p className="text-sm text-[#1DB954] font-bold mb-4">{activeCommunityDetail.date}</p>
               <div className="flex -space-x-3 justify-center mb-2">
-                {allProfiles.slice(0, 3).map(u => <img key={u.id} src={u.avatar} className="w-9 h-9 rounded-full border-2 border-[#1c1c1e] object-cover" />)}
-                <div className="w-9 h-9 rounded-full bg-zinc-800 border-2 border-[#1c1c1e] flex items-center justify-center text-[10px] font-bold text-zinc-400 z-10">+{Math.max(0, activeCommunityDetail.memberCount - 3)}</div>
+                {(() => {
+                  const me = allProfiles.find(u => u.id === currentUser?.id) || myProfile;
+                  const participants = activeCommunityDetail.memberCount <= 1 
+                    ? [me].slice(0, activeCommunityDetail.memberCount)
+                    : [me, ...allProfiles.filter(u => u.id !== me.id)].slice(0, activeCommunityDetail.memberCount);
+                  
+                  return (
+                    <>
+                      {participants.slice(0, 3).map(u => <img key={u.id} src={u.avatar} className="w-9 h-9 rounded-full border-2 border-[#1c1c1e] object-cover" />)}
+                      {activeCommunityDetail.memberCount > 3 && (
+                        <div className="w-9 h-9 rounded-full bg-zinc-800 border-2 border-[#1c1c1e] flex items-center justify-center text-[10px] font-bold text-zinc-400 z-10">
+                          +{activeCommunityDetail.memberCount - 3}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
               <p className="text-xs text-zinc-400">{activeCommunityDetail.memberCount}人が参加中</p>
             </div>
-            <button onClick={() => joinCommunity(activeCommunityDetail)} className="w-full py-4 bg-white text-black rounded-xl text-sm font-bold shadow-lg hover:scale-105 transition-transform mb-2">コミュニティに参加する</button>
+            {chatCommunities.some(c => c.id === activeCommunityDetail.id) || activeCommunityDetail.isJoined ? (
+              <button onClick={() => { setActiveCommunityDetail(null); setActiveChatUserId(activeCommunityDetail.id); setActiveTab('chat'); setChatTabMode('community'); }} className="w-full py-4 bg-[#1DB954] text-black rounded-xl text-sm font-bold shadow-lg hover:scale-105 transition-transform mb-2">チャットを開く</button>
+            ) : (
+              <button onClick={() => joinCommunity(activeCommunityDetail)} className="w-full py-4 bg-white text-black rounded-xl text-sm font-bold shadow-lg hover:scale-105 transition-transform mb-2">コミュニティに参加する</button>
+            )}
             {/* 💡 ユーザー作成の非公式ライブの場合のみ、通報ボタンを表示 */}
             {!activeCommunityDetail.isVerified && (
               <button onClick={() => handleReportCommunity(activeCommunityDetail.id)} className="w-full py-3 bg-transparent text-zinc-600 hover:text-red-500 rounded-xl text-[10px] font-bold transition-colors flex items-center justify-center gap-1.5 mt-2">
@@ -2357,7 +2863,7 @@ function MainApp() {
                 {activeChatUserId.startsWith('com') ? chatCommunities.find(c => c.id === activeChatUserId)?.name : activeChatUserId.startsWith('g') ? chatGroups.find(g => g.id === activeChatUserId)?.name : allProfiles.find(u => u.id === activeChatUserId)?.name || "Chat"}
                 {(activeChatUserId.startsWith('com') || activeChatUserId.startsWith('g')) && (
                   <span className="text-[15px] font-normal text-zinc-400">
-                    ({activeChatUserId.startsWith('com') ? (chatCommunities.find(c => c.id === activeChatUserId)?.memberCount || 0) : (chatGroups.find(g => g.id === activeChatUserId)?.memberIds.length || 0)})
+                    ({activeChatUserId.startsWith('com') ? (activeCommunityMemberIds ? activeCommunityMemberIds.length : Math.max(1, chatCommunities.find(c => c.id === activeChatUserId)?.memberCount || 1)) : Math.max(1, chatGroups.find(g => g.id === activeChatUserId)?.memberIds.length || 1)})
                   </span>
                 )}
               </h2>
@@ -2371,7 +2877,7 @@ function MainApp() {
           <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
             {(chatHistory[activeChatUserId] || []).map((msg: any) => {
               const sender = allProfiles.find(u => u.id === msg.senderId);
-              const isMe = msg.senderId === currentUser?.id || msg.senderId === 'me';
+              const isMe = msg.senderId === currentUser?.id;
               const isGroup = activeChatUserId.startsWith('com') || activeChatUserId.startsWith('g');
               const isHighlighted = jumpToMessageId === msg.id;
               return (
@@ -2486,7 +2992,13 @@ function MainApp() {
                     </div>
                     <div className="flex items-center gap-1 mt-1">
                       <span className="text-[9px] text-zinc-500">{displayLocalTime(msg.timestamp, timeZone)}</span>
-                      {isMe && msg.isRead && <span className="text-[9px] text-[#1DB954] font-bold">既読</span>}
+                      {isMe && msg.isRead && (
+                        <span className="text-[9px] text-[#1DB954] font-bold">
+                          {activeChatUserId?.startsWith('g') || activeChatUserId?.startsWith('com') 
+                            ? `既読 ${msg.readCount || 0}` 
+                            : '既読'}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -2781,15 +3293,46 @@ function MainApp() {
                   const isCommunity = activeChatUserId.startsWith('com');
                   const isChatGroup = activeChatUserId.startsWith('g');
                   let memberList = allProfiles;
+                  let displayCount = 0;
+                  
                   if (isChatGroup) {
                     const g = chatGroups.find(x => x.id === activeChatUserId);
-                    if (g) memberList = allProfiles.filter(u => g.memberIds.includes(u.id) || u.id === currentUser?.id);
+                    if (g) {
+                      memberList = allProfiles.filter(u => g.memberIds.includes(u.id) || u.id === currentUser?.id);
+                      displayCount = memberList.length;
+                    }
+                  } else if (isCommunity) {
+                    // 💡 SWRで取得した本物の参加者IDリストを使ってメンバーをフィルタリングする
+                    if (activeCommunityMemberIds) {
+                      memberList = allProfiles.filter(u => activeCommunityMemberIds.includes(u.id));
+                      displayCount = activeCommunityMemberIds.length;
+                    } else {
+                      // まだデータが取得できていない時のフォールバック（自分だけ表示）
+                      const me = allProfiles.find(u => u.id === currentUser?.id) || myProfile;
+                      memberList = [me];
+                      displayCount = 1;
+                    }
+                  } else {
+                    displayCount = memberList.length;
                   }
-                  const displayCount = isCommunity ? (chatCommunities.find(c => c.id === activeChatUserId)?.memberCount || 0) : memberList.length;
                   
                   return (
                     <div className="flex flex-col animate-fade-in">
-                      <div className="p-4 flex items-center gap-4 cursor-pointer hover:bg-[#1c1c1e] transition-colors" onClick={() => showToast("招待リンクをコピーしました")}>
+                      <div className="p-4 flex items-center gap-4 cursor-pointer hover:bg-[#1c1c1e] transition-colors" onClick={async () => {
+                        const inviteUrl = `https://echo.es/join/${activeChatUserId}`;
+                        if (navigator.share) {
+                          try {
+                            await navigator.share({
+                              title: 'Echoesに招待',
+                              text: 'グループ/ライブに参加しよう！',
+                              url: inviteUrl
+                            });
+                          } catch (err) {}
+                        } else {
+                          navigator.clipboard.writeText(inviteUrl);
+                          showToast("招待リンクをコピーしました！", "success");
+                        }
+                      }}>
                         <div className="w-12 h-12 rounded-full bg-[#1DB954]/10 text-[#1DB954] flex items-center justify-center border border-[#1DB954]/20"><IconUserPlus /></div>
                         <span className="font-bold text-[15px] text-[#1DB954]">友だちを招待</span>
                       </div>
@@ -2921,7 +3464,8 @@ function MainApp() {
                 <button onClick={async (e) => {
                   e.stopPropagation();
                   try {
-                    const imgUrl = viewingChatImage.text.replace('[IMAGE]', '');
+                    const imgUrl = viewingChatImage.text ? viewingChatImage.text.replace('[IMAGE]', '') : '';
+                    if (!imgUrl) throw new Error("画像URLがありません");
                     const response = await fetch(imgUrl);
                     const blob = await response.blob();
                     const objectUrl = window.URL.createObjectURL(blob);
@@ -2940,7 +3484,11 @@ function MainApp() {
                 </button>
                 <button onClick={async (e) => {
                   e.stopPropagation();
-                  const imgUrl = viewingChatImage.text.replace('[IMAGE]', '');
+                  const imgUrl = viewingChatImage.text ? viewingChatImage.text.replace('[IMAGE]', '') : '';
+                  if (!imgUrl) {
+                    showToast("画像のURLが取得できませんでした", "error");
+                    return;
+                  }
                   if (navigator.share) {
                     try {
                       await navigator.share({
@@ -3144,7 +3692,7 @@ function MainApp() {
               <div className="flex items-center justify-between p-4 cursor-pointer" onClick={() => setShowAppInfoModal({ title: t('appInfo'), content: "バージョン: 42.0.0\n\nEchoesは、音楽を通じて日々の記録を残す新しい形のSNSです。" })}><div className="flex items-center gap-3"><IconInfo /><p className="font-bold text-sm">{t('appInfo')}</p></div><IconChevronRight /></div>
             </div>
             {/* 💡 修正5: 指定メアドだけが見える管理者ダッシュボード */}
-            {currentUser?.email === 'kota12202003@icloud.com' && (
+            {currentUser?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL && (
               <>
                 <p className="text-xs font-bold text-red-500 mb-2 px-2">{t('adminOnly')}</p>
                 <div className="bg-[#1c1c1e] rounded-2xl mb-8 flex flex-col border border-red-500/30">
@@ -3577,6 +4125,7 @@ function MainApp() {
                   <div key={draft.id} onClick={() => {
                     setNewArticleTitle(draft.title);
                     setNewArticleContent(draft.content);
+                    setNewArticleCover(draft.coverUrl || null);
                     setCurrentDraftId(draft.id);
                     setEditingArticleId(null);
                     setShowWriteArticleModal(true);
@@ -3911,7 +4460,7 @@ function MainApp() {
               <button className="hover:text-white transition-colors"><IconDots /></button>
               {lastSaved && <span className="text-[10px] font-normal">{lastSaved} 保存済</span>}
               <button onClick={handleSaveDraft} className="hover:text-white transition-colors">下書き保存</button>
-              <button onClick={handlePostArticle} className="text-white hover:text-[#1DB954] transition-colors">公開設定</button>
+              <button onClick={handlePostArticle} className="text-white hover:text-[#1DB954] transition-colors">投稿</button>
             </div>
           </div>
           {/* エディタ部分 */}
@@ -4264,9 +4813,9 @@ function MainApp() {
               </div>
               <button className="px-4 py-1.5 border border-zinc-700 rounded-full text-[10px] font-bold text-white hover:bg-zinc-800 transition-colors">Follow</button>
             </div>
-            <div 
+           <div 
               className="text-sm text-zinc-300 leading-loose whitespace-pre-wrap mb-12 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-white [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-white [&_h3]:mt-4 [&_h3]:mb-2 [&_blockquote]:border-l-4 [&_blockquote]:border-zinc-500 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-zinc-400 [&_ul]:list-disc [&_ul]:list-inside [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:list-inside [&_ol]:my-2 [&_li]:mb-1 [&_hr]:my-6 [&_hr]:border-zinc-700"
-              dangerouslySetInnerHTML={{ __html: viewingArticle.content }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(viewingArticle.content) }}
             />
             {/* 記事のいいね＆コメント欄 */}
             <div className="border-t border-zinc-900 pt-8 pb-12">
