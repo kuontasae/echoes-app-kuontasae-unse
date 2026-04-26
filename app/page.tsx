@@ -5,9 +5,22 @@ import useSWR from 'swr';
 import { User, Comment, Song, FavoriteArtist, Notification, ChatMessage, ChatGroup, LiveCommunity } from './types';
 import { IconHeart, IconComment, IconLock, IconPlay, IconStop, IconChevronLeft, IconChevronRight, IconChevronDown, IconSearch, IconShareBox, IconVerified, IconCross, IconGear, IconTrend, IconSparkles, IconMusic, IconMusicSmall, IconBell, IconGlobe, IconClock, IconShareExternal, IconStar, IconInfo, IconHelp, IconLockSetting, IconCamera, IconShuffle, IconDots, IconFlame, IconRewind, IconCheck, IconWarning, IconMatchTab, IconChatTab, IconSend, IconUserPlus, IconUser, IconMessagePlus, IconFilter, IconTicket, IconCrown, IconUsers, IconCalendar } from './Icons';
 import { supabase } from './supabase';
+import { FeedCard } from './components/FeedCard';
+import { ArticleEditorModal } from './components/articles/ArticleEditorModal';
+import { ArticleListSection } from './components/articles/ArticleListSection';
+import { ArticleDetailModal } from './components/articles/ArticleDetailModal';
+import { MusicSearchBox } from './components/music/MusicSearchBox';
+import { SongPostModal } from './components/music/SongPostModal';
+import { EditProfileModal } from './components/profile/EditProfileModal';
+import { ProfileSection } from './components/profile/ProfileSection';
+import { UserListModal } from './components/profile/UserListModal';
+import { ChatInputBar } from './components/chat/ChatInputBar';
+import { ChatListSection } from './components/chat/ChatListSection';
+import { ChatMessages } from './components/chat/ChatMessages';
+import { ChatRoomHeader } from './components/chat/ChatRoomHeader';
 import { MiniPlayer } from './components/MiniPlayer';
+import { displayLocalTime, formatCount } from './utils/formatters';
 import { useSearchParams } from 'next/navigation';
-import Image from 'next/image';
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
@@ -36,11 +49,6 @@ const IconList = () => <svg viewBox="0 0 24 24" width="20" height="20" stroke="c
 const getVibeMatchScore = (id1: string, id2: string) => {
   const hash = (id1 + id2).split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return 60 + (hash % 39);
-};
-const formatCount = (n?: number) => (n == null) ? "0" : n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'K' : n.toString();
-const displayLocalTime = (ts: number, tz: string) => {
-  try { return new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit', hour12: false, timeZone: tz }).format(new Date(ts)); }
-  catch (e) { return new Date(ts).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }); }
 };
 const calculateStreak = (vibes: Song[]) => {
   if (!vibes.length) return 0;
@@ -909,7 +917,7 @@ const handleSaveDraft = () => {
       }
     }
   };
-  const handlePurchaseArticle = async (article: any) => {
+  const handlePurchaseArticle = async (article: any) => {
     if (!currentUser || !article || !article.id) {
       showToast("記事の情報が不正です", "error");
       return;
@@ -956,6 +964,38 @@ const handleSaveDraft = () => {
 
     } catch (err) {
       showToast("通信エラーが発生しました", "error");
+    }
+  };
+  const handleUnlockArticle = (article: any) => {
+    if (((myProfile as any).coin_balance || 0) < article.price) {
+      setShowCoinChargeModal(true);
+      showToast("コインが不足しています。チャージしてください。", "error");
+    } else {
+      handlePurchaseArticle(article);
+    }
+  };
+  const handleSendArticleGift = async (amount: number) => {
+    if (!currentUser || !viewingArticle) {
+      showToast("ログインが必要です", "error");
+      return;
+    }
+    const currentBalance = Number((myProfile as any).coin_balance) || 0;
+    if (currentBalance < amount) {
+      setShowCoinChargeModal(true);
+      showToast("コインが不足しています。チャージしてください。", "error");
+      return;
+    }
+    if (!window.confirm(`${amount}C を贈りますか？`)) return;
+    try {
+      const { error } = await supabase.from('transactions').insert([{ sender_id: currentUser.id, receiver_id: viewingArticle.author.id, amount, transaction_type: 'gift', target_id: viewingArticle.id }]);
+      if (error) throw error;
+      const newBalance = currentBalance - amount;
+      await supabase.from('profiles').update({ coin_balance: newBalance }).eq('id', currentUser.id);
+      setMyProfile(prev => ({ ...prev, coin_balance: newBalance } as any));
+      await supabase.from('notifications').insert([{ user_id: viewingArticle.author.id, sender_id: currentUser.id, type: 'gift', text: `${myProfile.name}さんから ${amount}C のサポートが届きました！🎁` }]);
+      showToast("クリエイターをサポートしました！", "success");
+    } catch (e) {
+      showToast("エラーが発生しました", "error");
     }
   };
   const [searchQuery, setSearchQuery] = useState("");
@@ -3069,59 +3109,29 @@ const handleDeleteCommunity = async (id: string) => {
     </div>
   );
 const renderFeedCard = (s: Song) => (
-  <div key={s.id} className="bg-[#1c1c1e] border border-zinc-800/50 rounded-[24px] p-5 shadow-lg relative z-0">
-    <div className="flex justify-between items-start mb-5">
-      <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => { if (s.user.id !== 'me') { setViewingUser(s.user); setActiveTab('other_profile'); } else { setActiveTab('profile'); } }}>
-        <div className="relative w-10 h-10 flex-shrink-0">
-          <Image src={s.user.avatar || '/default-avatar.png'} alt="avatar" fill className="rounded-full object-cover" sizes="40px" unoptimized />
-        </div>
-        <div className="flex-1 overflow-hidden">
-          <p className="text-sm font-bold truncate">{s.user.name}</p>
-          <p className="text-[10px] text-zinc-500 truncate">@{s.user.handle} • {displayLocalTime(s.timestamp, timeZone)}</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-2">
-        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleShareVibe(s); }} className="text-zinc-500 hover:text-white p-1"><IconShareExternal /></button>
-        {(s.user.id === myProfile.id || s.user.id === currentUser?.id || s.user.id === 'me') && <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteVibe(s.id); }} className="text-[10px] font-bold text-zinc-600 hover:text-red-500 uppercase tracking-widest p-1">削除</button>}
-      </div>
-    </div>
-    <div className="flex items-center gap-4 mb-5">
-      <div className="relative w-20 h-20 rounded-full overflow-hidden border border-zinc-700 group flex-shrink-0">
-        <Image src={s.imgUrl} alt="cover" fill className={`object-cover ${playingSong === s.previewUrl ? 'animate-[spin_4s_linear_infinite]' : ''}`} sizes="80px" unoptimized />
-        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
-          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePlay(s.previewUrl); }} className="w-10 h-10 bg-black/60 rounded-full flex items-center justify-center text-white pointer-events-auto shadow-lg hover:scale-105 transition-transform relative z-50">
-            {playingSong === s.previewUrl ? <IconStop /> : <IconPlay />}
-          </button>
-        </div>
-      </div>
-      <div className="flex-1 overflow-hidden">
-        <p className="font-bold text-lg truncate">{s.title}</p>
-        <p onClick={(e) => handleArtistClick(e, s.artistId, s.artist, s.imgUrl)} className="text-xs text-zinc-400 hover:text-[#1DB954] cursor-pointer inline-block mt-1 relative z-10 truncate max-w-full">{s.artist}</p>
-      </div>
-    </div>
-    <p className="text-xs mb-5 leading-relaxed">{parseMention(s.caption)}</p>
-    <div className="flex gap-6 border-t border-zinc-800/60 pt-4">
-      <button onClick={() => toggleLike(s.id)} className="flex items-center gap-2"><IconHeart filled={s.isLiked} />{formatCount(s.likes)}</button>
-      <button onClick={() => setActiveCommentSongId(activeCommentSongId === s.id ? null : s.id)} className="flex items-center gap-2"><IconComment />{formatCount(s.comments.length)}</button>
-    </div>
-    {activeCommentSongId === s.id && (
-      <div className="mt-4 bg-black border border-zinc-800/80 rounded-xl p-4 animate-fade-in">
-        <div className="flex flex-col gap-4 mb-4 max-h-[150px] overflow-y-auto scrollbar-hide">
-          {s.comments.map(c => (
-            <div key={c.id} className="text-[11px] flex items-start gap-2">
-              <span className="font-bold text-[#1DB954] shrink-0">@{c.user.handle}</span>
-              <span className="text-zinc-300 leading-relaxed break-words">{c.text}</span>
-            </div>
-          ))}
-          {s.comments.length === 0 && <p className="text-[10px] text-zinc-500">まだコメントはありません</p>}
-        </div>
-        <form onSubmit={(e) => { e.preventDefault(); submitComment(s.id); }} className="flex gap-2 items-center">
-          <input type="text" placeholder="コメントを追加..." value={commentInput} onChange={e => setCommentInput(e.target.value)} className="flex-1 bg-[#1c1c1e] rounded-full px-4 py-2 text-xs focus:outline-none" />
-          <button type="submit" className="text-[10px] font-bold text-black bg-white px-4 py-2 rounded-full shrink-0">Post</button>
-        </form>
-      </div>
-    )}
-  </div>
+  <FeedCard
+    key={s.id}
+    song={s}
+    timeZone={timeZone}
+    myProfileId={myProfile.id}
+    currentUserId={currentUser?.id}
+    playingSong={playingSong}
+    activeCommentSongId={activeCommentSongId}
+    commentInput={commentInput}
+    formatCount={formatCount}
+    displayLocalTime={displayLocalTime}
+    renderCaption={parseMention}
+    onOpenUser={(user) => { setViewingUser(user); setActiveTab('other_profile'); }}
+    onOpenOwnProfile={() => setActiveTab('profile')}
+    onShareVibe={handleShareVibe}
+    onDeleteVibe={deleteVibe}
+    onTogglePlay={togglePlay}
+    onArtistClick={handleArtistClick}
+    onToggleLike={toggleLike}
+    onToggleComments={(id) => setActiveCommentSongId(activeCommentSongId === id ? null : id)}
+    onCommentInputChange={setCommentInput}
+    onSubmitComment={submitComment}
+  />
 );
   useEffect(() => {
     const hasOpenModal = 
@@ -3298,33 +3308,19 @@ const renderFeedCard = (s: Song) => (
           </div>
         </div>
       )}
-      {draftSong && !showPostOverrideConfirm && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[1200] flex items-center justify-center p-6 animate-fade-in" onClick={cancelDraft}>
-          <div className="bg-[#1c1c1e] border border-zinc-800 p-8 rounded-[32px] w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
-            <div className="relative w-24 h-24 mx-auto mb-6">
-              <img src={draftSong.artworkUrl100.replace('100x100bb', '300x300bb')} className={`w-full h-full rounded-full shadow-lg border-2 border-zinc-800 object-cover ${playingSong === draftSong.previewUrl ? 'animate-[spin_10s_linear_infinite]' : ''}`} />
-            </div>
-            <p className="text-center font-bold text-sm truncate mb-1">{draftSong.trackName}</p>
-            <p className="text-center text-[#1DB954] text-[10px] mb-8 font-bold">{draftSong.artistName}</p>
-            <textarea placeholder="今日のVibeは？ (@でメンション)" value={draftCaption} onChange={(e) => setDraftCaption(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl p-4 text-xs text-white focus:outline-none min-h-[100px] resize-none mb-6" />
-            <div className="flex gap-4">
-              <button onClick={cancelDraft} className="flex-1 py-3.5 border border-zinc-800 rounded-xl text-xs font-bold uppercase">{t('cancel')}</button>
-              <button onClick={checkAndPost} className="flex-1 py-3.5 bg-white text-black rounded-xl text-xs font-bold uppercase">{t('postVibe')}</button>
-            </div>
-          </div>
-        </div>
-      )}
-      {showPostOverrideConfirm && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-2xl z-[1200] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowPostOverrideConfirm(null)}>
-          <div className="bg-[#1c1c1e] border border-zinc-800 p-8 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
-            <p className="text-center font-bold text-lg mb-6 leading-relaxed">今日はすでに投稿しています。<br />上書きして記録しますか？</p>
-            <div className="flex gap-4">
-              <button onClick={() => setShowPostOverrideConfirm(null)} className="flex-1 py-3.5 border border-zinc-800 rounded-xl text-xs font-bold uppercase">{t('cancel')}</button>
-              <button onClick={() => executePost(new Date())} className="flex-1 py-3.5 bg-white text-black rounded-xl text-xs font-bold uppercase">上書きする</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <SongPostModal
+        draftSong={draftSong}
+        showOverrideConfirm={showPostOverrideConfirm !== null}
+        draftCaption={draftCaption}
+        playingSong={playingSong}
+        cancelLabel={t('cancel')}
+        postLabel={t('postVibe')}
+        onCancelDraft={cancelDraft}
+        onCaptionChange={setDraftCaption}
+        onPost={checkAndPost}
+        onCancelOverride={() => setShowPostOverrideConfirm(null)}
+        onOverwrite={() => executePost(new Date())}
+      />
       {activeArtistProfile && (
         <div className="fixed inset-0 bg-black z-[1000] animate-fade-in flex flex-col overflow-y-auto">
           <div className="absolute top-0 w-full h-[50vh] z-0 pointer-events-none">
@@ -3613,174 +3609,39 @@ const renderFeedCard = (s: Song) => (
       )}
       {activeChatUserId && (
         <div className={`fixed inset-0 bg-black animate-fade-in flex flex-col ${showChatMusicSelector ? 'z-[1200]' : 'z-[900]'}`}>
-          <div className="flex items-center p-3 bg-[#0a0a0a]/95 backdrop-blur-md sticky top-0 border-b border-zinc-900 z-10">
-            <button onClick={handleGoBack} className="p-2 -ml-1 text-white hover:opacity-80 transition-opacity"><IconChevronLeft /></button>
-            <div className="flex-1 overflow-hidden px-2 flex flex-col">
-              <h2 className="text-white font-bold text-[16px] truncate flex items-center gap-1.5">
-                {activeChatUserId.startsWith('com') ? chatCommunities.find(c => c.id === activeChatUserId)?.name : activeChatUserId.startsWith('g') ? chatGroups.find(g => g.id === activeChatUserId)?.name : allProfiles.find(u => u.id === activeChatUserId)?.name || "Chat"}
-                {(activeChatUserId.startsWith('com') || activeChatUserId.startsWith('g')) && (
-                  <span className="text-[15px] font-normal text-zinc-400">
-                    ({activeChatUserId.startsWith('com') ? (activeCommunityMemberIds ? activeCommunityMemberIds.length : Math.max(1, chatCommunities.find(c => c.id === activeChatUserId)?.memberCount || 1)) : Math.max(1, chatGroups.find(g => g.id === activeChatUserId)?.memberIds.length || 1)})
-                  </span>
-                )}
-              </h2>
-            </div>
-            {(activeChatUserId.startsWith('com') || activeChatUserId.startsWith('g')) ? (
-              <button onClick={() => setShowChatDetails(true)} className="p-2 -mr-1 text-white hover:opacity-80 transition-opacity">
-                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-              </button>
-            ) : <div className="w-10"></div>}
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
-            {(chatHistory[activeChatUserId] || []).map((msg: any) => {
-              const sender = allProfiles.find(u => u.id === msg.senderId);
-              const isMe = msg.senderId === currentUser?.id;
-              const isGroup = activeChatUserId.startsWith('com') || activeChatUserId.startsWith('g');
-              const isHighlighted = jumpToMessageId === msg.id;
-              return (
-                <div 
-                  key={msg.id} 
-                  ref={(el) => { messageRefs.current[msg.id] = el; }}
-                  className={`flex gap-2 max-w-[85%] transition-all duration-1000 ${isMe ? 'self-end' : 'self-start'} ${isHighlighted ? 'bg-[#1DB954]/20 p-2 rounded-2xl ring-2 ring-[#1DB954] shadow-[0_0_20px_rgba(29,185,84,0.3)] scale-[1.02] z-10' : ''}`}
-                >
-                  {!isMe && sender && (
-                    <img
-                      src={sender.avatar}
-                      className="w-8 h-8 rounded-full object-cover self-end flex-shrink-0 cursor-pointer hover:opacity-80"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setProfileBackTarget({ tab: 'chat', chatUserId: activeChatUserId });
-                        setViewingUser(sender);
-                        setActiveTab('other_profile');
-                        setActiveChatUserId(null);
-                      }}
-                    />
-                  )}
-                  <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                    {!isMe && sender && <span className="text-[10px] text-zinc-500 mb-1 ml-1">{sender.name}</span>}
-                    {/* 💡 長押し（スマホ）＆右クリック（PC）で送信取り消しメニューを出す */}
-                    <div
-                      onContextMenu={(e) => { e.preventDefault(); if (isMe) setActiveCommentSongId(msg.id); }}
-                      style={{ WebkitTouchCallout: 'none', userSelect: 'none' }}
-                      className={`w-fit h-fit break-words shadow-sm relative ${msg.text.startsWith('[IMAGE]') ? 'p-0 bg-transparent cursor-pointer' : msg.text.startsWith('[MUSIC]') || msg.text.startsWith('[FILE]') ? `bg-[#1c1c1e] text-white p-3 rounded-2xl border border-zinc-800/50 ${isMe ? 'rounded-br-[4px]' : 'rounded-bl-[4px]'} cursor-pointer` : `px-3.5 py-2 cursor-pointer ${isMe ? 'bg-[#8de055] text-black rounded-[20px] rounded-br-[4px]' : 'bg-[#2c2c2e] text-white rounded-[20px] rounded-bl-[4px]'}`}`}
-                    >
-                      {msg.text.startsWith('[VOICE]') ? (
-                        <audio controls src={msg.text.replace('[VOICE]', '')} className="max-w-[200px] h-10" />
-                      ) : msg.text.startsWith('[IMAGE]') ? (
-                        <img src={msg.text.replace('[IMAGE]', '')} onClick={(e) => { e.stopPropagation(); setViewingChatImage({ ...msg, sender }); }} className="max-w-[240px] max-h-[300px] object-cover rounded-2xl hover:opacity-90 transition-opacity shadow-sm" alt="chat image" />
-                      ) : msg.text.startsWith('[FILE]') ? (
-                        (() => {
-                          const parts = msg.text.replace('[FILE]', '').split('|');
-                          const fileName = parts[0] || "不明なファイル";
-                          const fileUrl = parts[1] || "#";
-                          const fileSize = parts[2] ? `サイズ: ${parts[2]}` : "サイズ不明";
-                          const extMatch = fileName.match(/\.([a-zA-Z0-9]+)$/);
-                          const ext = extMatch ? extMatch[1].toUpperCase() : 'FILE';
-                          return (
-                            <a href={fileUrl} target="_blank" rel="noopener noreferrer" className={`flex items-center gap-3 w-[240px] p-2 hover:opacity-80 transition-opacity ${isMe ? 'bg-black/10' : 'bg-black/20'} rounded-xl`} onClick={(e) => e.stopPropagation()}>
-                              <div className="w-10 h-10 flex items-center justify-center flex-shrink-0 bg-white rounded-lg text-red-500 shadow-sm">
-                                <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                              </div>
-                              <div className="flex-1 overflow-hidden flex flex-col justify-center">
-                                <span className="text-[14px] font-bold truncate leading-tight text-white mb-0.5">
-                                  {fileName}
-                                </span>
-                                <span className="text-[10px] font-bold text-zinc-400">
-                                  {ext} • {parts[2] ? `サイズ: ${parts[2]}` : "サイズ情報なし"}
-                                </span>
-                              </div>
-                            </a>
-                          );
-                        })()
-                      ) : msg.text.startsWith('[MUSIC]') ? (
-                        (() => {
-                          const [trackId, trackName, artistName, artworkUrl, previewUrl] = msg.text.replace('[MUSIC]', '').split('|');
-                          return (
-                            <div className="flex items-center gap-4 w-[240px]" onClick={(e) => e.stopPropagation()}>
-                              <div className="relative w-14 h-14 rounded-full overflow-hidden shrink-0 shadow-md border border-zinc-800 hover:opacity-80 transition-opacity" onClick={() => togglePlay(previewUrl, { title: trackName, artist: artistName, imgUrl: artworkUrl })}>
-                                <img src={artworkUrl} className={`w-full h-full object-cover ${playingSong === previewUrl ? 'opacity-40 animate-[spin_4s_linear_infinite]' : ''}`} />
-                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-white">
-                                  {playingSong === previewUrl ? <IconStop /> : <IconPlay />}
-                                </div>
-                              </div>
-                              <div className="flex-1 overflow-hidden">
-                                <p className="font-bold text-[15px] text-white truncate leading-tight">{trackName}</p>
-                                <p onClick={(e) => handleArtistClick(e, parseInt(trackId) || 0, artistName, artworkUrl)} className="text-[11px] text-zinc-400 truncate mt-1 hover:underline hover:text-[#1DB954] transition-colors relative z-10 inline-block">{artistName}</p>
-                              </div>
-                            </div>
-                          );
-                        })()
-                      ) : (
-                        <p className="text-[15px] font-medium leading-snug">{msg.text}</p>
-                      )}
-                      {/* 💡 コンテキストメニュー（右クリック・長押しで出現） */}
-                      {activeCommentSongId === msg.id && isMe && (
-                        <>
-                          <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); setActiveCommentSongId(null); }}></div>
-                          <div className={`absolute top-full ${isMe ? 'right-0' : 'left-0'} mt-2 bg-[#2c2c2e] border border-zinc-700 rounded-xl shadow-2xl z-50 overflow-hidden min-w-[160px] animate-fade-in flex flex-col`}>
-                            <button onClick={(e) => { e.stopPropagation(); setActiveCommentSongId(msg.id + '_confirm'); }} className="w-full text-left px-4 py-3 text-sm text-red-500 font-bold hover:bg-zinc-700 transition-colors flex items-center gap-2">
-                              <IconTrash /> 送信取消
-                            </button>
-                            <button onClick={(e) => { e.stopPropagation(); setActiveCommentSongId(null); }} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-zinc-700 transition-colors border-t border-zinc-700">
-                              キャンセル
-                            </button>
-                          </div>
-                        </>
-                      )}
-                      {/* 💡 送信取消の美しい確認モーダル */}
-                      {activeCommentSongId === msg.id + '_confirm' && isMe && (
-                        <div className="fixed inset-0 z-[1300] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={(e) => { e.stopPropagation(); setActiveCommentSongId(null); }}>
-                          <div className="bg-[#1c1c1e] rounded-3xl p-6 w-full max-w-xs shadow-2xl border border-zinc-800 flex flex-col items-center text-center" onClick={(e) => e.stopPropagation()}>
-                            <div className="w-14 h-14 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mb-4">
-                              <IconTrash />
-                            </div>
-                            <h3 className="text-lg font-bold text-white mb-2">送信を取り消しますか？</h3>
-                            <p className="text-xs text-zinc-400 mb-6 leading-relaxed">相手の画面からもこのメッセージや写真が<br/>完全に削除されます。</p>
-                            <div className="flex gap-3 w-full">
-                              <button onClick={(e) => { e.stopPropagation(); setActiveCommentSongId(null); }} className="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition-colors">キャンセル</button>
-                              <button onClick={(e) => { e.stopPropagation(); deleteChatMessage(msg.id, activeChatUserId!); setActiveCommentSongId(null); }} className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-bold transition-colors shadow-lg">取り消す</button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-1 mt-1">
-                      <span className="text-[9px] text-zinc-500">{displayLocalTime(msg.timestamp, timeZone)}</span>
-                      {isMe && msg.isRead && (
-                        <span className="text-[9px] text-[#1DB954] font-bold">
-                          {activeChatUserId?.startsWith('g') || activeChatUserId?.startsWith('com') 
-                            ? `既読 ${msg.readCount || 0}` 
-                            : '既読'}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-            <div ref={chatEndRef} />
-          </div>
-          {/* 💡 ＋ボタンを押した時に開くメニュー */}
-          {showChatPlusMenu && (
-            <div className="bg-[#1c1c1e] p-6 grid grid-cols-4 gap-4 border-t border-zinc-900 animate-fade-in absolute bottom-[68px] w-full z-20">
-              <label className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80">
-                <div className="w-12 h-12 bg-zinc-800 rounded-[18px] flex items-center justify-center text-white"><IconFile /></div>
-                <span className="text-[11px] font-bold text-zinc-400">ファイル</span>
-                <input type="file" multiple onChange={(e) => {
-                  if(e.target.files) {
-                    const newFiles = Array.from(e.target.files).map(f => ({ type: 'file' as const, data: URL.createObjectURL(f), name: f.name, file: f }));
-                    setPendingAttachments(prev => [...prev, ...newFiles]);
-                  }
-                  e.target.value = '';
-                  setShowChatPlusMenu(false);
-                }} className="absolute opacity-0 w-0 h-0 overflow-hidden" />
-              </label>
-              <div className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80" onClick={() => { setShowChatMusicSelector(true); setShowChatPlusMenu(false); }}>
-                <div className="w-12 h-12 bg-zinc-800 rounded-[18px] flex items-center justify-center text-white"><IconMusic /></div>
-                <span className="text-[11px] font-bold text-zinc-400">音楽</span>
-              </div>
-            </div>
-          )}
+          <ChatRoomHeader
+            activeChatUserId={activeChatUserId}
+            allProfiles={allProfiles}
+            chatGroups={chatGroups}
+            chatCommunities={chatCommunities}
+            activeCommunityMemberIds={activeCommunityMemberIds}
+            onBack={handleGoBack}
+            onOpenDetails={() => setShowChatDetails(true)}
+          />
+          <ChatMessages
+            activeChatUserId={activeChatUserId}
+            messages={chatHistory[activeChatUserId] || []}
+            allProfiles={allProfiles}
+            currentUserId={currentUser?.id}
+            timeZone={timeZone}
+            playingSong={playingSong}
+            activeMenuId={activeCommentSongId}
+            jumpToMessageId={jumpToMessageId}
+            messageRefs={messageRefs}
+            chatEndRef={chatEndRef}
+            displayLocalTime={displayLocalTime}
+            onOpenSenderProfile={(sender) => {
+              setProfileBackTarget({ tab: 'chat', chatUserId: activeChatUserId });
+              setViewingUser(sender);
+              setActiveTab('other_profile');
+              setActiveChatUserId(null);
+            }}
+            onOpenImage={setViewingChatImage}
+            onTogglePlay={togglePlay}
+            onArtistClick={handleArtistClick}
+            onSetActiveMenuId={setActiveCommentSongId}
+            onDeleteMessage={deleteChatMessage}
+          />
           {/* 💡 音楽選択モーダル（投稿作成画面風UI・最前面表示） */}
           {showChatMusicSelector && (
             <div className="fixed inset-0 z-[1200] flex flex-col justify-end animate-fade-in">
@@ -3938,97 +3799,33 @@ const renderFeedCard = (s: Song) => (
               </div>
             </div>
           )}
-          {/* 💡 マイクボタンを押した時に開く録音パネル (LINE風) */}
-          {showVoiceMenu && (
-            <div className="bg-[#1c1c1e] border-t border-zinc-900 animate-fade-in absolute bottom-[68px] w-full z-20 flex flex-col items-center justify-center min-h-[250px] shadow-[0_-10px_40px_rgba(0,0,0,0.5)]">
-              <button onClick={cancelVoiceRecording} className="absolute top-4 right-4 p-2 text-zinc-400 hover:text-white"><IconCross /></button>
-              {/* 裏で音声を再生するための隠しプレイヤー */}
-              {draftVoice && <audio ref={draftAudioRef} src={draftVoice.url} onEnded={() => setIsPlayingDraft(false)} className="hidden" />}
-              {!isRecording && !draftVoice && (
-                <>
-                  <p className="text-zinc-400 text-sm font-bold mb-8">ボタンをタップして録音してください</p>
-                  <div onClick={startVoiceRecording} className="w-28 h-28 rounded-full border-4 border-zinc-800 flex items-center justify-center cursor-pointer hover:bg-zinc-800/50 transition-colors">
-                    <div className="w-10 h-10 bg-red-500 rounded-full"></div>
-                  </div>
-                </>
-              )}
-              {isRecording && (
-                <>
-                  <p className="text-red-500 text-3xl font-bold mb-8 tracking-widest">{Math.floor(recordingSeconds / 60).toString().padStart(2, '0')}:{(recordingSeconds % 60).toString().padStart(2, '0')}</p>
-                  <div onClick={stopVoiceRecording} className="w-28 h-28 rounded-full border-4 border-red-500/30 flex items-center justify-center cursor-pointer hover:bg-red-500/10 transition-colors animate-pulse">
-                    <div className="w-8 h-8 bg-red-500 rounded-sm"></div>
-                  </div>
-                </>
-              )}
-              {draftVoice && (
-                <>
-                  <p className="text-[#1DB954] text-3xl font-bold mb-8 tracking-widest">{Math.floor(recordingSeconds / 60).toString().padStart(2, '0')}:{(recordingSeconds % 60).toString().padStart(2, '0')}</p>
-                  <div className="flex items-center gap-8">
-                    <button onClick={cancelVoiceRecording} className="w-14 h-14 rounded-full border-2 border-zinc-700 flex items-center justify-center text-red-500 hover:bg-zinc-800 transition-colors">
-                      <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    </button>
-                    <button onClick={toggleDraftPlay} className="w-24 h-24 rounded-full border-4 border-[#1DB954] flex items-center justify-center text-[#1DB954] hover:bg-[#1DB954]/10 transition-colors">
-                      {isPlayingDraft ? <IconStop /> : <IconPlay />}
-                    </button>
-                    <button onClick={sendVoiceMessage} className="w-14 h-14 rounded-full border-2 border-zinc-700 flex items-center justify-center text-blue-500 hover:bg-zinc-800 pl-1 transition-colors">
-                      <IconSend />
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-          {/* LINE風の入力エリア（完成版） */}
-          <div className="bg-[#0a0a0a] border-t border-zinc-900 flex flex-col relative z-30">
-            {pendingAttachments.length > 0 && (
-              <div className="flex flex-col gap-2 p-3 mx-3 mt-3 bg-[#1c1c1e] rounded-xl border border-zinc-800 animate-fade-in max-h-[150px] overflow-y-auto scrollbar-hide">
-                {pendingAttachments.map((att, idx) => (
-                  <div key={idx} className="flex items-center justify-between bg-black/50 p-2 rounded-lg">
-                    <div className="flex items-center gap-3">
-                      {att.type === 'image' ? (
-                        <img src={att.data} className="w-8 h-8 rounded object-cover" />
-                      ) : (
-                        <span className="text-[#1DB954]"><IconFile /></span>
-                      )}
-                      <span className="text-xs text-white font-bold truncate max-w-[180px]">
-                        {att.name}
-                      </span>
-                    </div>
-                    <button onClick={() => setPendingAttachments(prev => prev.filter((_, i) => i !== idx))} className="w-6 h-6 bg-zinc-800 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors shrink-0">
-                      <IconCross />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className="p-3 flex gap-3 items-center">
-              <button onClick={() => { setShowChatPlusMenu(!showChatPlusMenu); setShowVoiceMenu(false); }} className={`w-7 h-7 flex items-center justify-center transition-colors flex-shrink-0 ${showChatPlusMenu ? 'text-white rotate-45' : 'text-zinc-400 hover:text-white'}`}>
-                <IconPlus />
-              </button>
-              <label className="relative w-7 h-7 flex-shrink-0 flex items-center justify-center text-zinc-400 hover:text-white transition-colors cursor-pointer">
-                <IconImage />
-                <input type="file" accept="image/*" multiple onChange={(e) => {
-                  if(e.target.files) {
-                    const newFiles = Array.from(e.target.files).map(f => ({ type: 'image' as const, data: URL.createObjectURL(f), name: f.name, file: f }));
-                    setPendingAttachments(prev => [...prev, ...newFiles]);
-                  }
-                  e.target.value = '';
-                }} className="absolute opacity-0 w-0 h-0 overflow-hidden" />
-              </label>
-              <div className="flex-1 bg-[#1c1c1e] rounded-full px-4 py-2 flex items-center">
-                <input type="text" placeholder="Aa" value={chatMessageInput} onChange={(e) => setChatMessageInput(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) submitChatMessage(activeChatUserId!); }} className="w-full bg-transparent text-[15px] text-white focus:outline-none" />
-              </div>
-              {chatMessageInput.trim() || pendingAttachments.length > 0 ? (
-                <button onClick={() => submitChatMessage(activeChatUserId!)} className="w-8 h-8 rounded-full flex items-center justify-center bg-[#1DB954] text-black shadow-sm flex-shrink-0 transition-colors hover:scale-105">
-                  <IconSend />
-                </button>
-              ) : (
-                <button onClick={() => { setShowVoiceMenu(!showVoiceMenu); setShowChatPlusMenu(false); }} className={`w-8 h-8 rounded-full flex items-center justify-center shadow-sm flex-shrink-0 transition-colors ${showVoiceMenu ? 'bg-white text-black' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}>
-                  <IconMic />
-                </button>
-              )}
-            </div>
-          </div>
+          <ChatInputBar
+            messageInput={chatMessageInput}
+            pendingAttachments={pendingAttachments}
+            showChatPlusMenu={showChatPlusMenu}
+            showVoiceMenu={showVoiceMenu}
+            isRecording={isRecording}
+            recordingSeconds={recordingSeconds}
+            draftVoice={draftVoice}
+            draftAudioRef={draftAudioRef}
+            isPlayingDraft={isPlayingDraft}
+            onMessageChange={setChatMessageInput}
+            onTogglePlusMenu={() => { setShowChatPlusMenu(!showChatPlusMenu); setShowVoiceMenu(false); }}
+            onToggleVoiceMenu={() => { setShowVoiceMenu(!showVoiceMenu); setShowChatPlusMenu(false); }}
+            onAddAttachments={(attachments) => {
+              setPendingAttachments(prev => [...prev, ...attachments]);
+              setShowChatPlusMenu(false);
+            }}
+            onRemoveAttachment={(index) => setPendingAttachments(prev => prev.filter((_, i) => i !== index))}
+            onOpenMusicSelector={() => { setShowChatMusicSelector(true); setShowChatPlusMenu(false); }}
+            onSubmitMessage={() => submitChatMessage(activeChatUserId!)}
+            onCancelVoiceRecording={cancelVoiceRecording}
+            onStartVoiceRecording={startVoiceRecording}
+            onStopVoiceRecording={stopVoiceRecording}
+            onToggleDraftPlay={toggleDraftPlay}
+            onSendVoiceMessage={sendVoiceMessage}
+            onDraftAudioEnded={() => setIsPlayingDraft(false)}
+          />
           {showChatDetails && (
             <div className="absolute inset-0 bg-[#0a0a0a] z-[950] flex flex-col animate-fade-in">
               <div className="flex items-center p-4 border-b border-zinc-900 sticky top-0 bg-[#0a0a0a]">
@@ -4737,24 +4534,29 @@ const renderFeedCard = (s: Song) => (
           </div>
         </div>
       )}
-      {isEditingProfile && (
-        <div className="fixed inset-0 bg-black/90 z-[500] flex items-center justify-center p-6 animate-fade-in">
-          <div className="bg-[#1c1c1e] w-full max-w-sm rounded-[24px] p-6 flex flex-col gap-4 shadow-2xl relative max-h-[80vh] overflow-y-auto">
-            <h3 className="text-center font-bold text-lg mb-2">{t('editProfile')}</h3>
-            <div className="flex flex-col items-center mb-2"><div className="relative w-20 h-20 mb-3 group cursor-pointer mx-auto"><img src={editAvatar} className="w-full h-full rounded-full object-cover opacity-70 group-hover:opacity-50" /><div className="absolute inset-0 flex items-center justify-center pointer-events-none"><IconCamera /></div><input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" /></div></div>
-            <div className="space-y-3">
-              <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="名前" className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none" />
-              <div className="flex items-center bg-black border border-zinc-800 rounded-xl overflow-hidden focus-within:border-zinc-500"><span className="pl-3.5 text-zinc-500 font-bold">@</span><input type="text" value={editHandle} onChange={(e) => setEditHandle(e.target.value)} placeholder="ユーザーID" className="w-full bg-transparent p-3.5 text-sm text-white focus:outline-none" /></div>
-              <textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="自己紹介" className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none min-h-[60px]" />
-              <div><label className="text-[10px] text-zinc-500 ml-1 mb-1 block">ハッシュタグ (カンマ区切り)</label><input type="text" value={editHashtags} onChange={(e) => setEditHashtags(e.target.value)} placeholder="例: 邦ロック, Vaundy" className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none" /></div>
-              <div><label className="text-[10px] text-zinc-500 ml-1 mb-1 block">ライブ参戦履歴 (カンマ区切り)</label><input type="text" value={editLiveHistory} onChange={(e) => setEditLiveHistory(e.target.value)} placeholder="例: Tele 2026ツアー, VIVA LA ROCK" className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none" /></div>
-              <div><label className="text-[10px] text-zinc-500 ml-1 mb-1 block">X (旧Twitter) のリンク</label><input type="text" value={editTwitter} onChange={(e) => setEditTwitter(e.target.value)} placeholder="例: https://x.com/username" className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none" /></div>
-              <div><label className="text-[10px] text-zinc-500 ml-1 mb-1 block">Instagram のリンク</label><input type="text" value={editInstagram} onChange={(e) => setEditInstagram(e.target.value)} placeholder="例: https://instagram.com/username" className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none" /></div>
-            </div>
-            <div className="flex gap-3 mt-4 sticky bottom-0 bg-[#1c1c1e] pt-2"><button onClick={() => setIsEditingProfile(false)} className="flex-1 py-3.5 border border-zinc-800 rounded-xl text-xs font-bold uppercase hover:bg-zinc-800 transition-colors">{t('cancel')}</button><button onClick={saveProfileChanges} className="flex-1 py-3.5 bg-white text-black rounded-xl text-xs font-bold uppercase hover:bg-gray-200 transition-colors">保存</button></div>
-          </div>
-        </div>
-      )}
+      <EditProfileModal
+        isOpen={isEditingProfile}
+        title={t('editProfile')}
+        cancelLabel={t('cancel')}
+        editAvatar={editAvatar}
+        editName={editName}
+        editHandle={editHandle}
+        editBio={editBio}
+        editHashtags={editHashtags}
+        editLiveHistory={editLiveHistory}
+        editTwitter={editTwitter}
+        editInstagram={editInstagram}
+        onClose={() => setIsEditingProfile(false)}
+        onSave={saveProfileChanges}
+        onImageUpload={handleImageUpload}
+        onNameChange={setEditName}
+        onHandleChange={setEditHandle}
+        onBioChange={setEditBio}
+        onHashtagsChange={setEditHashtags}
+        onLiveHistoryChange={setEditLiveHistory}
+        onTwitterChange={setEditTwitter}
+        onInstagramChange={setEditInstagram}
+      />
       {showAppInfoModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[950] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowAppInfoModal(null)}>
           <div className="bg-[#1c1c1e] border border-zinc-800 p-8 rounded-3xl w-full max-w-sm shadow-2xl relative text-center" onClick={e => e.stopPropagation()}>
@@ -4765,31 +4567,16 @@ const renderFeedCard = (s: Song) => (
           </div>
         </div>
       )}
-      {showUserListModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[900] flex items-center justify-center p-6 animate-fade-in" onClick={() => { setShowUserListModal(null); setModalSearchQuery(""); }}>
-          <div className="bg-[#1c1c1e] border border-zinc-800 p-6 rounded-3xl w-full max-w-sm shadow-2xl flex flex-col max-h-[70vh]" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-4 shrink-0">
-              <h3 className="text-sm font-bold uppercase tracking-widest">{showUserListModal}</h3>
-              <button onClick={() => { setShowUserListModal(null); setModalSearchQuery(""); }} className="text-zinc-500 hover:text-white p-2"><IconCross /></button>
-            </div>
-            <div className="relative mb-4 shrink-0">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2"><IconSearch /></div>
-              <input type="text" placeholder="Search users..." value={modalSearchQuery} onChange={(e) => setModalSearchQuery(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-lg py-2 pl-10 text-xs text-white focus:outline-none" />
-            </div>
-            <div className="flex flex-col gap-5 overflow-y-auto pr-2 flex-1 scrollbar-hide">
-              {displayModalUsers.map(u => (
-                <div key={u.id} className="flex items-center justify-between">
-                  <div className="flex items-center gap-3 cursor-pointer" onClick={() => { setViewingUser(u); setActiveTab('other_profile'); setShowUserListModal(null); }}>
-                    <img src={u.avatar} className="w-10 h-10 rounded-full object-cover border border-zinc-800" />
-                    <div><p className="font-bold text-xs flex items-center">{u.name}</p><p className="text-[10px] text-zinc-500">@{u.handle}</p></div>
-                  </div>
-                  <button onClick={() => toggleFollow(u.id)} className={`px-4 py-1.5 rounded-full text-[9px] font-bold uppercase tracking-wider ${followedUsers.has(u.id) ? 'border border-zinc-700 text-zinc-400' : 'bg-white text-black'}`}>{followedUsers.has(u.id) ? 'Following' : 'Follow'}</button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+      <UserListModal
+        title={showUserListModal}
+        users={displayModalUsers}
+        searchQuery={modalSearchQuery}
+        followedUsers={followedUsers}
+        onClose={() => { setShowUserListModal(null); setModalSearchQuery(""); }}
+        onSearchChange={setModalSearchQuery}
+        onOpenUser={(u) => { setViewingUser(u); setActiveTab('other_profile'); setShowUserListModal(null); }}
+        onToggleFollow={toggleFollow}
+      />
       <div className="p-4 sm:p-6">
         {/* 🏠 Home タブ */}
         {activeTab === 'home' && (
@@ -4805,44 +4592,20 @@ const renderFeedCard = (s: Song) => (
               <button onClick={() => setHomeFeedMode('all')} className={`pb-2 text-sm font-bold transition-colors ${homeFeedMode === 'all' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>Global</button>
               <button onClick={() => setHomeFeedMode('following')} className={`pb-2 text-sm font-bold transition-colors ${homeFeedMode === 'following' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>Following</button>
             </div>
-            <div className="relative mb-10 z-40">
-              <input type="text" placeholder={t('searchPlaceholder')} onFocus={() => setIsSearchFocused(true)} onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full bg-[#1c1c1e] rounded-xl p-4 text-sm text-white focus:outline-none focus:border-zinc-500 transition-all shadow-sm" />
-              {isSearchFocused && searchQuery && (searchArtistInfo || searchResults.length > 0) && (
-                <div className="absolute top-full left-0 w-full mt-2 bg-[#1c1c1e] border border-zinc-800 rounded-xl overflow-hidden shadow-2xl max-h-[350px] overflow-y-auto">
-                  {searchArtistInfo && (
-                    <div className="p-4 border-b border-zinc-800 flex items-center gap-4 cursor-pointer hover:bg-zinc-800/50" onMouseDown={e => handleArtistClick(e, searchArtistInfo.artistId, searchArtistInfo.artistName, searchArtistInfo.artworkUrl)}>
-                      <img src={searchArtistInfo.artworkUrl} className="w-12 h-12 rounded-full object-cover" />
-                      <div className="flex-1"><p className="font-bold text-sm">{searchArtistInfo.artistName}</p><p className="text-[10px] text-zinc-400 mt-0.5">アーティスト</p></div>
-                      <IconChevronRight />
-                    </div>
-                  )}
-                  {searchResults.length > 0 && (
-                    <>
-                      <p className="text-[10px] font-bold text-zinc-500 uppercase px-4 pt-4 pb-2">{t('topResults')}</p>
-                      {searchResults.map(tr => (
-                        <div key={tr.trackId} onMouseDown={(e) => { e.preventDefault(); setDraftSong(tr); }} className="p-4 flex items-center gap-4 hover:bg-zinc-800 cursor-pointer">
-                          <img src={tr.artworkUrl60} className="w-10 h-10 rounded" />
-                          <div className="flex-1 overflow-hidden"><p className="font-bold text-sm truncate">{tr.trackName}</p><p className="text-[10px] text-zinc-400 mt-0.5 truncate">{tr.artistName}</p></div>
-                        </div>
-                      ))}
-                    </>
-                  )}
-                </div>
-              )}
-              {isSearchFocused && !searchQuery && trendingSongs.length > 0 && (
-                <div className="absolute top-full left-0 w-full mt-2 bg-[#1c1c1e] border border-zinc-800 rounded-xl overflow-hidden shadow-2xl max-h-[300px] overflow-y-auto">
-                  <p className="text-[10px] font-bold text-zinc-500 uppercase px-4 pt-4 pb-2 flex items-center"><IconTrend />Trending Now</p>
-                  {trendingSongs.map((tr, i) => (
-                    <div key={tr.trackId} onMouseDown={(e) => { e.preventDefault(); setDraftSong(tr); }} className="p-4 flex items-center gap-4 hover:bg-zinc-800 cursor-pointer group">
-                      <p className="text-zinc-600 font-bold text-sm w-4 text-right group-hover:hidden">{i + 1}</p>
-                      <div className="w-4 text-[#1DB954] hidden group-hover:block"><IconPlay /></div>
-                      <img src={tr.artworkUrl60} className="w-10 h-10 rounded" />
-                      <div className="flex-1 overflow-hidden"><p className="font-bold text-sm truncate">{tr.trackName}</p><p className="text-[10px] text-zinc-400 mt-0.5 truncate">{tr.artistName}</p></div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <MusicSearchBox
+              placeholder={t('searchPlaceholder')}
+              searchQuery={searchQuery}
+              isSearchFocused={isSearchFocused}
+              searchArtistInfo={searchArtistInfo}
+              searchResults={searchResults}
+              trendingSongs={trendingSongs}
+              topResultsLabel={t('topResults')}
+              onFocus={() => setIsSearchFocused(true)}
+              onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+              onSearchQueryChange={setSearchQuery}
+              onArtistMouseDown={handleArtistClick}
+              onSelectSong={setDraftSong}
+            />
             <div className="flex flex-col gap-6">
               {allFeedVibes.length === 0 && !isLoadingVibes ? (
                 <p className="text-center text-zinc-500 py-20 text-sm">今日のVibeを記録しましょう</p>
@@ -5021,174 +4784,70 @@ const renderFeedCard = (s: Song) => (
         )}
         {/* 📝 Article (Read) タブ：本番・AI分析連携版 */}
         {activeTab === 'article' && (
-          <div className="mt-6 animate-fade-in px-2 pb-10">
-            <div className="flex justify-between items-center mb-6 px-2">
-              <h2 className="text-2xl font-black tracking-tight">Articles</h2>
-              <button onClick={() => setShowWriteArticleModal(true)} className="w-9 h-9 bg-white text-black rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
-                <IconEdit />
-              </button>
-            </div>
-            {/* 💡 タブメニュー */}
-            <div className="flex gap-6 mb-6 px-3 border-b border-zinc-900 overflow-x-auto scrollbar-hide">
-              <button onClick={() => setArticleTabMode('trend')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'trend' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>Trend</button>
-              <button onClick={() => setArticleTabMode('global')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'global' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>Global</button>
-              <button onClick={() => setArticleTabMode('following')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'following' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>Following</button>
-              <button onClick={() => setArticleTabMode('liked')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'liked' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>Liked</button>
-              <button onClick={() => setArticleTabMode('my_posts')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'my_posts' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>Mine</button>
-              <button onClick={() => setArticleTabMode('drafts')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'drafts' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>Drafts</button>
-            </div>
-            {/* 💡 記事一覧 */}
-            {articleTabMode === 'drafts' ? (
-              <div className="flex flex-col gap-5">
-                {draftArticles.length > 0 ? draftArticles.map((draft) => (
-                  <div key={draft.id} onClick={() => {
-                    setNewArticleTitle(draft.title);
-                    setNewArticleContent(draft.content);
-                    setNewArticleCover(draft.coverUrl || null);
-                    setCurrentDraftId(draft.id);
-                    setEditingArticleId(null);
-                    setShowWriteArticleModal(true);
-                  }} className="bg-[#1c1c1e] rounded-2xl p-5 shadow-lg border border-zinc-800 cursor-pointer hover:bg-zinc-800/50 transition-colors border-l-4 border-l-[#1DB954] relative group">
-                    <div className="flex justify-between items-start mb-3">
-                      <h3 className="font-bold text-[17px] text-white truncate pr-10">{draft.title || "無題の下書き"}</h3>
-                      <span className="text-[10px] font-bold text-zinc-400 bg-zinc-900 px-2 py-1 rounded-md shrink-0">{draft.date}</span>
-                    </div>
-                    <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">{draft.content.replace(/<[^>]*>/g, '') || "本文がありません"}</p>
-                    <button onClick={(e) => {
-                      e.stopPropagation();
-                      if(window.confirm("この下書きを削除しますか？")) {
-                        setDraftArticles(prev => {
-                          const next = prev.filter(d => d.id !== draft.id);
-                          localStorage.setItem('echoes_drafts_v2', JSON.stringify(next));
-                          return next;
-                        });
-                      }
-                    }} className="absolute top-4 right-4 w-8 h-8 bg-black/60 rounded-full flex items-center justify-center text-zinc-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <IconTrash />
-                    </button>
-                  </div>
-                )) : (
-                  <div className="py-20 text-center text-zinc-500">
-                    <IconEdit2 />
-                    <p className="text-sm font-bold mt-4">保存された下書きはありません</p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex flex-col gap-5">
-                {displayArticles.length > 0 ? displayArticles.map((article) => (
-                  <div key={article.id} className="bg-[#1c1c1e] rounded-2xl overflow-hidden shadow-lg border border-zinc-800 relative group transition-colors">
-                    <div className="cursor-pointer flex flex-col" onClick={() => setViewingArticle(article)}>
-                      <img src={article.coverUrl} className="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-500" />
-                      <div className="p-5 relative bg-[#1c1c1e]">
-                        <h3 className="font-bold text-[17px] mb-2 leading-snug">{article.title}</h3>
-                        <p className="text-xs text-zinc-400 mb-4 line-clamp-2 leading-relaxed">{article.content.replace(/<[^>]*>/g, '')}</p>
-                        <div className="flex items-center justify-between mt-4 pt-4 border-t border-zinc-800/50">
-                          <div className="flex items-center gap-2" onClick={(e) => { e.stopPropagation(); setViewingUser(article.author); setActiveTab('other_profile'); }}>
-                            <img src={article.author.avatar} className="w-6 h-6 rounded-full object-cover border border-zinc-700" />
-                            <span className="text-[11px] font-bold text-white flex items-center gap-1">
-                              {article.author.name} {article.author.isVerified && <IconVerified />}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-4 text-zinc-400">
-                            <button onClick={(e) => { e.stopPropagation(); toggleArticleLike(article.id); }} className={`flex items-center gap-1 text-[11px] font-bold ${article.isLiked ? 'text-[#1DB954]' : 'hover:text-white'}`}>
-                              <IconHeart filled={article.isLiked} /> {article.likes}
-                            </button>
-                            <span className="flex items-center gap-1 text-[11px] font-bold"><IconComment /> {article.comments.length}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button onClick={(e) => {
-                        e.stopPropagation();
-                        if (navigator.share) {
-                          navigator.share({ title: `Echoes - ${article.title}`, text: `${article.author.name}の記事をチェック！`, url: 'https://echo.es' }).catch(() => { });
-                        } else {
-                          showToast("URLをクリップボードにコピーしました。");
-                        }
-                      }} className="w-8 h-8 rounded-full bg-black/60 text-zinc-400 hover:text-white hover:bg-black flex items-center justify-center transition-colors" title="シェア"><IconShareExternal /></button>
-                      {article.author.id === myProfile.id && (
-                        <>
-                          <button onClick={(e) => { e.stopPropagation(); startEditingArticle(article); }} className="w-8 h-8 rounded-full bg-black/60 text-zinc-400 hover:text-white hover:bg-black flex items-center justify-center transition-colors" title="編集"><IconEdit2 /></button>
-                          <button onClick={(e) => { e.stopPropagation(); deleteArticle(article.id); }} className="w-8 h-8 rounded-full bg-black/60 text-zinc-400 hover:text-red-400 hover:bg-black flex items-center justify-center transition-colors" title="削除"><IconTrash /></button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )) : (
-                  <div className="py-20 text-center text-zinc-500">
-                    <IconArticle />
-                    <p className="text-sm font-bold mt-4">記事がありません</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
+          <ArticleListSection
+            articleTabMode={articleTabMode}
+            displayArticles={displayArticles}
+            draftArticles={draftArticles}
+            myProfileId={myProfile.id}
+            onChangeTab={setArticleTabMode}
+            onOpenWriter={() => setShowWriteArticleModal(true)}
+            onOpenArticle={setViewingArticle}
+            onOpenAuthor={(author) => { setViewingUser(author); setActiveTab('other_profile'); }}
+            onOpenDraft={(draft) => {
+              setNewArticleTitle(draft.title);
+              setNewArticleContent(draft.content);
+              setNewArticleCover(draft.coverUrl || null);
+              setCurrentDraftId(draft.id);
+              setEditingArticleId(null);
+              setShowWriteArticleModal(true);
+            }}
+            onDeleteDraft={(draftId) => {
+              if(window.confirm("この下書きを削除しますか？")) {
+                setDraftArticles(prev => {
+                  const next = prev.filter(d => d.id !== draftId);
+                  localStorage.setItem('echoes_drafts_v2', JSON.stringify(next));
+                  return next;
+                });
+              }
+            }}
+            onToggleArticleLike={toggleArticleLike}
+            onStartEditingArticle={startEditingArticle}
+            onDeleteArticle={deleteArticle}
+            onShareArticle={(article) => {
+              if (navigator.share) {
+                navigator.share({ title: `Echoes - ${article.title}`, text: `${article.author.name}の記事をチェック！`, url: 'https://echo.es' }).catch(() => { });
+              } else {
+                showToast("URLをクリップボードにコピーしました。");
+              }
+            }}
+          />
         )}
         {/* 💬 Chat タブ */}
         {activeTab === 'chat' && (
-          <div className="mt-8 animate-fade-in px-2">
-            <h2 className="text-2xl font-bold tracking-tight mb-6 px-2">{t('chat')}</h2>
-            <div className="flex bg-[#1c1c1e] p-1 rounded-xl mb-6 mx-2 border border-zinc-800">
-              <button onClick={() => setChatTabMode('friends')} className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition-colors ${chatTabMode === 'friends' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-white'}`}>{t('friendsChat')}</button>
-              <button onClick={() => setChatTabMode('groups')} className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition-colors ${chatTabMode === 'groups' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-white'}`}>{t('groupsChat')}</button>
-              <button onClick={() => setChatTabMode('community')} className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition-colors ${chatTabMode === 'community' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-white'}`}>{t('communityChat')}</button>
-            </div>
-            {chatTabMode === 'groups' && (
-              <div className="px-2 mb-4">
-                <button onClick={() => setShowCreateGroupModal(true)} className="w-full py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-sm font-bold text-[#1DB954] hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2">
-                  グループを作成
-                </button>
-              </div>
-            )}
-            <div className="flex flex-col px-2">
-              {chatTabMode === 'friends' && Object.keys(chatHistory).filter(id => !id.startsWith('com') && !id.startsWith('g') && allProfiles.some(p => p.id === id)).map(partnerId => {
-                const u = allProfiles.find(x => x.id === partnerId);
-                const lastMsg = chatHistory[partnerId][chatHistory[partnerId].length - 1];
-                return (
-                  <div key={partnerId} onClick={() => setActiveChatUserId(partnerId)} className="flex items-center gap-4 p-3 hover:bg-[#1c1c1e] rounded-2xl cursor-pointer transition-colors group relative">
-                    <img
-                      src={u?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80"}
-                      className="w-14 h-14 rounded-full object-cover flex-shrink-0 border border-zinc-800 hover:opacity-80 relative z-10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (u) {
-                          setProfileBackTarget({ tab: 'chat', chatUserId: null });
-                          setViewingUser(u);
-                          setActiveTab('other_profile');
-                        }
-                      }}
-                    />
-                    <div className="flex-1 overflow-hidden">
-                      <div className="flex justify-between items-center">
-                        <p className="font-bold text-sm truncate">{u?.name || "ユーザー"}</p>
-                        <span className="text-[9px] text-zinc-500">{lastMsg ? displayLocalTime(lastMsg.timestamp, timeZone) : ""}</span>
-                      </div>
-                      <p className="text-xs text-zinc-400 truncate mt-0.5">
-                        {lastMsg ? (
-                          lastMsg.text.startsWith('[VOICE]') ? 'ボイスメッセージ' :
-                            lastMsg.text.startsWith('[IMAGE]') ? '画像を送信しました' :
-                              lastMsg.text.startsWith('[FILE]') ? 'ファイルを送信しました' :
-                                lastMsg.text
-                        ) : "メッセージを送ろう"}
-                      </p>
-                    </div>
-                    {chatHistory[partnerId].some(m => m.senderId !== currentUser?.id && !m.isRead) && (
-                      <div className="absolute right-4 bottom-4 w-2 h-2 bg-[#1DB954] rounded-full shadow-[0_0_8px_#1DB954]"></div>
-                    )}
-                  </div>
-                );
-              })}
-              {chatTabMode === 'friends' && Object.keys(chatHistory).filter(id => !id.startsWith('com') && !id.startsWith('g')).length === 0 && (
-                <div className="py-20 text-center">
-                  <p className="text-zinc-500 text-sm">メッセージはまだありません</p>
-                </div>
-              )}
-              {chatTabMode === 'groups' && chatGroups.map(g => (<div key={g.id} onClick={() => setActiveChatUserId(g.id)} className="flex items-center gap-4 p-3 hover:bg-[#1c1c1e] rounded-2xl cursor-pointer"><div className="w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden relative"><IconUsers /></div><div className="flex-1 overflow-hidden z-10"><p className="font-bold text-sm truncate">{g.name}</p><p className="text-xs text-zinc-400 truncate">参加しました</p></div></div>))}
-              {chatTabMode === 'community' && chatCommunities.map(c => (<div key={c.id} onClick={() => setActiveChatUserId(c.id)} className="flex items-center gap-4 p-3 hover:bg-[#1c1c1e] rounded-2xl cursor-pointer"><div className="w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden relative"><IconTicket /></div><div className="flex-1 overflow-hidden z-10"><p className="font-bold text-sm truncate">{c.name}</p><p className="text-xs text-zinc-400 truncate">参加しました</p></div></div>))}
-            </div>
-          </div>
+          <ChatListSection
+            chatTabMode={chatTabMode}
+            labels={{
+              chat: t('chat'),
+              friendsChat: t('friendsChat'),
+              groupsChat: t('groupsChat'),
+              communityChat: t('communityChat'),
+            }}
+            chatHistory={chatHistory}
+            allProfiles={allProfiles}
+            chatGroups={chatGroups}
+            chatCommunities={chatCommunities}
+            currentUserId={currentUser?.id}
+            timeZone={timeZone}
+            displayLocalTime={displayLocalTime}
+            onTabChange={setChatTabMode}
+            onCreateGroup={() => setShowCreateGroupModal(true)}
+            onOpenChat={setActiveChatUserId}
+            onOpenProfile={(u) => {
+              setProfileBackTarget({ tab: 'chat', chatUserId: null });
+              setViewingUser(u);
+              setActiveTab('other_profile');
+            }}
+          />
         )}
         {/* 📅 Calendar (Diary) タブ */}
         {activeTab === 'calendar' && (
@@ -5229,147 +4888,47 @@ const renderFeedCard = (s: Song) => (
         )}
         {/* 👤 Profile タブ */}
         {(activeTab === 'profile' || activeTab === 'other_profile') && (
-          <div className="mt-4 flex flex-col items-center animate-fade-in px-4">
-            <div className="w-full flex justify-between items-center mb-6 relative z-50">
-              {activeTab === 'other_profile' ? (
-                <button onClick={handleGoBack} className="relative z-50 p-3 pointer-events-auto"><IconChevronLeft /></button>
-              ) : (
-                <div className="w-10"></div>
-              )}
-              {activeTab === 'profile' && (
-                <div className="flex items-center gap-3 ml-auto relative z-50 pointer-events-auto">
-                  <button 
-                    onClick={() => setShowCoinChargeModal(true)}
-                    className="flex flex-col items-end justify-center bg-[#1c1c1e] hover:bg-zinc-800 border border-zinc-800 px-4 py-1.5 rounded-2xl transition-all active:scale-95 shadow-sm flex-shrink-0"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full flex items-center justify-center text-black shadow-inner border border-yellow-300/50 flex-shrink-0">
-                        <span className="text-[9px] font-black leading-none mt-[1px]">C</span>
-                      </div>
-                      <span className="text-sm font-bold text-white whitespace-nowrap">
-                        {(Number((myProfile as any).free_coin) || 0) + (Number((myProfile as any).paid_coin) || 0)} 
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-[9px] font-bold text-zinc-500 mt-0.5">
-                      <span>有償 {Number((myProfile as any).paid_coin) || 0}</span>
-                      <span>無償 {Number((myProfile as any).free_coin) || 0}</span>
-                    </div>
-                  </button>
-                  <button onClick={() => setShowSettingsMenu(true)} className="w-9 h-9 bg-[#1c1c1e] border border-zinc-800 rounded-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all shadow-sm active:scale-95 flex-shrink-0">
-                    <IconSettings />
-                  </button>
-                </div>
-              )}
-            </div>
-            <div className="relative"><img src={activeTab === 'profile' ? myProfile.avatar : viewingUser?.avatar} className="w-[100px] h-[100px] rounded-full object-cover mb-4 shadow-xl border border-zinc-800" /></div>
-            <h2 className="text-[22px] font-bold flex items-center">{activeTab === 'profile' ? myProfile.name : viewingUser?.name}</h2>
-            <p className="text-sm text-zinc-500 font-bold mt-1">@{activeTab === 'profile' ? myProfile.handle : viewingUser?.handle}</p>
-            {activeTab === 'profile' && myStreak > 0 && (<div className="mt-3 flex items-center bg-[#1c1c1e] border border-orange-500/30 px-3 py-1.5 rounded-full shadow-sm"><IconFlame /><span className="text-[11px] font-bold text-orange-400">{myStreak}日連続記録中</span></div>)}
-            <div className="flex gap-4 mt-5 text-sm font-bold"><span className="cursor-pointer" onClick={() => setShowUserListModal('FOLLOWING')}>{formatCount(activeTab === 'profile' ? followedUsers.size : viewingUserStats.following)} {t('following')}</span><span className="text-zinc-600">•</span><span className="cursor-pointer" onClick={() => setShowUserListModal('FOLLOWERS')}>{formatCount(activeTab === 'profile' ? myFollowers.size : viewingUserStats.followers)} フォロワー</span></div>
-            {/* 💡 共通の友達（BeReal風表示） */}
-            {activeTab === 'other_profile' && mutualFriendsList.length > 0 && (
-              <div className="flex items-center justify-center gap-2 mt-3 cursor-pointer hover:opacity-80 transition-opacity" onClick={() => setShowMutualFriendsModal(true)}>
-                <div className="flex -space-x-2">
-                  {mutualFriendsList.slice(0, 3).map(m => <img key={m.id} src={m.avatar} className="w-6 h-6 rounded-full border-2 border-black object-cover" />)}
-                </div>
-                <span className="text-xs font-bold text-zinc-400">{mutualFriendsList.length}人の共通の友達</span>
-              </div>
-            )}
-            <p className="text-zinc-300 text-sm mt-4 text-center max-w-xs">{activeTab === 'profile' ? myProfile.bio : viewingUser?.bio}</p>
-            <div className="flex flex-col items-center mt-3 gap-2 w-full max-w-xs"><div className="flex flex-wrap justify-center gap-1.5">{(activeTab === 'profile' ? myProfile.hashtags : viewingUser?.hashtags)?.map((h, i) => (<span key={i} className="px-2 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded text-[10px]">#{h}</span>))}</div></div>
-           <div className="flex gap-4 mt-4">
-              {(activeTab === 'profile' ? (myProfile as any).twitterUrl : (viewingUser as any)?.twitterUrl) && (
-                <a href={activeTab === 'profile' ? (myProfile as any).twitterUrl : (viewingUser as any)?.twitterUrl} target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-black border border-zinc-800 flex items-center justify-center text-white hover:scale-105 transition-transform shadow-md">
-                  <svg viewBox="0 0 24 24" className="w-[22px] h-[22px]" fill="currentColor"><path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z"></path></svg>
-                </a>
-              )}
-              {(activeTab === 'profile' ? (myProfile as any).instagramUrl : (viewingUser as any)?.instagramUrl) && (
-                <a href={activeTab === 'profile' ? (myProfile as any).instagramUrl : (viewingUser as any)?.instagramUrl} target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 flex items-center justify-center text-white hover:scale-105 transition-transform shadow-md">
-                  <svg viewBox="0 0 24 24" className="w-6 h-6" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>
-                </a>
-              )}
-            </div>
-            {activeTab === 'profile' && favoriteArtists.length > 0 && (
-              <div className="w-full mt-10">
-                <p className="text-[13px] font-bold text-white mb-4 w-full text-left">{t('favoriteArtists')}</p>
-                <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2">
-                  {favoriteArtists.map((artist, i) => (
-                    <div key={i} onClick={(e) => handleArtistClick(e, artist.artistId, artist.artistName, artist.artworkUrl)} className="flex flex-col items-center flex-shrink-0 w-16 cursor-pointer group">
-                      <img src={artist.artworkUrl} className="w-16 h-16 rounded-full object-cover border border-zinc-800 shadow-md group-hover:scale-105 transition-transform" />
-                      <p className="text-[10px] font-bold text-zinc-400 mt-2 truncate w-full text-center group-hover:text-white transition-colors">{artist.artistName}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            {activeTab === 'other_profile' && viewingUser && vibeMatchData && (
-              <div onClick={() => setShowVibeMatchDetails(true)} className="mt-5 w-full max-w-[200px] bg-[#1c1c1e] border border-zinc-800 rounded-xl p-3 flex flex-col items-center shadow-lg cursor-pointer hover:bg-zinc-800/50 transition-colors">
-                <div className="flex justify-between w-full mb-1"><span className="text-[10px] font-bold text-zinc-400 uppercase">Vibe Match</span><span className="text-[10px] font-bold text-[#1DB954]">{vibeMatchData.score}%</span></div>
-                <div className="w-full bg-zinc-900 rounded-full h-1.5"><div className="bg-[#1DB954] h-full rounded-full" style={{ width: `${vibeMatchData.score}%` }}></div></div>
-              </div>
-            )}
-            {activeTab === 'other_profile' && showVibeMatchDetails && viewingUser && vibeMatchData && (
-              <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[950] flex flex-col justify-end animate-fade-in" onClick={() => setShowVibeMatchDetails(false)}>
-                <div className="bg-[#1c1c1e] rounded-t-[32px] p-8 w-full shadow-2xl relative flex flex-col items-center" onClick={e => e.stopPropagation()}>
-                  <div className="w-12 h-1.5 bg-zinc-800 rounded-full mb-6 cursor-pointer" onClick={() => setShowVibeMatchDetails(false)}></div>
-                  <h3 className="text-2xl font-black mb-2">{vibeMatchData.score}% Match</h3>
-                  <p className="text-xs text-zinc-400 mb-8 text-center px-4">あなたと{viewingUser.name}さんの音楽の好みの分析結果です。</p>
-                  <div className="w-full mb-6">
-                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3">Top Shared Artists</p>
-                    <p className="text-sm font-bold text-white mb-4">お互いにこれらのアーティストをよく聴いています！</p>
-                    <div className="flex gap-3">
-                      {vibeMatchData.sharedArtists.map((a, i) => (
-                        <div key={i} className="px-3 py-1.5 bg-[#1DB954]/10 text-[#1DB954] rounded-full text-xs font-bold flex items-center"><IconMusicSmall /> {a}</div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="w-full mb-8">
-                    <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3">Shared Genres</p>
-                    <div className="flex flex-col gap-4">
-                      <div>
-                        <div className="flex justify-between w-full mb-1"><span className="text-xs font-bold text-white">{vibeMatchData.genre1}</span><span className="text-xs font-bold text-[#1DB954]">{vibeMatchData.genre1Score}%</span></div>
-                        <div className="w-full bg-zinc-900 rounded-full h-1.5"><div className="bg-[#1DB954] h-full rounded-full" style={{ width: `${vibeMatchData.genre1Score}%` }}></div></div>
-                      </div>
-                      <div>
-                        <div className="flex justify-between w-full mb-1"><span className="text-xs font-bold text-white">{vibeMatchData.genre2}</span><span className="text-xs font-bold text-[#1DB954]">{vibeMatchData.genre2Score}%</span></div>
-                        <div className="w-full bg-zinc-900 rounded-full h-1.5"><div className="bg-[#1DB954] h-full rounded-full opacity-60" style={{ width: `${vibeMatchData.genre2Score}%` }}></div></div>
-                      </div>
-                    </div>
-                  </div>
-                  <button onClick={() => { setShowVibeMatchDetails(false); setActiveChatUserId(viewingUser.id); setActiveTab('chat'); }} className="w-full py-4 bg-[#1DB954] text-black rounded-xl font-bold flex justify-center items-center gap-2 hover:scale-105 transition-transform">
-                    <IconMessagePlus /> 音楽の趣味が合うね！とメッセージを送る
-                  </button>
-                </div>
-              </div>
-            )}
-            {activeTab === 'profile' ? (
-              <button onClick={openEditProfile} className="mt-6 w-full max-w-[200px] py-3 bg-[#1c1c1e] hover:bg-zinc-800 transition-colors rounded-xl text-sm font-bold text-white shadow-sm">{t('editProfileFull')}</button>
-            ) : (
-              <div className="flex flex-col gap-3 w-full max-w-[240px] mt-4">
-                <div className="flex gap-2 w-full">
-                  <button onClick={() => toggleFollow(viewingUser!.id)} className={`flex-1 py-3 rounded-xl text-sm font-bold ${followedUsers.has(viewingUser!.id) ? 'bg-[#1c1c1e] text-white hover:bg-zinc-800' : 'bg-white text-black hover:bg-gray-200'} transition-colors shadow-sm`}>{followedUsers.has(viewingUser!.id) ? t('following') : t('follow')}</button>
-                  <button onClick={() => { setActiveChatUserId(viewingUser!.id); setActiveTab('chat'); }} className="flex-1 py-3 bg-[#1c1c1e] text-white hover:bg-zinc-800 transition-colors rounded-xl text-sm font-bold shadow-sm flex items-center justify-center gap-2"><IconMessagePlus /></button>
-                </div>
-                {/* 💡 通報・ブロックボタン */}
-                <div className="flex gap-2 w-full mt-2">
-                  <button onClick={() => handleBlockUser(viewingUser!.id)} className="flex-1 py-2 bg-transparent border border-red-500/30 text-red-500 hover:bg-red-500/10 transition-colors rounded-xl text-[10px] font-bold">{t('block')}</button>
-                  <button onClick={() => handleReportUser(viewingUser!.id)} className="flex-1 py-2 bg-transparent border border-zinc-700 text-zinc-400 hover:bg-zinc-800 transition-colors rounded-xl text-[10px] font-bold">{t('report')}</button>
-                </div>
-              </div>
-            )}
-            <div className="w-full h-px bg-zinc-900 my-8"></div>
-            {activeTab === 'profile' && (
-              <div className="flex w-full mb-6">
-                <button onClick={() => setProfileTabMode('my_vibes')} className={`flex-1 pb-2 text-sm font-bold border-b-2 transition-colors ${profileTabMode === 'my_vibes' ? 'border-white text-white' : 'border-transparent text-zinc-600'}`}>{t('myEchoes')}</button>
-                <button onClick={() => setProfileTabMode('liked')} className={`flex-1 pb-2 text-sm font-bold border-b-2 transition-colors ${profileTabMode === 'liked' ? 'border-white text-white' : 'border-transparent text-zinc-600'}`}>{t('likedPosts')}</button>
-              </div>
-            )}
-            {activeTab === 'profile' && profileTabMode === 'liked' ? (
-              <div className="w-full flex flex-col gap-4">
-                {likedVibes.length === 0 ? <p className="text-center text-zinc-500 py-10 text-xs">まだ{t('likedPosts')}はありません</p> : likedVibes.map(renderFeedCard)}
-              </div>
-            ) : renderCalendar()}
-          </div>
+          <ProfileSection
+            activeTab={activeTab}
+            myProfile={myProfile}
+            viewingUser={viewingUser}
+            myStreak={myStreak}
+            followedUsers={followedUsers}
+            myFollowersCount={myFollowers.size}
+            viewingUserStats={viewingUserStats}
+            mutualFriendsList={mutualFriendsList}
+            favoriteArtists={favoriteArtists}
+            vibeMatchData={vibeMatchData}
+            showVibeMatchDetails={showVibeMatchDetails}
+            profileTabMode={profileTabMode}
+            labels={{
+              following: t('following'),
+              follow: t('follow'),
+              block: t('block'),
+              report: t('report'),
+              favoriteArtists: t('favoriteArtists'),
+              editProfileFull: t('editProfileFull'),
+              myEchoes: t('myEchoes'),
+              likedPosts: t('likedPosts'),
+            }}
+            likedPostsContent={likedVibes.length === 0 ? <p className="text-center text-zinc-500 py-10 text-xs">まだ{t('likedPosts')}はありません</p> : likedVibes.map(renderFeedCard)}
+            calendarContent={renderCalendar()}
+            formatCount={formatCount}
+            onGoBack={handleGoBack}
+            onShowCoinCharge={() => setShowCoinChargeModal(true)}
+            onShowSettings={() => setShowSettingsMenu(true)}
+            onShowUserList={setShowUserListModal}
+            onShowMutualFriends={() => setShowMutualFriendsModal(true)}
+            onArtistClick={handleArtistClick}
+            onShowVibeMatchDetails={() => setShowVibeMatchDetails(true)}
+            onCloseVibeMatchDetails={() => setShowVibeMatchDetails(false)}
+            onOpenChat={(userId) => { setActiveChatUserId(userId); setActiveTab('chat'); }}
+            onOpenEditProfile={openEditProfile}
+            onToggleFollow={toggleFollow}
+            onBlockUser={handleBlockUser}
+            onReportUser={handleReportUser}
+            onProfileTabChange={setProfileTabMode}
+          />
         )}
       </div>
       <nav className="fixed bottom-0 left-0 w-full bg-[#0a0a0a]/95 backdrop-blur-2xl border-t border-zinc-900 flex justify-around p-3 z-[100] pb-8">
@@ -5386,124 +4945,25 @@ const renderFeedCard = (s: Song) => (
         </button>
         <button onClick={() => switchBottomTab('profile')} className={`flex flex-col items-center gap-1 w-12 ${activeTab === 'profile' || activeTab === 'other_profile' ? 'text-white' : 'text-zinc-600'}`}><IconUser /><span className="text-[8px] font-bold uppercase">Profile</span></button>
       </nav>
-      {/* 💡 記事を書く（投稿）モーダル (note風UI) */}
-      {showWriteArticleModal && (
-        <div className="fixed inset-0 bg-[#121212] z-[1000] flex flex-col animate-fade-in">
-          <div className="flex justify-between items-center px-4 py-3 border-b border-zinc-800/50">
-            <button onClick={handleCloseModal} className="p-2 -ml-2 text-white hover:opacity-80 transition-opacity shrink-0">
-              <IconChevronLeft />
-            </button>
-            <div className="flex items-center gap-4 text-sm font-bold text-zinc-400">
-              {lastSaved && <span className="text-[10px] font-normal hidden sm:inline">{lastSaved} 保存済</span>}
-              <button onClick={handleSaveDraft} className="hover:text-white transition-colors hidden sm:block">下書き保存</button>
-              <button onClick={() => setShowPublishSettingsModal(true)} className="text-white hover:text-[#1DB954] transition-colors ml-1 px-4 py-1.5 bg-[#1DB954]/20 text-[#1DB954] font-bold rounded-full border border-[#1DB954]/50">公開設定</button>
-            </div>
-          </div>
-          {/* エディタ部分 */}
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 relative">
-            <div className="relative mb-2">
-              {newArticleCover ? (
-                <div className="relative w-full h-48 sm:h-64 rounded-2xl overflow-hidden group border border-zinc-800">
-                  <img src={newArticleCover} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
-                    <label className="cursor-pointer px-4 py-2 bg-black/80 rounded-full text-xs font-bold text-white hover:bg-zinc-800 border border-zinc-700 transition-colors flex items-center gap-2">
-                      <IconImage /> 表紙を変更
-                      <input type="file" accept="image/*" onChange={handleArticleCoverUpload} className="hidden" />
-                    </label>
-                  </div>
-                </div>
-              ) : (
-                <label className="w-16 h-16 border-2 border-zinc-700 border-dashed rounded-2xl flex items-center justify-center text-zinc-500 hover:bg-zinc-800 hover:border-zinc-500 hover:text-white transition-colors cursor-pointer group">
-                  {isArticleUploading ? (
-                    <div className="w-6 h-6 border-2 border-zinc-500 border-t-[#1DB954] rounded-full animate-spin"></div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-1 group-hover:scale-110 transition-transform">
-                      <IconImage />
-                      <span className="text-[8px] font-bold">表紙追加</span>
-                    </div>
-                  )}
-                  <input type="file" accept="image/*" onChange={handleArticleCoverUpload} disabled={isArticleUploading} className="hidden" />
-                </label>
-              )}
-            </div>
-            <textarea
-              placeholder="タイトル"
-              value={newArticleTitle}
-              onChange={e => setNewArticleTitle(e.target.value)}
-              className="w-full bg-transparent text-3xl font-black text-white focus:outline-none resize-none overflow-hidden placeholder-zinc-600"
-              rows={1}
-              style={{ minHeight: '1.5em' }}
-            />
-            <div
-              ref={articleTextareaRef as any}
-              contentEditable
-              suppressContentEditableWarning
-              onInput={e => setNewArticleContent(e.currentTarget.innerHTML)}
-              className="w-full flex-1 bg-transparent text-base text-zinc-300 focus:outline-none outline-none leading-relaxed empty:before:content-['ご自由にお書きください。'] empty:before:text-zinc-600 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-white [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-white [&_h3]:mt-4 [&_h3]:mb-2 [&_blockquote]:border-l-4 [&_blockquote]:border-zinc-500 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-zinc-400 [&_ul]:list-disc [&_ul]:list-inside [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:list-inside [&_ol]:my-2 [&_li]:mb-1 [&_hr]:my-6 [&_hr]:border-zinc-700 [&_.quote-text:empty]:before:content-['ここに引用文を入力...'] [&_.quote-text:empty]:before:text-zinc-500 [&_.quote-source:empty]:before:content-['出典を入力'] [&_.quote-source:empty]:before:text-zinc-600"
-              style={{ minHeight: '200px' }}
-              onKeyDown={e => {
-                if (e.key === 'Enter') {
-                  const selection = window.getSelection();
-                  if (!selection || selection.rangeCount === 0) return;
-                  let node = selection.focusNode;
-                  let isInsideList = false;
-                  let curr: Node | null = node;
-                  while (curr && curr !== articleTextareaRef.current) {
-                    if (curr.nodeName === 'LI') { isInsideList = true; break; }
-                    curr = curr.parentNode;
-                  }
-                  // 💡 手動で「1. 」「・ 」と打った場合も自動で次を続ける魔法の処理
-                  if (!isInsideList && node && node.nodeType === Node.TEXT_NODE) {
-                    const text = node.textContent || '';
-                    if (selection.focusOffset !== text.length) return; // 行の途中でEnterを押した場合は除外
-                    const bulletMatch = text.match(/^([・\-*])\s(.*)$/);
-                    const numberMatch = text.match(/^(\d+)\.\s(.*)$/);
-                    // 空のままEnterを押したらリストから抜け出す処理
-                    const isEmptyBullet = /^([・\-*])\s$/.test(text) || /^(\d+)\.\s$/.test(text);
-                    if (isEmptyBullet) {
-                      e.preventDefault();
-                      const range = document.createRange();
-                      range.selectNodeContents(node);
-                      selection.removeAllRanges();
-                      selection.addRange(range);
-                      document.execCommand('delete', false, '');
-                      document.execCommand('insertHTML', false, '<br/><br/>');
-                      return;
-                    }
-                    if (bulletMatch) {
-                      e.preventDefault();
-                      document.execCommand('insertHTML', false, '<br/>' + bulletMatch[1] + ' ');
-                    } else if (numberMatch) {
-                      e.preventDefault();
-                      document.execCommand('insertHTML', false, '<br/>' + (parseInt(numberMatch[1]) + 1) + '. ');
-                    }
-                  }
-                }
-              }}
-            />
-          </div>
-          <div className="px-4 py-2 flex justify-end">
-            <span className="bg-zinc-800/80 text-zinc-400 text-[10px] px-3 py-1 rounded-full font-bold">
-              {newArticleContent.replace(/<[^>]*>/g, '').length}文字
-            </span>
-          </div>
-         <div className="border-t border-zinc-800/80 bg-[#1c1c1e] px-2 py-3 flex items-center gap-4 overflow-x-auto scrollbar-hide relative z-40">
-            <button onClick={() => setShowElementMenu(true)} className="p-2 text-white hover:bg-zinc-800 rounded-lg transition-colors shrink-0"><IconPlus /></button>
-            <button onMouseDown={e => { e.preventDefault(); document.execCommand('bold', false, ''); }} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors shrink-0 font-bold" title="太字">B</button>
-            <button onMouseDown={e => { e.preventDefault(); document.execCommand('strikeThrough', false, ''); }} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors shrink-0 font-bold line-through" title="取り消し線">S</button>
-            <button onMouseDown={e => { e.preventDefault(); setShowHeadingMenu(true); }} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors shrink-0 font-bold text-lg leading-none" title="見出し">T</button>
-            <button onMouseDown={e => { e.preventDefault(); setShowAlignmentMenu(true); }} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors shrink-0" title="配置">
-              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="15" y2="12"></line><line x1="3" y1="18" x2="19" y2="18"></line></svg>
-            </button>
-            <button onMouseDown={e => { e.preventDefault(); setShowListMenu(true); }} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors shrink-0" title="リスト">
-              <IconList />
-            </button>
-            <div className="w-px h-5 bg-zinc-700 shrink-0 mx-1"></div>
-            <button className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors shrink-0 flex gap-1">
-              <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-              <IconChevronDown />
-            </button>
-          </div>
+      <ArticleEditorModal
+        isOpen={showWriteArticleModal}
+        lastSaved={lastSaved}
+        newArticleCover={newArticleCover}
+        newArticleTitle={newArticleTitle}
+        newArticleContent={newArticleContent}
+        isArticleUploading={isArticleUploading}
+        articleTextareaRef={articleTextareaRef}
+        onClose={handleCloseModal}
+        onSaveDraft={handleSaveDraft}
+        onOpenPublishSettings={() => setShowPublishSettingsModal(true)}
+        onCoverUpload={handleArticleCoverUpload}
+        onTitleChange={setNewArticleTitle}
+        onContentChange={setNewArticleContent}
+        onOpenElementMenu={() => setShowElementMenu(true)}
+        onOpenHeadingMenu={() => setShowHeadingMenu(true)}
+        onOpenAlignmentMenu={() => setShowAlignmentMenu(true)}
+        onOpenListMenu={() => setShowListMenu(true)}
+      >
           {showHeadingMenu && (
             <div className="absolute inset-0 z-50 flex flex-col justify-end animate-fade-in">
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowHeadingMenu(false)}></div>
@@ -5723,8 +5183,7 @@ const renderFeedCard = (s: Song) => (
               </div>
             </div>
           )}
-        </div>
-      )}
+      </ArticleEditorModal>
       {showPublishSettingsModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[1100] flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowPublishSettingsModal(false)}>
           <div className="bg-[#1c1c1e] border border-zinc-800 rounded-[32px] w-full max-w-md overflow-hidden shadow-2xl relative flex flex-col" onClick={e => e.stopPropagation()}>
@@ -5893,166 +5352,22 @@ const renderFeedCard = (s: Song) => (
           </div>
         </div>
       )}
-      {viewingArticle && (
-        <div className="fixed inset-0 bg-black z-[950] flex flex-col animate-fade-in overflow-y-auto">
-          <div className="relative w-full h-[40vh] flex-shrink-0">
-            <img src={viewingArticle.coverUrl} className="w-full h-full object-cover opacity-80" />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black"></div>
-            <button onClick={() => setViewingArticle(null)} className="absolute top-4 left-4 w-10 h-10 bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-black/80 transition-colors z-10"><IconChevronLeft /></button>
-          </div>
-          <div className="px-6 py-8 relative z-10 -mt-10 bg-black rounded-t-[32px] flex-1">
-            <div className="flex items-center justify-between mb-6">
-              <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{viewingArticle.date} • {viewingArticle.readTime}</span>
-              <button className="text-zinc-400 hover:text-white"><IconShareExternal /></button>
-            </div>
-            <h1 className="text-2xl font-black text-white leading-snug mb-8">{viewingArticle.title}</h1>
-            <div className="flex items-center justify-between mb-8 pb-8 border-b border-zinc-900 cursor-pointer" onClick={() => { setViewingArticle(null); setViewingUser(viewingArticle.author); setActiveTab('other_profile'); }}>
-              <div className="flex items-center gap-3">
-                <img src={viewingArticle.author.avatar} className="w-10 h-10 rounded-full object-cover border border-zinc-800" />
-                <div>
-                  <p className="font-bold text-sm text-white flex items-center gap-1">{viewingArticle.author.name} {viewingArticle.author.isVerified && <IconVerified />}</p>
-                  <p className="text-[10px] text-zinc-500">@{viewingArticle.author.handle}</p>
-                </div>
-              </div>
-              <button className="px-4 py-1.5 border border-zinc-700 rounded-full text-[10px] font-bold text-white hover:bg-zinc-800 transition-colors">Follow</button>
-            </div>
-            <div className="text-sm text-zinc-300 leading-loose whitespace-pre-wrap mb-12 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-white [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-white [&_h3]:mt-4 [&_h3]:mb-2 [&_blockquote]:border-l-4 [&_blockquote]:border-zinc-500 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-zinc-400 [&_ul]:list-disc [&_ul]:list-inside [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:list-inside [&_ol]:my-2 [&_li]:mb-1 [&_hr]:my-6 [&_hr]:border-zinc-700">
-              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(viewingArticle.content) }} />
-              {viewingArticle.price > 0 && (
-                <div className="mt-8 relative">
-                  {hasPurchasedArticle || viewingArticle.author.id === currentUser?.id ? (
-                    <div className="border-t border-[#1DB954]/30 pt-6 mt-6 animate-fade-in">
-                      <div className="flex items-center gap-2 mb-6 text-[#1DB954] font-bold text-xs bg-[#1DB954]/10 w-fit px-4 py-2 rounded-full border border-[#1DB954]/20 shadow-sm">
-                        <IconLockSetting />
-                        <span>有料コンテンツをアンロックしました</span>
-                      </div>
-                      <div className="text-sm text-zinc-300 leading-loose whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(viewingArticle.premium_content || "") }} />
-                    </div>
-                  ) : (
-                    <div className="border-t border-zinc-800 pt-6 mt-6 relative overflow-hidden rounded-3xl">
-                      <div className="filter blur-md opacity-30 select-none pointer-events-none h-[320px] overflow-hidden">
-                        <p>ここに有料限定のテキストが入ります。ライブの裏話や、特別なセットリストの解説、個人的な音楽の考察などが読めるようになります。アーティストの活動を支援するために、ぜひコインを使って続きを読んでみてください。応援がクリエイターの力になります...</p>
-                        <br/>
-                        <p>さらに深い音楽の話や、ここでしか見られない特別なコンテンツをお楽しみください。あなたのサポートが、次の素晴らしい作品を生み出す原動力となります。</p>
-                        <br/>
-                        <p>Echoesで新しい音楽の発見を。</p>
-                      </div>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/90 to-transparent p-6 text-center z-10">
-                        <div className="w-14 h-14 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full flex items-center justify-center text-black shadow-[0_0_20px_rgba(250,204,21,0.2)] mb-4 border border-yellow-300/50">
-                          <IconLock />
-                        </div>
-                        <p className="text-white font-black text-xl mb-2 tracking-tight">この続きは有料コンテンツです</p>
-                        <div className="flex flex-col items-center gap-3 mb-8 w-full max-w-[260px] mt-4">
-                          <div className="w-full flex items-center justify-between bg-[#1c1c1e] border border-zinc-800 px-5 py-3.5 rounded-2xl shadow-inner">
-                            <span className="text-xs font-bold text-zinc-400">記事の価格</span>
-                            <div className="flex items-center gap-2">
-                              <div className="w-4 h-4 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full flex items-center justify-center text-black shadow-sm">
-                                <span className="text-[9px] font-black leading-none mt-[0.5px]">C</span>
-                              </div>
-                              <span className="text-xl font-black text-white leading-none">{viewingArticle.price}</span>
-                            </div>
-                          </div>
-                          <div className="w-full flex items-center justify-between bg-transparent border border-zinc-800 px-5 py-3 rounded-xl cursor-pointer hover:bg-zinc-800/50 transition-colors" onClick={() => setShowCoinChargeModal(true)}>
-                            <span className="text-[10px] font-bold text-zinc-500">現在の所持コイン</span>
-                            <div className="flex items-center gap-1.5">
-                              <div className="w-3.5 h-3.5 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full flex items-center justify-center text-black shadow-sm">
-                                <span className="text-[8px] font-black leading-none mt-[0.5px]">C</span>
-                              </div>
-                              <span className="text-sm font-bold text-zinc-300 leading-none">{(myProfile as any).coin_balance || 0}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => {
-                            if (((myProfile as any).coin_balance || 0) < viewingArticle.price) {
-                              setShowCoinChargeModal(true);
-                              showToast("コインが不足しています。チャージしてください。", "error");
-                            } else {
-                              handlePurchaseArticle(viewingArticle);
-                            }
-                          }}
-                          className="bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-black py-4 px-10 rounded-full shadow-[0_0_20px_rgba(250,204,21,0.3)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 w-full max-w-[280px] text-sm"
-                        >
-                          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                          記事をアンロック
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-            {/* 記事のいいね＆コメント欄 */}
-            <div className="border-t border-zinc-900 pt-8 pb-12">
-              {/* 💡 クリエイターサポート（投げ銭）機能 */}
-              {viewingArticle.author.id !== currentUser?.id && (
-                <div className="bg-[#121212] border border-zinc-800 rounded-[24px] p-6 mb-10 flex flex-col items-center shadow-lg animate-fade-in">
-                  <h3 className="font-black text-lg text-white mb-2 tracking-tight">クリエイターをサポート</h3>
-                  <p className="text-xs text-zinc-400 mb-6 text-center leading-relaxed">この記事が気に入ったら、コインを贈って応援しよう！<br/>あなたのサポートが次の作品の原動力になります。</p>
-                  <div className="flex gap-3 w-full justify-center">
-                    {[100, 500, 1000].map(amount => (
-                      <button key={amount} onClick={async () => {
-                        if (!currentUser) return showToast("ログインが必要です", "error");
-                        const currentBalance = Number((myProfile as any).coin_balance) || 0;
-                        if (currentBalance < amount) {
-                          setShowCoinChargeModal(true);
-                          return showToast("コインが不足しています。チャージしてください。", "error");
-                        }
-                        if (window.confirm(`${amount}C を贈りますか？`)) {
-                          try {
-                            const { error } = await supabase.from('transactions').insert([{ sender_id: currentUser.id, receiver_id: viewingArticle.author.id, amount, transaction_type: 'gift', target_id: viewingArticle.id }]);
-                            if (error) throw error;
-                            const newBalance = currentBalance - amount;
-                            await supabase.from('profiles').update({ coin_balance: newBalance }).eq('id', currentUser.id);
-                            setMyProfile(prev => ({ ...prev, coin_balance: newBalance } as any));
-                            await supabase.from('notifications').insert([{ user_id: viewingArticle.author.id, sender_id: currentUser.id, type: 'gift', text: `${myProfile.name}さんから ${amount}C のサポートが届きました！🎁` }]);
-                            showToast("クリエイターをサポートしました！", "success");
-                          } catch (e) { showToast("エラーが発生しました", "error"); }
-                        }
-                      }} className="flex flex-col items-center justify-center p-3 w-[80px] sm:w-[100px] bg-black border border-zinc-800 rounded-2xl hover:border-yellow-500/50 hover:bg-yellow-500/5 transition-all group active:scale-95 shadow-sm">
-                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full flex items-center justify-center text-black shadow-md mb-2 group-hover:scale-110 transition-transform">
-                          <span className="text-sm sm:text-base font-black mt-0.5">C</span>
-                        </div>
-                        <span className="font-black text-sm sm:text-base text-white">{amount}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-              <div className="flex gap-6 mb-8">
-                <button onClick={() => toggleArticleLike(viewingArticle.id)} className={`flex items-center gap-2 font-bold ${viewingArticle.isLiked ? 'text-[#1DB954]' : 'text-zinc-400 hover:text-white'}`}>
-                  <IconHeart filled={viewingArticle.isLiked} /> {viewingArticle.likes} Likes
-                </button>
-                <div className="flex items-center gap-2 font-bold text-zinc-400"><IconComment /> {viewingArticle.comments.length} Comments</div>
-              </div>
-              {/* 💡 コメント一覧の表示 */}
-              {viewingArticle.comments.length > 0 && (
-                <div className="flex flex-col gap-5 mb-8">
-                  {viewingArticle.comments.map((c: any) => (
-                    <div key={c.id} className="flex gap-3">
-                      <img src={c.user.avatar} className="w-8 h-8 rounded-full object-cover border border-zinc-800 shrink-0" />
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-xs text-white">{c.user.name}</span>
-                          <span className="text-[10px] text-zinc-500">@{c.user.handle}</span>
-                        </div>
-                        <p className="text-sm text-zinc-300 mt-1 leading-snug">{c.text}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {/* 💡 コメント入力（formタグで囲むことでEnterキー送信に対応） */}
-              <form onSubmit={submitArticleComment} className="flex gap-3 items-center mb-8">
-                <img src={myProfile.avatar} className="w-8 h-8 rounded-full object-cover shrink-0" />
-                <div className="flex-1 bg-[#1c1c1e] rounded-full px-4 py-2 flex items-center border border-zinc-800 focus-within:border-zinc-600 transition-colors">
-                  <input type="text" placeholder="感想を書く..." value={articleCommentInput} onChange={e => setArticleCommentInput(e.target.value)} className="w-full bg-transparent text-xs text-white focus:outline-none" />
-                  <button type="submit" className="text-[10px] font-bold text-black bg-white px-3 py-1 rounded-full ml-2 shrink-0">Post</button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
+      {viewingArticle && (
+        <ArticleDetailModal
+          article={viewingArticle}
+          myProfile={myProfile}
+          currentUserId={currentUser?.id}
+          hasPurchasedArticle={hasPurchasedArticle}
+          articleCommentInput={articleCommentInput}
+          onClose={() => setViewingArticle(null)}
+          onOpenAuthor={(author) => { setViewingArticle(null); setViewingUser(author); setActiveTab('other_profile'); }}
+          onOpenCoinCharge={() => setShowCoinChargeModal(true)}
+          onUnlockArticle={handleUnlockArticle}
+          onSendGift={handleSendArticleGift}
+          onToggleArticleLike={toggleArticleLike}
+          onSubmitArticleComment={submitArticleComment}
+          onArticleCommentInputChange={setArticleCommentInput}
+        />
       )}
       {/* 💡 コンポーネント化したミニプレイヤー */}
       <MiniPlayer 
