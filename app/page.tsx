@@ -7,13 +7,13 @@ import { IconHeart, IconComment, IconLock, IconPlay, IconStop, IconChevronLeft, 
 import { supabase } from './supabase';
 import { MiniPlayer } from './components/MiniPlayer';
 import { useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
   if (!res.ok) throw new Error("NetworkError");
   return res.json();
 };
-
 // 💡 本物の歯車アイコン
 const IconSettings = () => <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>;
 const IconPlus = () => <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>;
@@ -58,7 +58,7 @@ const compressImage = async (file: File, maxWidth = 800, quality = 0.7): Promise
     const reader = new FileReader();
     reader.readAsDataURL(file);
     reader.onload = (event) => {
-      const img = new Image();
+      const img = new window.Image();
       img.onload = () => {
         const canvas = document.createElement('canvas');
         let width = img.width;
@@ -98,6 +98,85 @@ function MainApp() {
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [settings, setSettings] = useState({ audio: true, notifications: true });
+  const [spotifyAccessToken, setSpotifyAccessToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const code = urlParams.get('code');
+      if (code) {
+        const getToken = async () => {
+          const codeVerifier = window.localStorage.getItem('code_verifier');
+          const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID as string;
+          const redirectUri = window.location.origin;
+          const payload = new URLSearchParams({
+            client_id: clientId,
+            grant_type: 'authorization_code',
+            code: code,
+            redirect_uri: redirectUri,
+            code_verifier: codeVerifier || '',
+          });
+          try {
+            const targetEndpoint = ["https:", "", "accounts.spotify.com", "api", "token"].join("/");
+            const response = await fetch(targetEndpoint, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+              body: payload.toString()
+            });
+            const data = await response.json();
+            if (data.access_token) {
+              setSpotifyAccessToken(data.access_token);
+              window.history.replaceState(null, '', window.location.pathname);
+            }
+          } catch (err) {
+          }
+        };
+        getToken();
+      }
+    }
+  }, []);
+
+  const handleSpotifyLoginPkce = async () => {
+    const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID as string;
+    if (!clientId) {
+      return;
+    }
+    const redirectUri = window.location.origin + '/';
+    const scope = 'streaming user-read-email user-read-private';
+    const generateRandomString = (length: number) => {
+      const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+      const values = crypto.getRandomValues(new Uint8Array(length));
+      return values.reduce((acc, x) => acc + possible[x % possible.length], "");
+    };
+    const sha256 = async (plain: string) => {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(plain);
+      return window.crypto.subtle.digest('SHA-256', data);
+    };
+    const base64encode = (input: ArrayBuffer) => {
+      return btoa(String.fromCharCode(...new Uint8Array(input)))
+        .replace(/=/g, '')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_');
+    };
+    const codeVerifier = generateRandomString(64);
+    window.localStorage.setItem('code_verifier', codeVerifier);
+    const hashed = await sha256(codeVerifier);
+    const codeChallenge = base64encode(hashed);
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: clientId,
+      scope: scope,
+      code_challenge_method: 'S256',
+      code_challenge: codeChallenge,
+      redirect_uri: redirectUri,
+    });
+    const targetEndpoint = ["https:", "", "accounts.spotify.com", "authorize"].join("/");
+    window.location.href = targetEndpoint + "?" + params.toString();
+  };
+
   const [timeZone, setTimeZone] = useState("Asia/Tokyo");
   const [language, setLanguage] = useState("日本語");
   const t = (k: string) => localI18n[language]?.[k] || localI18n["日本語"][k];
@@ -112,6 +191,22 @@ function MainApp() {
   // 💡 プロフィール画面を開いた時に「どこから来たか」を記憶する箱
   // --- プロフィール管理 ---
   const [allProfiles, setAllProfiles] = useState<User[]>([]);
+  // 💡 記事の購入状態をチェックするSWR
+  const [viewingArticle, setViewingArticle] = useState<any>(null);
+  const { data: hasPurchasedArticle, mutate: mutatePurchase } = useSWR(
+    (currentUser && viewingArticle && viewingArticle.price > 0) ? ['check_purchase', currentUser.id, viewingArticle.id] : null,
+    async ([_, userId, articleId]) => {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('id')
+        .eq('sender_id', userId)
+        .eq('target_id', articleId)
+        .eq('transaction_type', 'article')
+        .maybeSingle();
+      if (error) throw error;
+      return !!data;
+    }
+  );
   useEffect(() => {
     const fetchAllProfiles = async () => {
       const { data } = await supabase.from('profiles').select('*');
@@ -133,57 +228,96 @@ function MainApp() {
   const [vibes, setVibes] = useState<Song[]>([]);
   const [communityVibes, setCommunityVibes] = useState<Song[]>([]);
   const allFeedVibes = useMemo(() => {
-    let list = [...vibes, ...communityVibes].filter(v => !blockedUsers.has(v.user.id));
-    if (homeFeedMode === 'following') {
-      list = list.filter(v => followedUsers.has(v.user.id) || v.user.id === currentUser?.id);
-    }
-    return list.sort((a, b) => b.timestamp - a.timestamp);
-  }, [vibes, communityVibes, homeFeedMode, followedUsers, currentUser, blockedUsers]);
+  const today = new Date();
+  const currentY = today.getFullYear();
+  const currentM = today.getMonth() + 1;
+  const currentD = today.getDate();
+  let list = [...vibes, ...communityVibes].filter(v => 
+    !blockedUsers.has(v.user.id) && 
+    v.year === currentY && 
+    v.month === currentM && 
+    v.dayIndex === currentD
+  );
+  if (homeFeedMode === 'following') {
+    list = list.filter(v => followedUsers.has(v.user.id) || v.user.id === currentUser?.id);
+  }
+  return list.sort((a, b) => b.timestamp - a.timestamp);
+}, [vibes, communityVibes, homeFeedMode, followedUsers, currentUser, blockedUsers]);
   const likedVibes = useMemo(() => allFeedVibes.filter(v => v.isLiked), [allFeedVibes]);
   const myStreak = calculateStreak(vibes);
   // 💡 記事機能のデータと画面状態の箱（エラー回避のため、vibesの下に配置）
   const [articleTabMode, setArticleTabMode] = useState<'global' | 'trend' | 'following' | 'liked' | 'my_posts' | 'drafts'>('trend');
   // 💡 リロードしても消えないようにブラウザの保存領域（localStorage）を使うss
   const [articles, setArticles] = useState<any[]>([]);
-
   useEffect(() => {
-    const fetchArticlesFromDB = async () => {
-      try {
-        const { data, error } = await supabase.from('articles').select('*').order('created_at', { ascending: false });
-        
-        if (data) {
-          const formatted = data.map((a: any) => {
-            const authorProfile = allProfiles.find(p => p.id === a.author_id);
-            return {
-              id: a.id,
-              title: a.title,
-              content: a.content,
-              coverUrl: a.cover_url,
-              author: authorProfile || {
-                id: 'unknown',
-                name: 'Unknown',
-                handle: 'unknown',
-                avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80'
-              },
-              likes: 0,
-              isLiked: false,
-              comments: [],
-              date: new Date(a.created_at).toLocaleDateString('ja-JP'),
-              readTime: '2 min read'
-            };
-          });
-          setArticles(formatted);
-        }
-      } catch (e) {
-        console.warn(e);
+  const fetchArticlesFromDB = async () => {
+    try {
+      const { data: articlesData, error: articlesError } = await supabase
+        .from('articles')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (articlesError) throw articlesError;
+      if (!articlesData || articlesData.length === 0) {
+        setArticles([]);
+        return;
       }
-    };
-    
-    if (allProfiles.length > 0) {
-      fetchArticlesFromDB();
+      const articleIds = articlesData.map(a => a.id);
+      // 💡 作成した専用テーブルから取得する！
+      const [likesRes, commentsRes] = await Promise.all([
+        supabase.from('article_likes').select('*').in('article_id', articleIds),
+        supabase.from('article_comments').select('*').in('article_id', articleIds)
+      ]);
+      const likesData = likesRes.data || [];
+      const commentsData = commentsRes.data || [];
+      const currentUserId = currentUser?.id;
+      const formatted = articlesData.map((a: any) => {
+        const authorProfile = allProfiles.find(p => p.id === a.author_id);
+        // 💡 専用テーブルのカラム（article_id）でフィルタリング！
+        const postLikes = likesData.filter(l => l.article_id === a.id);
+        const postComments = commentsData.filter(c => c.article_id === a.id);
+        const isLikedByMe = currentUserId ? postLikes.some(l => l.user_id === currentUserId) : false;
+        const formattedComments = postComments.map(c => {
+          const commenterProfile = allProfiles.find(p => p.id === c.user_id);
+          return {
+            id: c.id,
+            text: c.text,
+            user: {
+              id: commenterProfile?.id || 'unknown',
+              handle: commenterProfile?.handle || 'unknown',
+              name: commenterProfile?.name || 'Unknown',
+              avatar: commenterProfile?.avatar || '/default-avatar.png'
+            }
+          };
+        });
+        return {
+          id: a.id,
+          title: a.title,
+          content: a.content,
+          premium_content: a.premium_content || "",
+          price: a.price || 0,
+          coverUrl: a.cover_url,
+          author: authorProfile || {
+            id: 'unknown',
+            name: 'Unknown',
+            handle: 'unknown',
+            avatar: '/default-avatar.png'
+          },
+          likes: postLikes.length,
+          isLiked: isLikedByMe,
+          comments: formattedComments,
+          date: new Date(a.created_at).toLocaleDateString('ja-JP'),
+          readTime: '2 min read'
+        };
+      });
+      setArticles(formatted);
+    } catch (e) {
+      console.warn(e);
     }
-  }, [allProfiles.length]);
-  const [viewingArticle, setViewingArticle] = useState<any>(null);
+  };
+  if (allProfiles.length > 0) {
+    fetchArticlesFromDB();
+  }
+}, [allProfiles.length, currentUser?.id]);
   useEffect(() => {
     if (!searchParams) return;
     const articleId = searchParams.get('article');
@@ -301,37 +435,42 @@ function MainApp() {
         }
       };
       const handleEmbedLink = () => {
-        let url = window.prompt("YouTubeやSpotifyのURLを入力してください\n（通常のリンクも可能です）");
-        if (!url) return;
-        url = url.trim();
-        if (!url.startsWith('http')) {
-          url = 'https://' + url;
-        }
-        let embedHtml = `<a href="${url}" target="_blank" style="color: #1DB954; text-decoration: underline; word-break: break-all;">${url}</a>`;
-        if (url.includes('youtube.com/watch') || url.includes('youtu.be/')) {
-          const videoId = url.includes('youtu.be/') ? url.split('youtu.be/')[1].split('?')[0] : url.split('v=')[1]?.split('&')[0];
-          if (videoId) {
-            embedHtml = `<br/><iframe width="100%" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius: 12px; margin: 16px 0;"></iframe><br/>`;
-          }
-        } else if (url.includes('spotify.com/')) {
-          try {
-            const urlObj = new URL(url);
-            const pathParts = urlObj.pathname.split('/').filter(Boolean);
-            const type = pathParts[pathParts.length - 2];
-            const id = pathParts[pathParts.length - 1];
-            if (type && id) {
-              const embedUrl = `https://open.spotify.com/embed/${type}/${id}`;
-              embedHtml = `<br/><iframe src="${embedUrl}" width="100%" height="152" frameborder="0" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" style="border-radius: 12px; margin: 16px 0;"></iframe><br/>`;
-            }
-          } catch (e) {}
-        }
-        if (articleTextareaRef.current) {
-          articleTextareaRef.current.focus();
-          document.execCommand('insertHTML', false, embedHtml);
-          setNewArticleContent(articleTextareaRef.current.innerHTML);
-        }
-        setShowElementMenu(false);
-      };
+  let url = window.prompt("EnterURL");
+  if (!url) return;
+  url = url.trim();
+  try {
+    const parsedUrl = new URL(url.startsWith('http') ? url : `https://${url}`);
+    if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+      throw new Error("InvalidProtocol");
+    }
+    const safeUrl = parsedUrl.toString();
+    const escapeHtml = (str: string) => str.replace(/[<&>"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c] || c));
+    const escapedSafeUrl = escapeHtml(safeUrl);
+    let embedHtml = `<a href="${escapedSafeUrl}" target="_blank" rel="noopener noreferrer" style="color: #1DB954; text-decoration: underline; word-break: break-all;">${escapedSafeUrl}</a>`;
+    if (safeUrl.includes('youtube.com/watch') || safeUrl.includes('youtu.be/')) {
+      const videoIdMatch = safeUrl.match(/(?:youtu\.be\/|v=)([^&]+)/);
+      if (videoIdMatch && videoIdMatch[1]) {
+        const cleanId = videoIdMatch[1].replace(/[^a-zA-Z0-9_-]/g, '');
+        embedHtml = `<br/><iframe width="100%" height="315" src="https://www.youtube.com/embed/${cleanId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius: 12px; margin: 16px 0;"></iframe><br/>`;
+      }
+    } else if (safeUrl.includes('open.spotify.com/')) {
+      const pathParts = parsedUrl.pathname.split('/').filter(Boolean);
+      const type = pathParts[0];
+      const id = pathParts[1];
+      if ((type === 'track' || type === 'album' || type === 'playlist') && /^[a-zA-Z0-9]+$/.test(id)) {
+        embedHtml = `<br/><iframe src="https://open.spotify.com/embed/${type}/${id}" width="100%" height="152" frameborder="0" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" style="border-radius: 12px; margin: 16px 0;"></iframe><br/>`;
+      }
+    }
+    if (articleTextareaRef.current) {
+      articleTextareaRef.current.focus();
+      document.execCommand('insertHTML', false, embedHtml);
+      setNewArticleContent(articleTextareaRef.current.innerHTML);
+    }
+  } catch (err) {
+    showToast("InvalidURL", "error");
+  }
+  setShowElementMenu(false);
+};
       const insertEditorVoice = async () => {
         if (!draftVoice || !currentUser) return;
         showToast("録音した音声を挿入しています...");
@@ -375,108 +514,156 @@ function MainApp() {
           setShowElementMenu(false);
         } catch (err) {
           showToast("ファイルの挿入に失敗しました", "error");
-        }
-      };
-      const handlePostArticle = async () => {
-    const trimmedTitle = newArticleTitle.trim();
-    const trimmedContent = newArticleContent.trim();
-    
-    if (!trimmedTitle || !trimmedContent || !currentUser) {
-      showToast("タイトルと本文を入力してください", "error");
-      return;
+        }
+      };
+  const [isArticlePremium, setIsArticlePremium] = useState(false);
+  const [articlePriceInput, setArticlePriceInput] = useState(300);
+  const [showPublishSettingsModal, setShowPublishSettingsModal] = useState(false);
+  const [showCoinChargeModal, setShowCoinChargeModal] = useState(false);
+  const [isCharging, setIsCharging] = useState(false);
+  const [selectedChargePlan, setSelectedChargePlan] = useState<{ coins: number, price: number } | null>(null);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const paymentStatus = urlParams.get('payment');
+      if (paymentStatus === 'success') {
+        showToast("決済が完了し、コインがチャージされました！ 🎉", "success");
+        window.history.replaceState(null, '', window.location.pathname);
+      } else if (paymentStatus === 'cancel') {
+        showToast("決済をキャンセルしました", "error");
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    }
+  }, []);
+  const [cardInfo, setCardInfo] = useState({ number: "", expiry: "", cvc: "", name: "" });
+  const handleChargeCoins = async (coinAmount?: number) => {
+  if (!currentUser) return;
+  const finalCoins = selectedChargePlan ? selectedChargePlan.coins : (coinAmount || 0);
+  if (finalCoins <= 0) {
+    showToast("InvalidCoinAmount", "error");
+    return;
+  }
+  setIsCharging(true);
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/create-checkout-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: currentUser.id,
+        coins: finalCoins,
+        successUrl: `${window.location.origin}/?payment=success`,
+        cancelUrl: `${window.location.origin}/?payment=cancel`
+      })
+    });
+    if (!response.ok) {
+      throw new Error("APIRequestFailed");
     }
-    
-    if (trimmedTitle.length > 100) {
-      showToast("タイトルは100文字以内で入力してください", "error");
-      return;
-    }
-
-    const articleId = editingArticleId || `article_${Date.now()}`;
-    const articleData = {
-      id: articleId,
-      title: trimmedTitle,
-      content: trimmedContent,
-      cover_url: newArticleCover || 'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=600&q=80',
-      author_id: currentUser.id
-    };
-
-    const previousArticles = [...articles];
-
-    const optimisticArticle = {
-      id: articleId,
-      title: trimmedTitle,
-      content: trimmedContent,
-      coverUrl: articleData.cover_url,
-      author: myProfile,
-      likes: 0,
-      isLiked: false,
-      comments: [],
-      date: 'たった今',
-      readTime: '1 min read'
-    };
-
-    if (editingArticleId) {
-      setArticles(articles.map(a => a.id === editingArticleId ? { ...a, ...optimisticArticle } : a));
+    const data = await response.json();
+    if (data.checkoutUrl) {
+      window.location.href = data.checkoutUrl;
     } else {
-      setArticles([optimisticArticle, ...articles]);
+      throw new Error("InvalidResponse");
     }
-
-    try {
-      if (editingArticleId) {
-        const { error } = await supabase
-          .from('articles')
-          .update(articleData)
-          .eq('id', editingArticleId)
-          .eq('author_id', currentUser.id);
-        
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from('articles').insert([articleData]);
-        if (error) throw error;
-      }
-
-      const { data: refreshedData, error: fetchError } = await supabase
-        .from('articles')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (fetchError) throw fetchError;
-
-      if (refreshedData) {
-        const formatted = refreshedData.map((a: any) => {
-          const authorProfile = allProfiles.find(p => p.id === a.author_id) || myProfile;
-          return {
-            id: a.id,
-            title: a.title,
-            content: a.content,
-            coverUrl: a.cover_url,
-            author: authorProfile,
-            likes: 0,
-            isLiked: false,
-            comments: [],
-            date: new Date(a.created_at).toLocaleDateString('ja-JP'),
-            readTime: '2 min read'
-          };
-        });
-        setArticles(formatted);
-      }
-
-      localStorage.removeItem('article_draft');
-      setDraftArticles([]);
-      setLastSaved(null);
-      setShowWriteArticleModal(false);
-      setNewArticleTitle("");
-      setNewArticleContent("");
-      setNewArticleCover(null);
-      setEditingArticleId(null);
-      showToast(editingArticleId ? "記事を更新しました！" : "新しい記事を投稿しました！", "success");
-
-    } catch (err: any) {
-      console.error("データベース保存エラー:", err);
-      setArticles(previousArticles);
-      showToast(`保存失敗: ${err.message || '通信エラー'}`, "error");
-    }
+  } catch (err) {
+    showToast("PaymentInitFailed", "error");
+    setIsCharging(false);
+  }
+};
+  const handlePostArticle = async () => {
+  if (!currentUser) return;
+  const trimmedTitle = newArticleTitle.trim();
+  const rawContent = newArticleContent.trim();
+  if (!trimmedTitle || !rawContent) {
+    showToast("ValidationError", "error");
+    return;
+  }
+  if (trimmedTitle.length > 100) {
+    showToast("TitleTooLong", "error");
+    return;
+  }
+  const sanitizeHtml = (html: string) => {
+    return html.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+               .replace(/on\w+="[^"]*"/gi, '')
+               .replace(/javascript:/gi, '');
   };
+  const trimmedContent = sanitizeHtml(rawContent);
+  let freeContent = trimmedContent;
+  let premiumContent = "";
+  let articlePrice = 0;
+  if (isArticlePremium) {
+    const paywallRegex = /(?:<br\s*\/?>\s*)*(?:<div[^>]*>\s*)?<hr[^>]*>[\s\S]*?ここから先は有料エリアです[\s\S]*?<\/p>(?:\s*<\/div>)?(?:<br\s*\/?>\s*)*/i;
+    if (!paywallRegex.test(trimmedContent)) {
+      showToast("MissingPaywallSeparator", "error");
+      return;
+    }
+    const parsedPrice = Math.floor(Number(articlePriceInput));
+    if (isNaN(parsedPrice) || parsedPrice < 1) {
+      showToast("InvalidPrice", "error");
+      return;
+    }
+    const parts = trimmedContent.split(paywallRegex);
+    freeContent = parts[0] || "";
+    premiumContent = parts.slice(1).join('').replace(/^<br\s*\/?>/, '');
+    articlePrice = parsedPrice;
+  }
+  const articleId = editingArticleId || `article_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  const coverUrl = newArticleCover || 'https://images.unsplash.com/photo-1506157786151-b8491531f063?w=600&q=80';
+  const articleData = {
+    id: articleId,
+    title: trimmedTitle,
+    content: freeContent,
+    premium_content: premiumContent,
+    price: articlePrice,
+    cover_url: coverUrl,
+    author_id: currentUser.id
+  };
+  const previousArticles = [...articles];
+  const optimisticArticle = {
+    id: articleId,
+    title: trimmedTitle,
+    content: freeContent,
+    premium_content: premiumContent,
+    price: articlePrice,
+    coverUrl: coverUrl,
+    author: myProfile,
+    likes: 0,
+    isLiked: false,
+    comments: [],
+    date: new Date().toLocaleDateString('en-US'),
+    readTime: '1 min read'
+  };
+  if (editingArticleId) {
+    setArticles(articles.map(a => a.id === editingArticleId ? { ...a, ...optimisticArticle } : a));
+  } else {
+    setArticles([optimisticArticle, ...articles]);
+  }
+  try {
+    if (editingArticleId) {
+      const { error } = await supabase
+        .from('articles')
+        .update(articleData)
+        .eq('id', editingArticleId)
+        .eq('author_id', currentUser.id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase.from('articles').insert([articleData]);
+      if (error) throw error;
+    }
+    localStorage.removeItem('article_draft');
+    setDraftArticles([]);
+    setLastSaved(null);
+    setShowWriteArticleModal(false);
+    setShowPublishSettingsModal(false);
+    setNewArticleTitle("");
+    setNewArticleContent("");
+    setNewArticleCover(null);
+    setEditingArticleId(null);
+    showToast("Success", "success");
+  } catch (err) {
+    setArticles(previousArticles);
+    showToast("DatabaseError", "error");
+  }
+};
   // 💡 記事の編集を開始する（画像もセットする）
   const startEditingArticle = (article: any) => {
     setNewArticleTitle(article.title);
@@ -490,63 +677,65 @@ function MainApp() {
       articleTextareaRef.current.innerHTML = newArticleContent;
     }
   }, [showWriteArticleModal]);
-  const handleCloseModal = () => {
-    const currentHtml = articleTextareaRef.current?.innerHTML || "";
-    const plainText = currentHtml.replace(/<[^>]*>/g, '').trim();
-    if (newArticleTitle.trim() || plainText) {
-      const d = new Date();
-      const now = d.getHours().toString().padStart(2, '0') + ":" + d.getMinutes().toString().padStart(2, '0');
-      const draftId = currentDraftId || `draft_${Date.now()}`;
-      const newDraft = { id: draftId, title: newArticleTitle, content: currentHtml, date: now };
-      setDraftArticles(prev => {
-        const exists = prev.some(d => d.id === draftId);
-        const updated = exists ? prev.map(d => d.id === draftId ? newDraft : d) : [newDraft, ...prev];
-        localStorage.setItem('echoes_drafts_v2', JSON.stringify(updated));
-        return updated;
-      });
-    }
-    setShowWriteArticleModal(false);
-    setNewArticleTitle("");
-    setNewArticleContent("");
-    setNewArticleCover(null);
-    setEditingArticleId(null);
-    setCurrentDraftId(null);
-    setLastSaved(null);
-    setArticleTabMode('drafts');
-  };
-  const handleSaveDraft = () => {
-    const currentHtml = articleTextareaRef.current?.innerHTML || "";
-    const plainText = currentHtml.replace(/<[^>]*>/g, '').trim();
-    if (!newArticleTitle.trim() && !plainText && !newArticleCover) {
-      showToast("保存する内容がありません", "error");
-      return;
-    }
+  const resetEditorState = () => {
+  setShowWriteArticleModal(false);
+  setNewArticleTitle("");
+  setNewArticleContent("");
+  setNewArticleCover(null);
+  setEditingArticleId(null);
+  setCurrentDraftId(null);
+  setLastSaved(null);
+  setArticleTabMode('drafts');
+};
+const handleCloseModal = () => {
+  const currentHtml = articleTextareaRef.current?.innerHTML || "";
+  const safeHtml = DOMPurify.sanitize(currentHtml);
+  const plainText = safeHtml.replace(/<[^>]*>/g, '').trim();
+  const safeTitle = newArticleTitle.trim().replace(/[<&>]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c));
+  if (safeTitle || plainText || newArticleCover) {
     const d = new Date();
-    const now = d.getHours().toString().padStart(2, '0') + ":" + d.getMinutes().toString().padStart(2, '0');
-    const draftId = currentDraftId || `draft_${Date.now()}`;
-    const newDraft = { 
-      id: draftId, 
-      title: newArticleTitle, 
-      content: currentHtml, 
-      coverUrl: newArticleCover,
-      date: now 
-    };
+    const now = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+    const draftId = currentDraftId || `draft_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const newDraft = { id: draftId, title: safeTitle, content: safeHtml, coverUrl: newArticleCover, date: now };
     setDraftArticles(prev => {
       const exists = prev.some(d => d.id === draftId);
       const updated = exists ? prev.map(d => d.id === draftId ? newDraft : d) : [newDraft, ...prev];
-      localStorage.setItem('echoes_drafts_v2', JSON.stringify(updated));
+      try {
+        localStorage.setItem('echoes_drafts_v2', JSON.stringify(updated));
+      } catch (e) {
+        showToast("StorageQuotaExceeded", "error");
+      }
       return updated;
     });
-    setShowWriteArticleModal(false);
-    setNewArticleTitle("");
-    setNewArticleContent("");
-    setNewArticleCover(null);
-    setEditingArticleId(null);
-    setCurrentDraftId(null);
-    setLastSaved(null);
-    setArticleTabMode('drafts');
-    showToast("下書きを保存しました！", "success");
-  };
+  }
+  resetEditorState();
+};
+const handleSaveDraft = () => {
+  const currentHtml = articleTextareaRef.current?.innerHTML || "";
+  const safeHtml = DOMPurify.sanitize(currentHtml);
+  const plainText = safeHtml.replace(/<[^>]*>/g, '').trim();
+  const safeTitle = newArticleTitle.trim().replace(/[<&>]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c));
+  if (!safeTitle && !plainText && !newArticleCover) {
+    showToast("EmptyDraft", "error");
+    return;
+  }
+  const d = new Date();
+  const now = `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
+  const draftId = currentDraftId || `draft_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  const newDraft = { id: draftId, title: safeTitle, content: safeHtml, coverUrl: newArticleCover, date: now };
+  setDraftArticles(prev => {
+    const exists = prev.some(d => d.id === draftId);
+    const updated = exists ? prev.map(d => d.id === draftId ? newDraft : d) : [newDraft, ...prev];
+    try {
+      localStorage.setItem('echoes_drafts_v2', JSON.stringify(updated));
+    } catch {
+      showToast("StorageQuotaExceeded", "error");
+    }
+    return updated;
+  });
+  resetEditorState();
+  showToast("Success", "success");
+};
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const savedDrafts = localStorage.getItem('echoes_drafts_v2');
@@ -596,69 +785,180 @@ function MainApp() {
     }
     return list;
   }, [articles, articleTabMode, followedUsers, myProfile.id]);
-  // 💡 記事のいいね機能
-  const toggleArticleLike = (id: string) => {
-    setArticles(prev => prev.map(a => a.id === id ? { ...a, isLiked: !a.isLiked, likes: a.isLiked ? a.likes - 1 : a.likes + 1 } : a));
-    if (viewingArticle?.id === id) {
-      setViewingArticle((prev: any) => ({ ...prev, isLiked: !prev.isLiked, likes: prev.isLiked ? prev.likes - 1 : prev.likes + 1 }));
+  const toggleArticleLike = async (id: string) => {
+  if (!currentUser) return;
+  let isCurrentlyLiked = false;
+  let targetAuthorId = "";
+  const updateFn = (a: any) => {
+    if (a.id === id) {
+      isCurrentlyLiked = a.isLiked;
+      targetAuthorId = a.author?.id || "";
+      return { ...a, isLiked: !a.isLiked, likes: a.isLiked ? a.likes - 1 : a.likes + 1 };
     }
+    return a;
   };
-  // 💡 記事へのコメント送信機能
-  const submitArticleComment = (e?: React.FormEvent) => {
-    if (e) e.preventDefault(); // Enterキーによる画面リロードを防ぐ
-    if (!articleCommentInput.trim() || !currentUser || !viewingArticle) return;
-    const newCommentText = articleCommentInput;
-    setArticleCommentInput("");
+  const rollbackFn = (a: any) => {
+    if (a.id === id) {
+      return { ...a, isLiked: isCurrentlyLiked, likes: isCurrentlyLiked ? a.likes + 1 : a.likes - 1 };
+    }
+    return a;
+  };
+  setArticles(prev => prev.map(updateFn));
+  setViewingArticle((prev: any) => prev && prev.id === id ? updateFn(prev) : prev);
+  try {
+    if (isCurrentlyLiked) {
+      const { error } = await supabase
+        .from('article_likes')
+        .delete()
+        .eq('article_id', id)
+        .eq('user_id', currentUser.id);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from('article_likes')
+        .insert([{ article_id: id, user_id: currentUser.id }]);
+      if (error) throw error;
+      if (targetAuthorId && targetAuthorId !== currentUser.id && targetAuthorId !== 'ai_system') {
+        await supabase.from('notifications').insert([{
+          user_id: targetAuthorId,
+          sender_id: currentUser.id,
+          type: 'like',
+          text: `${myProfile.name} liked your article`
+        }]);
+      }
+    }
+  } catch (err) {
+    setArticles(prev => prev.map(rollbackFn));
+    setViewingArticle((prev: any) => prev && prev.id === id ? rollbackFn(prev) : prev);
+    showToast("UpdateFailed", "error");
+  }
+};
+  const submitArticleComment = async (e?: React.FormEvent) => {
+  if (e) e.preventDefault();
+  const trimmedInput = articleCommentInput.trim();
+  if (!trimmedInput || !currentUser || !viewingArticle) return;
+  if (trimmedInput.length > 500) {
+    showToast("CommentTooLong", "error");
+    return;
+  }
+  const escapeHtml = (str: string) => str.replace(/[<&>]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c));
+  const safeText = escapeHtml(trimmedInput);
+  setArticleCommentInput("");
+  try {
+    // 💡 新しく作った専用テーブル（article_comments）に保存する！
+    const { data: dbComment, error } = await supabase
+      .from('article_comments')
+      .insert([{ 
+        article_id: viewingArticle.id, 
+        user_id: currentUser.id, 
+        text: safeText 
+      }])
+      .select()
+      .single();
+    if (error) {
+      showToast("InsertFailed", "error");
+      return;
+    }
     const newComment = {
-      id: `article_comment_${Date.now()}`,
+      id: dbComment.id,
       user: myProfile,
-      text: newCommentText
+      text: safeText
     };
-    // 記事のリスト全体を更新
-    setArticles(prev => prev.map(a =>
-      a.id === viewingArticle.id ? { ...a, comments: [...a.comments, newComment] } : a
-    ));
-    // 現在開いている記事の詳細画面も更新
-    setViewingArticle((prev: any) => ({
-      ...prev,
-      comments: [...prev.comments, newComment]
-    }));
-    showToast("コメントを送信しました！", "success");
-  };
+    const updateFn = (a: any) => a.id === viewingArticle.id ? { ...a, comments: [...a.comments, newComment] } : a;
+    setArticles(prev => prev.map(updateFn));
+    setViewingArticle((prev: any) => prev && prev.id === viewingArticle.id ? updateFn(prev) : prev);
+    showToast("Success", "success");
+    const targetAuthorId = viewingArticle.author?.id;
+    if (targetAuthorId && targetAuthorId !== currentUser.id && targetAuthorId !== 'ai_system') {
+      await supabase.from('notifications').insert([{
+        user_id: targetAuthorId,
+        sender_id: currentUser.id,
+        type: 'comment',
+        text: `${myProfile.name}: "${safeText}"`
+      }]);
+    }
+  } catch (err) {
+    showToast("SystemError", "error");
+  }
+};
   const deleteArticle = async (id: string) => {
     if (!currentUser) return;
     const targetArticle = articles.find(a => a.id === id);
-    
     if (!targetArticle || targetArticle.author.id !== currentUser.id) {
       showToast("他人の記事は削除できません", "error");
       return;
     }
-
     if (window.confirm("本当にこの記事を削除しますか？\n（この操作は取り消せません）")) {
       const originalArticles = [...articles];
-      
       setArticles(prev => prev.filter(a => a.id !== id));
       if (viewingArticle?.id === id) {
         setViewingArticle(null);
       }
-
       try {
         const { error } = await supabase
           .from('articles')
           .delete()
           .eq('id', id)
           .eq('author_id', currentUser.id);
-        
         if (error) throw error;
         showToast("記事を削除しました！", "success");
       } catch (err) {
         console.warn("削除エラー:", err);
-        setArticles(originalArticles);
-        showToast("サーバーでの削除に失敗しました", "error");
+        setArticles(originalArticles);
+        showToast("サーバーでの削除に失敗しました", "error");
+      }
+    }
+  };
+  const handlePurchaseArticle = async (article: any) => {
+    if (!currentUser || !article || !article.id) {
+      showToast("記事の情報が不正です", "error");
+      return;
+    }
+    if (article.author && article.author.id === currentUser.id) {
+      showToast("自分の記事は購入できません", "error");
+      return;
+    }
+    const articlePrice = Math.floor(Number(article.price));
+    if (isNaN(articlePrice) || articlePrice <= 0) {
+      showToast("価格が不正です", "error");
+      return;
+    }
+
+    try {
+      const receiverId = article.author && article.author.id !== 'unknown' ? article.author.id : currentUser.id;
+      
+      // 💡 サーバー側のRPC（ストアドプロシージャ）を呼び出して全処理を安全に一括実行
+      const { data, error } = await supabase.rpc('purchase_article', {
+        buyer_id: currentUser.id,
+        author_id: receiverId,
+        target_article_id: String(article.id),
+        price: articlePrice
+      });
+
+      if (error) {
+        if (error.message.includes('Insufficient')) {
+          showToast("コインが不足しています", "error");
+        } else {
+          throw error; // その他の予期せぬエラー
+        }
+        return;
       }
+
+      // 💡 サーバーで計算された最新のコイン残高を画面に反映
+      setMyProfile(prev => ({ 
+        ...prev, 
+        free_coin: data.new_free_coin, 
+        paid_coin: data.new_paid_coin 
+      } as any));
+
+      showToast("記事を購入しました！", "success");
+      mutatePurchase(true); // 記事のロックを解除
+
+    } catch (err) {
+      showToast("通信エラーが発生しました", "error");
     }
   };
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchArtistInfo, setSearchArtistInfo] = useState<any>(null);
@@ -724,16 +1024,13 @@ function MainApp() {
         { id: "fb7", name: "King Gnu Live Tour 2026", date: "2026-10-05", memberCount: 0, isJoined: false, isVerified: true, reportedBy: [] },
         { id: "fb8", name: "COUNTDOWN JAPAN 26/27", date: "2026-12-28", memberCount: 0, isJoined: false, isVerified: true, reportedBy: [] }
       ];
-
       try {
         const apiKey = process.env.NEXT_PUBLIC_TICKETMASTER_API_KEY;
         const startDateTime = new Date().toISOString().split('.')[0] + 'Z';
         const response = await fetch(`https://app.ticketmaster.com/discovery/v2/events.json?classificationName=music&countryCode=JP&size=200&startDateTime=${startDateTime}&sort=date,asc&apikey=${apiKey}`);
-        
         if (!response.ok) {
           throw new Error("NetworkError");
         }
-        
         const data = await response.json();
         if (data._embedded && data._embedded.events) {
           apiLives = data._embedded.events.map((event: any) => ({
@@ -752,7 +1049,6 @@ function MainApp() {
         showToast("公式ライブの取得に失敗しました。標準データを表示します", "error");
         apiLives = fallbackLives;
       }
-
       let customLives: LiveCommunity[] = [];
       try {
         const { data: dbData, error: dbError } = await supabase.from('custom_communities').select('*');
@@ -773,12 +1069,10 @@ function MainApp() {
       } catch (dbErr) {
         showToast("ユーザー作成ライブの取得に失敗しました", "error");
       }
-
       setRealCommunities([...apiLives, ...customLives]);
     };
     fetchLiveSchedules();
   }, []);
-
   useEffect(() => {
     if (!currentUser || realCommunities.length === 0) return;
     const fetchJoinedCommunities = async () => {
@@ -787,7 +1081,6 @@ function MainApp() {
           .from('community_members')
           .select('community_id')
           .eq('user_id', currentUser.id);
-        
         if (data && !error) {
           const joinedIds = new Set(data.map((d: any) => d.community_id));
           const joined = realCommunities
@@ -801,7 +1094,6 @@ function MainApp() {
     };
     fetchJoinedCommunities();
   }, [currentUser, realCommunities]);
-
   const [matchIndex, setMatchIndex] = useState(0);
   const [showMatchFilterModal, setShowMatchFilterModal] = useState(false);
   const [matchFilter, setMatchFilter] = useState({ artists: [] as any[], hashtags: [] as string[], liveHistories: [] as string[], ageMin: 18, ageMax: 100, gender: "All" });
@@ -854,7 +1146,6 @@ function MainApp() {
   const [activeChatUserId, setActiveChatUserId] = useState<string | null>(null);
   const [chatMessageInput, setChatMessageInput] = useState("");
   const [showChatPlusMenu, setShowChatPlusMenu] = useState(false);
-
   const { data: activeCommunityMemberIds } = useSWR(
     activeChatUserId?.startsWith('com') ? ['community_members', activeChatUserId] : null,
     async ([_, commId]) => {
@@ -903,7 +1194,6 @@ function MainApp() {
   const [chatMusicComment, setChatMusicComment] = useState("");
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-
   useEffect(() => {
             if (jumpToMessageId && messageRefs.current[jumpToMessageId]) {
               messageRefs.current[jumpToMessageId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -911,9 +1201,7 @@ function MainApp() {
               return () => clearTimeout(timer);
             }
           }, [jumpToMessageId]);
-
           const prevChatLengthRef = useRef(0);
-
           // 💡 チャットを開いた時＆新着メッセージが来た時に一番下へ自動スクロールするエンジン
           useEffect(() => {
             if (activeChatUserId && chatHistory[activeChatUserId]) {
@@ -931,18 +1219,17 @@ function MainApp() {
               prevChatLengthRef.current = 0;
             }
           }, [activeChatUserId, chatHistory]);
-
-          
-
   const unreadNotificationsCount = notifications.filter(n => !n.read).length;
   const [calendarDate, setCalendarDate] = useState(new Date());
   const [showDrumrollModal, setShowDrumrollModal] = useState(false);
   const [selectedCalendarPopupVibe, setSelectedCalendarPopupVibe] = useState<Song | null>(null);
   const currentYear = calendarDate.getFullYear();
   const currentMonth = calendarDate.getMonth() + 1;
-  const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
+  const [showRevenueDashboard, setShowRevenueDashboard] = useState(false);
+  const [revenueData, setRevenueData] = useState<{ total: number, article: number, gift: number, history: any[] }>({ total: 0, article: 0, gift: 0, history: [] });
   const [showAdminDashboard, setShowAdminDashboard] = useState(false); // 💡 運営ダッシュボード用の箱
   const [showVibeMatchDetails, setShowVibeMatchDetails] = useState(false);
   const [showAppInfoModal, setShowAppInfoModal] = useState<{ title: string, content: string } | null>(null);
@@ -1199,59 +1486,117 @@ function MainApp() {
   const [isLoadingVibes, setIsLoadingVibes] = useState(false);
   const VIBES_PER_PAGE = 5; // 💡 動作確認しやすくするため最初は5件ずつ読み込む
   const fetchVibes = async (pageNumber = 0, isRefresh = false) => {
-    if (isLoadingVibes || (!hasMoreVibes && !isRefresh)) return;
-    setIsLoadingVibes(true);
-    try {
-      const from = pageNumber * VIBES_PER_PAGE;
-      const to = from + VIBES_PER_PAGE - 1;
-      const { data: vibesData, error: vibesError } = await supabase.from('vibes').select('*').order('created_at', { ascending: false }).range(from, to);
-      const { data: profilesData, error: profilesError } = await supabase.from('profiles').select('*');
-      const { data: likesData, error: likesError } = await supabase.from('likes').select('*');
-      const { data: commentsData, error: commentsError } = await supabase.from('comments').select('*');
-      if (vibesError) throw vibesError;
-      if (profilesError) throw profilesError;
-      if (likesError) throw likesError;
-      if (commentsError) throw commentsError;
-      if (vibesData && profilesData) {
-        const currentUserId = currentUser?.id;
-        const validVibesData = vibesData.filter((v: any) => profilesData.some((p: any) => p.id === v.user_id));
-        const formatted = validVibesData.map((v: any) => {
-          const authorProfile = profilesData.find((p: any) => p.id === v.user_id);
-          const postUser = authorProfile ? { id: authorProfile.id, name: authorProfile.name, handle: authorProfile.handle, avatar: authorProfile.avatar, bio: authorProfile.bio, followers: 0, following: 0, isPrivate: false, category: 'suggested' } : myProfile;
-          const postLikes = likesData ? likesData.filter((l: any) => l.vibe_id === v.id) : [];
-          const postComments = commentsData ? commentsData.filter((c: any) => c.vibe_id === v.id) : [];
-          const isLikedByMe = currentUserId ? postLikes.some((l: any) => l.user_id === currentUserId) : false;
-          const formattedComments = postComments.map((c: any) => {
-            const commenterProfile = profilesData.find((p: any) => p.id === c.user_id);
-            return { id: c.id, text: c.text, user: commenterProfile ? { id: commenterProfile.id, handle: commenterProfile.handle, name: commenterProfile.name, avatar: commenterProfile.avatar } : myProfile };
-          });
-          return { id: v.id, trackId: parseInt(v.track_id) || 0, title: v.title, artist: v.artist, artistId: 0, imgUrl: v.img_url, previewUrl: v.preview_url, date: new Date(v.created_at).toLocaleDateString('ja-JP'), year: new Date(v.created_at).getFullYear(), month: new Date(v.created_at).getMonth() + 1, dayIndex: new Date(v.created_at).getDate(), timestamp: new Date(v.created_at).getTime(), time: new Date(v.created_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }), caption: v.caption || "", user: postUser, likes: postLikes.length, isLiked: isLikedByMe, comments: formattedComments };
-        });
-        if (isRefresh || pageNumber === 0) {
-          setVibes(formatted as Song[]);
-        } else {
-          setVibes(prev => {
-            const existingIds = new Set(prev.map(p => p.id));
-            const newItems = formatted.filter(f => !existingIds.has(f.id));
-            return [...prev, ...newItems] as Song[];
-          });
-        }
-        setHasMoreVibes(vibesData.length === VIBES_PER_PAGE);
-        setVibePage(pageNumber);
-      }
-    } catch (error) {
-      showToast("タイムラインの読み込みに失敗しました", "error");
-    } finally {
-      setIsLoadingVibes(false);
+  if (isLoadingVibes || (!hasMoreVibes && !isRefresh)) return;
+  setIsLoadingVibes(true);
+  try {
+    const from = pageNumber * VIBES_PER_PAGE;
+    const to = from + VIBES_PER_PAGE - 1;
+    const { data: vibesData, error: vibesError } = await supabase
+      .from('vibes')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .range(from, to);
+    if (vibesError) throw vibesError;
+    if (!vibesData || vibesData.length === 0) {
+      if (isRefresh || pageNumber === 0) setVibes([]);
+      setHasMoreVibes(false);
+      return;
     }
-  };
-
+    const vibeIds = vibesData.map(v => v.id);
+    const [likesRes, commentsRes] = await Promise.all([
+      supabase.from('likes').select('*').in('vibe_id', vibeIds),
+      supabase.from('comments').select('*').in('vibe_id', vibeIds)
+    ]);
+    if (likesRes.error) throw likesRes.error;
+    if (commentsRes.error) throw commentsRes.error;
+    const likesData = likesRes.data || [];
+    const commentsData = commentsRes.data || [];
+    const userIds = [...new Set([
+      ...vibesData.map(v => v.user_id),
+      ...commentsData.map(c => c.user_id)
+    ])];
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('profiles')
+      .select('*')
+      .in('id', userIds);
+    if (profilesError) throw profilesError;
+    const validProfiles = profilesData || [];
+    const currentUserId = currentUser?.id;
+    const formatted = vibesData
+      .filter(v => validProfiles.some(p => p.id === v.user_id))
+      .map(v => {
+        const authorProfile = validProfiles.find(p => p.id === v.user_id);
+        const postUser = authorProfile ? { 
+          id: authorProfile.id, 
+          name: authorProfile.name, 
+          handle: authorProfile.handle, 
+          avatar: authorProfile.avatar, 
+          bio: authorProfile.bio, 
+          followers: 0, 
+          following: 0, 
+          isPrivate: false, 
+          category: 'suggested' 
+        } : myProfile;
+        const postLikes = likesData.filter(l => l.vibe_id === v.id);
+        const postComments = commentsData.filter(c => c.vibe_id === v.id);
+        const isLikedByMe = currentUserId ? postLikes.some(l => l.user_id === currentUserId) : false;
+        const formattedComments = postComments.map(c => {
+          const commenterProfile = validProfiles.find(p => p.id === c.user_id) || postUser;
+          return { 
+            id: c.id, 
+            text: c.text, 
+            user: { 
+              id: commenterProfile.id, 
+              handle: commenterProfile.handle, 
+              name: commenterProfile.name, 
+              avatar: commenterProfile.avatar 
+            } 
+          };
+        });
+        const createdAt = new Date(v.created_at);
+        return {
+          id: v.id,
+          trackId: parseInt(v.track_id, 10) || 0,
+          title: v.title,
+          artist: v.artist,
+          artistId: 0,
+          imgUrl: v.img_url,
+          previewUrl: v.preview_url,
+          date: createdAt.toLocaleDateString('ja-JP'),
+          year: createdAt.getFullYear(),
+          month: createdAt.getMonth() + 1,
+          dayIndex: createdAt.getDate(),
+          timestamp: createdAt.getTime(),
+          time: createdAt.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
+          caption: v.caption || "",
+          user: postUser,
+          likes: postLikes.length,
+          isLiked: isLikedByMe,
+          comments: formattedComments
+        };
+      });
+    if (isRefresh || pageNumber === 0) {
+      setVibes(formatted as Song[]);
+    } else {
+      setVibes(prev => {
+        const existingIds = new Set(prev.map(p => p.id));
+        const newItems = formatted.filter(f => !existingIds.has(f.id));
+        return [...prev, ...newItems] as Song[];
+      });
+    }
+    setHasMoreVibes(vibesData.length === VIBES_PER_PAGE);
+    setVibePage(pageNumber);
+  } catch (error) {
+    showToast("DataFetchFailed", "error");
+  } finally {
+    setIsLoadingVibes(false);
+  }
+};
         useEffect(() => {
           if (!isInitializing) {
             fetchVibes(0, true);
           }
         }, [isInitializing]);
-
   // 💡 画面の最下部を検知して次のデータを読み込むシステム
   const observerTarget = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -1268,11 +1613,19 @@ function MainApp() {
     }
     return () => observer.disconnect();
   }, [hasMoreVibes, isLoadingVibes, vibePage]);
-  useEffect(() => {
-    if (!currentUser) return;
-    const fetchChats = async () => {
+  // 💡 監視用の「分身（Ref）」を作ることで、再接続のループを防ぐ
+const activeChatUserIdRef = useRef<string | null>(activeChatUserId);
+useEffect(() => {
+  activeChatUserIdRef.current = activeChatUserId;
+}, [activeChatUserId]);
+useEffect(() => {
+  if (!currentUser) return;
+  let isMounted = true;
+
+  const fetchChats = async () => {
+    try {
       const { data } = await supabase.from('chat_messages').select('*').order('created_at', { ascending: true });
-      if (data) {
+      if (data && isMounted) {
         const history: Record<string, ChatMessage[]> = {};
         data.forEach(msg => {
           const isGroup = msg.target_id.startsWith('g') || msg.target_id.startsWith('com');
@@ -1292,63 +1645,77 @@ function MainApp() {
         });
         setChatHistory(history);
       }
-    };
-    fetchChats();
-    const fetchNotifications = async () => {
+    } catch (e) {}
+  };
+
+  const fetchNotifications = async () => {
+    try {
       const { data } = await supabase.from('notifications').select('*').eq('user_id', currentUser.id).order('created_at', { ascending: false });
-      if (data) {
-        setNotifications(data.map(n => ({ id: n.id, type: n.type, text: n.text, time: new Date(n.created_at).toLocaleDateString('ja-JP'), read: n.is_read })) as any);
+      if (data && isMounted) {
+        setNotifications(data.map(n => ({ id: n.id, type: n.type, text: n.text, time: new Date(n.created_at).toLocaleDateString('en-US'), read: n.is_read })) as any);
       }
-    };
-    fetchNotifications();
-    // 2. リアルタイム監視 (メッセージ・既読・削除・通知)
-    const channel = supabase.channel('realtime_updates')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, async (payload) => {
-        const msg = payload.new;
-        if (msg.sender_id === currentUser.id) return;
-        const isGroup = msg.target_id.startsWith('g') || msg.target_id.startsWith('com');
-        const partnerId = isGroup ? msg.target_id : msg.sender_id;
-        let isRead = msg.is_read;
-        // 💡 相手の画面を開いている最中なら既読にする
-        if (activeChatUserId === partnerId) {
-          isRead = true;
-          await supabase.from('chat_messages').update({ is_read: true }).eq('id', msg.id);
-        } else {
-          // 💡 通知を「〇〇さん：内容」のようにリッチにする
-          const senderName = allProfiles.find(u => u.id === msg.sender_id)?.name || "誰か";
-          const msgPreview = msg.text.startsWith('[IMAGE]') ? "画像を送信しました" : msg.text.startsWith('[FILE]') ? "ファイルを送信しました" : msg.text.startsWith('[VOICE]') ? "ボイスメッセージを送信しました" : msg.text;
-          showToast(`${senderName}さんから: ${msgPreview}`);
-        }
-        const newChatMsg = { id: msg.id, senderId: msg.sender_id, text: msg.text, timestamp: new Date(msg.created_at).getTime(), isRead: isRead };
-        setChatHistory(prev => ({ ...prev, [partnerId]: [...(prev[partnerId] || []), newChatMsg as any] }));
-      })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_messages' }, (payload) => {
-        const updatedMsg = payload.new;
-        setChatHistory(prev => {
-          const newHistory = { ...prev };
-          Object.keys(newHistory).forEach(pId => { newHistory[pId] = newHistory[pId].map(m => (m.id === updatedMsg.id ? { ...m, isRead: updatedMsg.is_read } as any : m)); });
-          return newHistory;
-        });
-      })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_messages' }, (payload) => {
-        // 💡 送信取り消しされたら、即座に画面から消す
-        const deletedMsgId = payload.old.id;
-        setChatHistory(prev => {
-          const newHistory = { ...prev };
-          Object.keys(newHistory).forEach(pId => { newHistory[pId] = newHistory[pId].filter(m => m.id !== deletedMsgId); });
-          return newHistory;
-        });
-      })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, (payload) => {
-        if (payload.new.user_id === currentUser.id) {
-          const newNotif = { id: payload.new.id, type: payload.new.type, text: payload.new.text, time: "たった今", read: payload.new.is_read };
-          setNotifications(prev => [newNotif as any, ...prev]);
-          showToast(payload.new.text, "success");
-        }
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [currentUser, activeChatUserId]);
+    } catch (e) {}
+  };
+
+  fetchChats();
+  fetchNotifications();
+
+  const channel = supabase.channel(`rt_${currentUser.id}`)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, async (payload) => {
+      const msg = payload.new;
+      if (msg.sender_id === currentUser.id) return;
+      
+      const isGroup = msg.target_id.startsWith('g') || msg.target_id.startsWith('com');
+      const partnerId = isGroup ? msg.target_id : msg.sender_id;
+      let isRead = msg.is_read;
+      
+      const currentActiveId = activeChatUserIdRef.current;
+
+      if (currentActiveId === partnerId) {
+        isRead = true;
+        await supabase.from('chat_messages').update({ is_read: true }).eq('id', msg.id);
+      } else {
+        const { data: senderData } = await supabase.from('profiles').select('name').eq('id', msg.sender_id).single();
+        const senderName = senderData ? senderData.name : "NewMessage";
+        const msgPreview = msg.text.startsWith('[IMAGE]') ? "Image" : msg.text.startsWith('[FILE]') ? "File" : msg.text.startsWith('[VOICE]') ? "Voice" : msg.text;
+        showToast(`${senderName}: ${msgPreview}`);
+      }
+      
+      const newChatMsg = { id: msg.id, senderId: msg.sender_id, text: msg.text, timestamp: new Date(msg.created_at).getTime(), isRead: isRead };
+      setChatHistory(prev => ({ ...prev, [partnerId]: [...(prev[partnerId] || []), newChatMsg as any] }));
+    })
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_messages' }, (payload) => {
+      const updatedMsg = payload.new;
+      setChatHistory(prev => {
+        const newHistory = { ...prev };
+        Object.keys(newHistory).forEach(pId => { newHistory[pId] = newHistory[pId].map(m => (m.id === updatedMsg.id ? { ...m, isRead: updatedMsg.is_read } as any : m)); });
+        return newHistory;
+      });
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_messages' }, (payload) => {
+      const deletedMsgId = payload.old.id;
+      setChatHistory(prev => {
+        const newHistory = { ...prev };
+        Object.keys(newHistory).forEach(pId => { newHistory[pId] = newHistory[pId].filter(m => m.id !== deletedMsgId); });
+        return newHistory;
+      });
+    })
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, (payload) => {
+      if (payload.new.user_id === currentUser.id) {
+        const newNotif = { id: payload.new.id, type: payload.new.type, text: payload.new.text, time: "Now", read: payload.new.is_read };
+        setNotifications(prev => [newNotif as any, ...prev]);
+        showToast("Success", "success");
+      }
+    })
+    .subscribe();
+
+  return () => { 
+    isMounted = false;
+    supabase.removeChannel(channel); 
+  };
+}, [currentUser]);
+
+ // 💡 最重要: activeChatUserId を依存リストから消し去ることで、無限リロードを阻止！
   useEffect(() => {
     if (!activeChatUserId || !currentUser) return;
     const markAsRead = async () => {
@@ -1364,14 +1731,11 @@ function MainApp() {
   }, [activeChatUserId, currentUser]);
   const [realUserSearchResults, setRealUserSearchResults] = useState<User[]>([]);
   const [debouncedUserSearchQuery, setDebouncedUserSearchQuery] = useState("");
-
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedUserSearchQuery(userSearchQuery), 300);
     return () => clearTimeout(timer);
   }, [userSearchQuery]);
-
   const cleanUserQuery = debouncedUserSearchQuery.trim().replace(/^@/, '');
-  
   const { data: userData, error: userError } = useSWR(
     cleanUserQuery ? `profiles_search_${cleanUserQuery}` : null,
     async () => {
@@ -1380,7 +1744,6 @@ function MainApp() {
       return data;
     }
   );
-
   useEffect(() => {
     if (!cleanUserQuery) {
       setRealUserSearchResults([]);
@@ -1395,17 +1758,14 @@ function MainApp() {
     }
   }, [cleanUserQuery, userData, userError]);
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
-  
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedSearchQuery(searchQuery), 500);
     return () => clearTimeout(timer);
   }, [searchQuery]);
-
   const { data: searchData, error: searchError } = useSWR(
     debouncedSearchQuery.trim() ? `https://itunes.apple.com/search?term=${encodeURIComponent(debouncedSearchQuery)}&entity=song&country=jp&limit=5` : null,
     fetcher
   );
-
   useEffect(() => {
     if (!debouncedSearchQuery.trim()) {
       setSearchResults([]);
@@ -1431,17 +1791,14 @@ function MainApp() {
     }
   }, [debouncedSearchQuery, searchData, searchError]);
   const [debouncedFilterArtistInput, setDebouncedFilterArtistInput] = useState("");
-
   useEffect(() => {
     const timer = setTimeout(() => setDebouncedFilterArtistInput(filterArtistInput), 500);
     return () => clearTimeout(timer);
   }, [filterArtistInput]);
-
   const { data: filterArtistData, error: filterArtistError } = useSWR(
     debouncedFilterArtistInput.trim() ? `https://itunes.apple.com/search?term=${encodeURIComponent(debouncedFilterArtistInput)}&entity=song&country=jp&limit=10` : null,
     fetcher
   );
-
   useEffect(() => {
     if (!debouncedFilterArtistInput.trim()) {
       setFilterArtistSuggestions([]);
@@ -1467,21 +1824,17 @@ function MainApp() {
     activeArtistProfile ? `https://itunes.apple.com/search?term=${encodeURIComponent(activeArtistProfile.artistName)}&entity=song&country=jp&limit=50` : null,
     fetcher
   );
-
   useEffect(() => {
     if (!activeArtistProfile) return;
-
     if (!artistData && !artistError) {
       setIsArtistLoading(true);
       return;
     }
-
     if (artistData) {
       const term = activeArtistProfile.artistName;
       const filtered = artistData.results.filter((i: any) => i.wrapperType === 'track' && i.artistName.toLowerCase().includes(term.toLowerCase()));
       const sortedSongs = filtered.sort((a: any, b: any) => new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime());
       setArtistSongs(sortedSongs);
-
       if (sortedSongs.length > 0 && !activeArtistProfile.isVerifiedReal) {
         setActiveArtistProfile((prev: any) => ({
           ...prev,
@@ -1491,36 +1844,29 @@ function MainApp() {
         }));
       }
     }
-
     if (artistError) {
       showToast("アーティスト情報の取得に失敗しました", "error");
       setArtistSongs([]);
     }
-
     setIsArtistLoading(false);
   }, [activeArtistProfile?.artistName, artistData, artistError]);
   const { data: albumData, error: albumError } = useSWR(
     activeAlbumProfile ? `https://itunes.apple.com/lookup?id=${activeAlbumProfile.collectionId}&entity=song&country=jp` : null,
     fetcher
   );
-
   useEffect(() => {
     if (!activeAlbumProfile) return;
-
     if (!albumData && !albumError) {
       setIsAlbumLoading(true);
       return;
     }
-
     if (albumData) {
       setAlbumSongs(albumData.results.filter((i: any) => i.wrapperType === 'track'));
     }
-
     if (albumError) {
       showToast("アルバム情報の取得に失敗しました", "error");
       setAlbumSongs([]);
     }
-
     setIsAlbumLoading(false);
   }, [activeAlbumProfile?.collectionId, albumData, albumError]);
   const allAvailableHashtags = useMemo(() => { const s = new Set<string>(); allProfiles.forEach(u => u.hashtags?.forEach(h => s.add(h))); return Array.from(s); }, [allProfiles]);
@@ -1563,179 +1909,278 @@ function MainApp() {
     if (existingPost) setShowPostOverrideConfirm(existingPost);
     else executePost(new Date());
   };
-  // 💡 二重投稿を完全に防止する処理を追加
   const executePost = async (now: Date) => {
-    if (!draftSong || isPosting || !currentUser) return;
-    setIsPosting(true);
-    try {
-      const currentUserId = currentUser.id;
-      const existingPost = isAlreadyPostedToday();
-      if (existingPost) { await supabase.from('vibes').delete().eq('id', existingPost.id); }
-      const newId = Date.now().toString();
-      const newVibeData = { id: newId, user_id: currentUserId, track_id: draftSong.trackId.toString(), title: draftSong.trackName, artist: draftSong.artistName, img_url: draftSong.artworkUrl100.replace('100x100bb', '600x600bb'), preview_url: draftSong.previewUrl || null, caption: draftCaption, created_at: now.toISOString() };
-      const { error } = await supabase.from('vibes').insert([newVibeData]);
-      if (error) { showToast("保存に失敗しました", 'error'); setIsPosting(false); return; }
-      await fetchVibes(0, true); // 💡 新しい取得ロジックに合わせて変更
-      cancelDraft(); setSearchQuery(""); setSearchResults([]); setSearchArtistInfo(null); setIsSearchFocused(false); setActiveTab('home'); showToast("記録が完了しました！", "success");
-    } catch (e) {
-      showToast("エラーが発生しました", "error");
-    } finally {
-      setIsPosting(false);
-    }
-  };
-  // 💡 DBと連動する「いいね」機能 (通知送信付き)
-  const toggleLike = async (vibeId: string) => {
-    if (!currentUser) return;
-    let isCurrentlyLiked = false;
-    let targetUserId = ""; // 投稿者のIDを覚えておく箱
-    const fn = (s: Song) => {
-      if (s.id === vibeId) {
-        isCurrentlyLiked = s.isLiked;
-        targetUserId = s.user.id; // 投稿者のIDを記録
-        return { ...s, isLiked: !s.isLiked, likes: s.isLiked ? s.likes - 1 : s.likes + 1 };
+  if (!draftSong || isPosting || !currentUser) {
+    return;
+  }
+  const tCaption = draftCaption.trim();
+  if (tCaption.length > 300) {
+    showToast("CaptionTooLong", "error");
+    return;
+  }
+  const escapeHtml = (str: string) => str.replace(/[<&>]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c));
+  const safeCaption = escapeHtml(tCaption);
+  setIsPosting(true);
+  try {
+    const existingPost = isAlreadyPostedToday();
+    if (existingPost) {
+      const { error: deleteError } = await supabase
+        .from('vibes')
+        .delete()
+        .eq('id', existingPost.id)
+        .eq('user_id', currentUser.id);
+      if (deleteError) {
+        showToast("DeleteFailed", "error");
+        return;
       }
-      return s;
+    }
+    const newId = `vibe_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const newVibeData = {
+      id: newId,
+      user_id: currentUser.id,
+      track_id: draftSong.trackId.toString(),
+      title: draftSong.trackName,
+      artist: draftSong.artistName,
+      img_url: draftSong.artworkUrl100.replace('100x100bb', '600x600bb'),
+      preview_url: draftSong.previewUrl || null,
+      caption: safeCaption,
+      created_at: now.toISOString()
     };
-    setVibes(vibes.map(fn)); setCommunityVibes(communityVibes.map(fn));
+    const { error: insertError } = await supabase.from('vibes').insert([newVibeData]);
+    if (insertError) {
+      showToast("InsertFailed", "error");
+      return;
+    }
+    await fetchVibes(0, true);
+    cancelDraft();
+    setSearchQuery("");
+    setSearchResults([]);
+    setSearchArtistInfo(null);
+    setIsSearchFocused(false);
+    setActiveTab('home');
+    showToast("Success", "success");
+  } catch (err) {
+    showToast("SystemError", "error");
+  } finally {
+    setIsPosting(false);
+  }
+};
+  const toggleLike = async (vibeId: string) => {
+  if (!currentUser) return;
+  let isCurrentlyLiked = false;
+  let targetUserId = "";
+  const updateFn = (s: any) => {
+    if (s.id === vibeId) {
+      isCurrentlyLiked = s.isLiked;
+      targetUserId = s.user.id;
+      return { ...s, isLiked: !s.isLiked, likes: s.isLiked ? s.likes - 1 : s.likes + 1 };
+    }
+    return s;
+  };
+  const rollbackFn = (s: any) => {
+    if (s.id === vibeId) {
+      return { ...s, isLiked: isCurrentlyLiked, likes: isCurrentlyLiked ? s.likes + 1 : s.likes - 1 };
+    }
+    return s;
+  };
+  setVibes(prev => prev.map(updateFn));
+  setCommunityVibes(prev => prev.map(updateFn));
+  try {
     if (isCurrentlyLiked) {
-      await supabase.from('likes').delete().eq('vibe_id', vibeId).eq('user_id', currentUser.id);
+      const { error } = await supabase
+        .from('likes')
+        .delete()
+        .eq('vibe_id', vibeId)
+        .eq('user_id', currentUser.id);
+      if (error) throw error;
     } else {
-      await supabase.from('likes').insert([{ vibe_id: vibeId, user_id: currentUser.id }]);
-      // 💡 自分以外の投稿なら「いいね」通知をDBに送信
+      const { error } = await supabase
+        .from('likes')
+        .insert([{ vibe_id: vibeId, user_id: currentUser.id }]);
+      if (error) throw error;
       if (targetUserId && targetUserId !== currentUser.id) {
         await supabase.from('notifications').insert([{
           user_id: targetUserId,
           sender_id: currentUser.id,
           type: 'like',
-          text: `${myProfile.name}さんがあなたのVibeにいいねしました`
+          text: `${myProfile.name} liked your post`
         }]);
       }
     }
-  };
+  } catch (err) {
+    setVibes(prev => prev.map(rollbackFn));
+    setCommunityVibes(prev => prev.map(rollbackFn));
+    showToast("UpdateFailed", "error");
+  }
+};
   // 💡 DBと連動する「コメント」機能 (通知送信付き)
   const submitComment = async (vibeId: string) => {
-    if (!commentInput.trim() || !currentUser) return;
-    const newCommentText = commentInput;
-    setCommentInput("");
-    const { data: newDbComment, error } = await supabase.from('comments').insert([{ vibe_id: vibeId, user_id: currentUser.id, text: newCommentText }]).select().single();
-    if (error) { showToast("コメントの送信に失敗しました", "error"); return; }
-    const c: Comment = { id: newDbComment.id, user: myProfile, text: newCommentText };
-    let targetUserId = ""; // 投稿者のIDを覚えておく箱
-    const fn = (s: Song) => {
-      if (s.id === vibeId) targetUserId = s.user.id; // 投稿者のIDを記録
-      return s.id === vibeId ? { ...s, comments: [...s.comments, c] } : s;
-    };
-    setVibes(vibes.map(fn)); setCommunityVibes(communityVibes.map(fn));
-    showToast("コメントしました！", "success");
-    // 💡 自分以外の投稿なら「コメント」通知をDBに送信
+  const trimmedInput = commentInput.trim();
+  if (!trimmedInput || !currentUser) {
+    return;
+  }
+  if (trimmedInput.length > 200) {
+    showToast("LengthLimitExceeded", "error");
+    return;
+  }
+  const sanitizedText = trimmedInput.replace(/[<&>]/g, (char) => {
+    const escapeMap: Record<string, string> = { '<': '&lt;', '>': '&gt;', '&': '&amp;' };
+    return escapeMap[char] || char;
+  });
+  setCommentInput("");
+  try {
+    const { data: newDbComment, error } = await supabase
+      .from('comments')
+      .insert([{ vibe_id: vibeId, user_id: currentUser.id, text: sanitizedText }])
+      .select()
+      .single();
+    if (error) {
+      showToast("InsertFailed", "error");
+      return;
+    }
+    const newComment = { id: newDbComment.id, user: myProfile, text: sanitizedText };
+    let targetUserId = "";
+    const updateStateFn = (prev: Song[]) => prev.map((s) => {
+      if (s.id === vibeId) {
+        targetUserId = s.user.id;
+        return { ...s, comments: [...s.comments, newComment] };
+      }
+      return s;
+    });
+    setVibes(updateStateFn);
+    setCommunityVibes(updateStateFn);
+    showToast("Success", "success");
     if (targetUserId && targetUserId !== currentUser.id) {
       await supabase.from('notifications').insert([{
         user_id: targetUserId,
         sender_id: currentUser.id,
         type: 'comment',
-        text: `${myProfile.name}さんがコメントしました: "${newCommentText}"`
+        text: `${myProfile.name}: "${sanitizedText}"`
       }]);
     }
-  };
+  } catch (err) {
+    showToast("SystemError", "error");
+  }
+};
   const deleteVibe = async (id: string) => {
-    if (confirm("このVibeを削除しますか？")) {
-      const { error } = await supabase.from('vibes').delete().eq('id', id);
-      if (error) { showToast("データの削除に失敗しました", "error"); return; }
-      setVibes(vibes.filter(v => v.id !== id)); setCommunityVibes(communityVibes.filter(v => v.id !== id));
+  if (!currentUser) {
+    showToast("Unauthorized", "error");
+    return;
+  }
+  if (window.confirm("DeleteConfirm")) {
+    const targetVibe = vibes.find(v => v.id === id) || communityVibes.find(v => v.id === id);
+    if (targetVibe && targetVibe.user.id !== currentUser.id) {
+      showToast("PermissionDenied", "error");
+      return;
     }
-  };
- // 💡 送信時に本物のIDを取得し、画像やファイルも同時に送れるように強化
-  const submitChatMessage = async (targetId: string) => {
-    if ((!chatMessageInput.trim() && pendingAttachments.length === 0) || !currentUser) return;
-    
-    const textToSend = chatMessageInput.trim();
-    const attachmentsToSend = [...pendingAttachments];
-    
-    // 💡 UIを即座にリセットしてサクサク感を出す
-    setChatMessageInput("");
-    setPendingAttachments([]);
-    
-    // 1. まずテキストメッセージがあれば送信
-    if (textToSend) {
-      const tempId = Date.now().toString();
-      const newMsg = { id: tempId, senderId: currentUser.id, text: textToSend, timestamp: Date.now(), isRead: false };
-      setChatHistory(prev => ({ ...prev, [targetId]: [...(prev[targetId] || []), newMsg as any] }));
-      
+    try {
+      const { error } = await supabase
+        .from('vibes')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', currentUser.id);
+      if (error) {
+        showToast("DeleteFailed", "error");
+        return;
+      }
+      setVibes(prev => prev.filter(v => v.id !== id));
+      setCommunityVibes(prev => prev.filter(v => v.id !== id));
+      showToast("Success", "success");
+    } catch (err) {
+      showToast("SystemError", "error");
+    }
+  }
+};
+ const submitChatMessage = async (targetId: string) => {
+  if (!currentUser) return;
+  const textToSend = chatMessageInput.trim();
+  const attachmentsToSend = [...pendingAttachments];
+  if (!textToSend && attachmentsToSend.length === 0) {
+    return;
+  }
+  if (textToSend.length > 1000) {
+    showToast("TextLimitExceeded", "error");
+    return;
+  }
+  if (attachmentsToSend.length > 5) {
+    showToast("TooManyFiles", "error");
+    return;
+  }
+  const MAX_FILE_SIZE = 10 * 1024 * 1024;
+  for (const att of attachmentsToSend) {
+    if (att.file && att.file.size > MAX_FILE_SIZE) {
+      showToast("FileSizeLimitExceeded", "error");
+      return;
+    }
+  }
+  const escapeHtml = (str: string) => str.replace(/[<&>]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c));
+  const safeText = escapeHtml(textToSend);
+  setChatMessageInput("");
+  setPendingAttachments([]);
+  if (safeText) {
+    const tempId = `msg_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const newMsg = { id: tempId, senderId: currentUser.id, text: safeText, timestamp: Date.now(), isRead: false };
+    setChatHistory(prev => ({ ...prev, [targetId]: [...(prev[targetId] || []), newMsg as any] }));
+    try {
       const { data, error } = await supabase
         .from('chat_messages')
-        .insert([{ sender_id: currentUser.id, target_id: targetId, text: textToSend }])
+        .insert([{ sender_id: currentUser.id, target_id: targetId, text: safeText }])
         .select()
         .single();
-        
       if (!error && data) {
         setChatHistory(prev => {
           const history = prev[targetId] || [];
           return { ...prev, [targetId]: history.map(m => m.id === tempId ? { ...m, id: data.id } as any : m) };
         });
       }
+    } catch (err) {
+      showToast("MessageSendFailed", "error");
+      setChatHistory(prev => ({ ...prev, [targetId]: (prev[targetId] || []).filter(m => m.id !== tempId) }));
     }
-
-    // 2. 添付ファイルがあれば連続でアップロードして送信
-    if (attachmentsToSend.length > 0) {
-      showToast("ファイルを送信中...", "success");
-      
-      for (const att of attachmentsToSend) {
-        const isImage = att.type === 'image';
-        
-        // 💡 ファイルサイズを計算（MB単位に変換）して記憶させる
-        const sizeMB = att.file ? (att.file.size / (1024 * 1024)).toFixed(2) + " MB" : "不明";
-        
-        // 💡 【重要】アップロードを待たずに、画面に「仮の画像」を即座に表示して安心させる（UX向上）
-        const tempFileId = Date.now().toString() + Math.random().toString(36).substring(7);
-        const tempFileText = isImage ? `[IMAGE]${att.data}` : `[FILE]${att.name}|${att.data}|${sizeMB}`;
-        const newTempMsg = { id: tempFileId, senderId: currentUser.id, text: tempFileText, timestamp: Date.now(), isRead: false };
-        setChatHistory(prev => ({ ...prev, [targetId]: [...(prev[targetId] || []), newTempMsg as any] }));
-        
-        try {
-          let uploadFile = att.file;
-          // 画像の場合、圧縮を試みるが、失敗した場合は元のファイルのまま強制的に送信を続行する
-          if (isImage) {
-            try {
-              uploadFile = await compressImage(att.file);
-            } catch (compressErr) {
-              console.log("画像圧縮をスキップし、オリジナルを送信します");
-            }
+  }
+  if (attachmentsToSend.length > 0) {
+    showToast("Uploading", "success");
+    for (const att of attachmentsToSend) {
+      const isImage = att.type === 'image';
+      const sizeMB = att.file ? (att.file.size / (1024 * 1024)).toFixed(2) + " MB" : "Unknown";
+      const safeFileName = escapeHtml(att.name);
+      const tempFileId = `file_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      const tempFileText = isImage ? `[IMAGE]${att.data}` : `[FILE]${safeFileName}|${att.data}|${sizeMB}`;
+      const newTempMsg = { id: tempFileId, senderId: currentUser.id, text: tempFileText, timestamp: Date.now(), isRead: false };
+      setChatHistory(prev => ({ ...prev, [targetId]: [...(prev[targetId] || []), newTempMsg as any] }));
+      try {
+        let uploadFile = att.file;
+        if (isImage) {
+          try {
+            uploadFile = await compressImage(att.file);
+          } catch (compressErr) {
+            uploadFile = att.file;
           }
-          
-          const fileExt = uploadFile.name.split('.').pop() || "jpeg";
-          // 💡 念のためRLS（セキュリティ）に引っかからないよう、必ずユーザーIDから始まるファイル名にする
-          const fileName = `${currentUser.id}-chat-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-          
-          // ストレージにアップロード
-          const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, uploadFile);
-          if (uploadError) throw uploadError;
-          
-          // 公開URLを取得
-          const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
-          const realFileText = isImage ? `[IMAGE]${urlData.publicUrl}` : `[FILE]${att.name}|${urlData.publicUrl}|${sizeMB}`;
-          
-          // DBに保存
-          const { data: dbData } = await supabase
-            .from('chat_messages')
-            .insert([{ sender_id: currentUser.id, target_id: targetId, text: realFileText }])
-            .select()
-            .single();
-            
-          if (dbData) {
-            setChatHistory(prev => {
-              const history = prev[targetId] || [];
-              // 仮のメッセージを本物のIDとURLに静かに差し替える
-              return { ...prev, [targetId]: history.map(m => m.id === tempFileId ? { ...m, id: dbData.id, text: realFileText } as any : m) };
-            });
-          }
-        } catch (err) {
-          showToast(`${att.name}の送信に失敗しました`, "error");
-          // 失敗した場合は仮の表示を消す
-          setChatHistory(prev => ({ ...prev, [targetId]: prev[targetId].filter(m => m.id !== tempFileId) }));
         }
+        const fileExt = uploadFile.name.split('.').pop() || "bin";
+        const fileName = `${currentUser.id}-chat-${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, uploadFile);
+        if (uploadError) throw uploadError;
+        const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+        const realFileText = isImage ? `[IMAGE]${urlData.publicUrl}` : `[FILE]${safeFileName}|${urlData.publicUrl}|${sizeMB}`;
+        const { data: dbData } = await supabase
+          .from('chat_messages')
+          .insert([{ sender_id: currentUser.id, target_id: targetId, text: realFileText }])
+          .select()
+          .single();
+        if (dbData) {
+          setChatHistory(prev => {
+            const history = prev[targetId] || [];
+            return { ...prev, [targetId]: history.map(m => m.id === tempFileId ? { ...m, id: dbData.id, text: realFileText } as any : m) };
+          });
+        }
+      } catch (err) {
+        showToast("UploadFailed", "error");
+        setChatHistory(prev => ({ ...prev, [targetId]: (prev[targetId] || []).filter(m => m.id !== tempFileId) }));
       }
     }
-  };
+  }
+};
   const deleteChatMessage = async (msgId: string, partnerId: string) => {
     if (!currentUser) return;
     setChatHistory(prev => {
@@ -1745,25 +2190,75 @@ function MainApp() {
     showToast("送信を取り消しました");
     await supabase.from('chat_messages').delete().eq('id', msgId).eq('sender_id', currentUser.id);
   };
-  const handleCreateGroup = () => { if (!newGroupName.trim() || newGroupMembers.size === 0) { showToast("グループ名とメンバーを指定", "error"); return; } const ng: ChatGroup = { id: `g${Date.now()}`, name: newGroupName, memberIds: Array.from(newGroupMembers), avatar: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80" }; setChatGroups([...chatGroups, ng]); setShowCreateGroupModal(false); setNewGroupName(""); setNewGroupMembers(new Set()); showToast("グループ作成完了！"); };
+  const handleCreateGroup = async () => {
+  if (!currentUser) return;
+  const tName = newGroupName.trim();
+  if (!tName || tName.length > 50) {
+    showToast("InvalidGroupName", "error");
+    return;
+  }
+  if (newGroupMembers.size === 0) {
+    showToast("NoMembersSelected", "error");
+    return;
+  }
+  const escapeHtml = (str: string) => str.replace(/[<&>]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c));
+  const safeName = escapeHtml(tName);
+  const groupId = `g_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  const memberArray = Array.from(newGroupMembers);
+  memberArray.push(currentUser.id);
+  try {
+    const { error: groupError } = await supabase.from('chat_groups').insert([{
+      id: groupId,
+      name: safeName,
+      creator_id: currentUser.id,
+      avatar: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80"
+    }]);
+    if (groupError) {
+      showToast("GroupCreationError", "error");
+      return;
+    }
+    const memberInserts = memberArray.map(uid => ({
+      group_id: groupId,
+      user_id: uid
+    }));
+    const { error: memberError } = await supabase.from('group_members').insert(memberInserts);
+    if (memberError) {
+      showToast("MemberAdditionError", "error");
+      return;
+    }
+    const newGroup = {
+      id: groupId,
+      name: safeName,
+      memberIds: memberArray,
+      avatar: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80"
+    };
+    setChatGroups(prev => [...prev, newGroup as any]);
+    setShowCreateGroupModal(false);
+    setNewGroupName("");
+    setNewGroupMembers(new Set());
+    setActiveChatUserId(groupId);
+    setChatTabMode('groups');
+    setActiveTab('chat');
+    showToast("Success", "success");
+  } catch (err) {
+    showToast("SystemError", "error");
+  }
+};
   const joinCommunity = async (c: LiveCommunity) => {
     if (!currentUser) {
       showToast("ログインが必要です", "error");
       return;
     }
-
     setChatCommunities(p => p.some(x => x.id === c.id) ? p : [...p, { ...c, isJoined: true }]);
     setActiveCommunityDetail(null);
     setChatTabMode('community');
     setActiveTab('chat');
     setActiveChatUserId(c.id);
-
     try {
       const { error } = await supabase.from('community_members').insert([{
         community_id: c.id,
         user_id: currentUser.id
       }]);
-      
       if (error) {
         throw error;
       }
@@ -1776,78 +2271,142 @@ function MainApp() {
     }
   };
   const handleCreateCommunity = async () => {
-    if (!newCommName.trim() || newCommYear.length !== 4 || !newCommMonth || !newCommDay) {
-      showToast("ライブ名と正しい日程(YYYY/MM/DD)を入力してください", "error");
+  if (!currentUser) {
+    showToast("Unauthorized", "error");
+    return;
+  }
+  const tName = newCommName.trim();
+  if (!tName || tName.length > 50) {
+    showToast("InvalidNameLength", "error");
+    return;
+  }
+  const y = parseInt(newCommYear, 10);
+  const m = parseInt(newCommMonth, 10);
+  const d = parseInt(newCommDay, 10);
+  if (isNaN(y) || isNaN(m) || isNaN(d) || y < 2024 || m < 1 || m > 12 || d < 1 || d > 31) {
+    showToast("InvalidDateFormat", "error");
+    return;
+  }
+  const testDate = new Date(y, m - 1, d);
+  if (testDate.getFullYear() !== y || testDate.getMonth() !== m - 1 || testDate.getDate() !== d) {
+    showToast("InvalidCalendarDate", "error");
+    return;
+  }
+  const escapeHtml = (str: string) => str.replace(/[<&>]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c));
+  const safeName = escapeHtml(tName);
+  const formattedDate = `${y}-${m.toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
+  const commId = `com_custom_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  try {
+    const { error: commError } = await supabase.from('custom_communities').insert([{
+      id: commId,
+      name: safeName,
+      date: formattedDate,
+      creator_id: currentUser.id
+    }]);
+    if (commError) {
+      showToast("DatabaseInsertFailed", "error");
       return;
     }
-    const formattedDate = `${newCommYear}-${newCommMonth.padStart(2, '0')}-${newCommDay.padStart(2, '0')}`;
-    const commId = `com_new_${Date.now()}`;
-    // 💡 自分が参加するので初期人数は必ず「1」に戻す
-    const newComm: LiveCommunity = { id: commId, name: newCommName, date: formattedDate, memberCount: 1, isJoined: true, isVerified: false, reportedBy: [] };
-    
-    if (currentUser) {
-      try {
-        const { error: commError } = await supabase.from('custom_communities').insert([{
-          id: commId,
-          name: newCommName,
-          date: formattedDate,
-          creator_id: currentUser.id
-        }]);
-
-        if (commError) {
-          console.warn("コミュニティ作成エラー:", commError);
-        } else {
-          const { error: memberError } = await supabase.from('community_members').insert([{
-            community_id: commId,
-            user_id: currentUser.id
-          }]);
-          if (memberError) console.warn("参加情報の自動保存エラー:", memberError);
-        }
-      } catch (e) {
-        console.warn("通信エラー(無視して続行します):", e);
-      }
+    const { error: memberError } = await supabase.from('community_members').insert([{
+      community_id: commId,
+      user_id: currentUser.id
+    }]);
+    if (memberError) {
+      showToast("MembershipSaveFailed", "error");
+      return;
     }
-
-    setRealCommunities(prev => [...prev, newComm]);
-    setChatCommunities(prev => [...prev, newComm]);
+    const newComm = {
+      id: commId,
+      name: safeName,
+      date: formattedDate,
+      memberCount: 1,
+      isJoined: true,
+      isVerified: false,
+      reportedBy: []
+    };
+    setRealCommunities(prev => [...prev, newComm as any]);
+    setChatCommunities(prev => [...prev, newComm as any]);
     setShowCreateCommunityModal(false);
     setNewCommName("");
-    setNewCommYear(""); setNewCommMonth(""); setNewCommDay("");
+    setNewCommYear("");
+    setNewCommMonth("");
+    setNewCommDay("");
     setChatTabMode('community');
     setActiveTab('chat');
-    setActiveChatUserId(newComm.id);
-    showToast(`${newComm.name} を新しく作成して参加しました！`, "success");
-  };
-  // 💡 嘘のコミュニティを{t('report')}機能（重複チェック版）
-  const handleReportCommunity = (id: string) => {
-    if (!currentUser) return;
-    const target = realCommunities.find(c => c.id === id);
-    if (target?.reportedBy?.includes(currentUser.id)) {
-      showToast("このライブは既に通報済みです", "error");
-      return;
+    setActiveChatUserId(commId);
+    showToast("Success", "success");
+  } catch (err) {
+    showToast("SystemError", "error");
+  }
+};
+  const handleReportCommunity = async (id: string) => {
+  if (!currentUser) return;
+  
+  const target = realCommunities.find(c => c.id === id);
+  if (target?.reportedBy?.includes(currentUser.id)) {
+    showToast("ReportAlreadySubmitted", "error");
+    return;
+  }
+
+  if (window.confirm("ReportConfirm")) {
+    setRealCommunities(prev => prev.map(c =>
+      c.id === id ? { ...c, reportedBy: [...(c.reportedBy || []), currentUser.id] } : c
+    ));
+    setActiveCommunityDetail(null);
+    
+    try {
+      const { error } = await supabase
+        .from('reports')
+        .insert([{ reporter_id: currentUser.id, reported_id: id, type: 'community' }]);
+        
+      if (error) throw error;
+      showToast("Success", "success");
+    } catch (err) {
+      showToast("SystemError", "error");
     }
-    if (confirm("このライブ情報は間違っていますか？\n（3人以上の異なるユーザーが{t('report')}と運営が確認します）")) {
-      setRealCommunities(prev => prev.map(c =>
-        c.id === id
-          ? { ...c, reportedBy: [...(c.reportedBy || []), currentUser.id] }
-          : c
-      ));
-      setActiveCommunityDetail(null);
-      showToast("通報を受け付けました。ご協力感謝します", "success");
+  }
+};
+
+const handleRestoreCommunity = async (id: string) => {
+  setRealCommunities(prev => prev.map(c => c.id === id ? { ...c, reportedBy: [] } : c));
+  
+  try {
+    await supabase
+      .from('reports')
+      .delete()
+      .eq('reported_id', id)
+      .eq('type', 'community');
+      
+    showToast("Success", "success");
+  } catch (err) {
+    showToast("SystemError", "error");
+  }
+};
+
+const handleDeleteCommunity = async (id: string) => {
+  if (window.confirm("DeleteConfirm")) {
+    setRealCommunities(prev => prev.filter(c => c.id !== id));
+    
+    try {
+      if (id.startsWith('com_custom_')) {
+        await supabase
+          .from('custom_communities')
+          .delete()
+          .eq('id', id);
+      }
+      
+      await supabase
+        .from('reports')
+        .delete()
+        .eq('reported_id', id)
+        .eq('type', 'community');
+        
+      showToast("Success", "success");
+    } catch (err) {
+      showToast("SystemError", "error");
     }
-  };
-  // 💡 運営用：通報されたコミュニティを復旧（安全判定）する
-  const handleRestoreCommunity = (id: string) => {
-    setRealCommunities(prev => prev.map(c => c.id === id ? { ...c, reportedBy: [] } : c));
-    showToast("コミュニティを復旧しました", "success");
-  };
-  // 💡 運営用：通報された悪質なコミュニティを完全削除する
-  const handleDeleteCommunity = (id: string) => {
-    if (confirm("本当にこのコミュニティを完全に削除しますか？")) {
-      setRealCommunities(prev => prev.filter(c => c.id !== id));
-      showToast("コミュニティを削除しました", "success");
-    }
-  };
+  }
+};
   // 💡 ステップ11: @メンションに加えて、#ハッシュタグもタップ可能にする（緑色のリンク化）
   // 💡 ステップ11: @メンションはプロフィールへ、#ハッシュタグはコミュニティ検索へ飛ぶ
   const parseMention = (cap: string) => {
@@ -1868,21 +2427,46 @@ function MainApp() {
     });
   };
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]; if (!file || !currentUser) return;
-    showToast("画像をアップロードしています...", "success");
+  const file = e.target.files?.[0];
+  if (!file || !currentUser) {
+    return;
+  }
+  if (!file.type.startsWith("image/")) {
+    showToast("InvalidFileType", "error");
+    e.target.value = "";
+    return;
+  }
+  const MAX_FILE_SIZE = 5 * 1024 * 1024;
+  if (file.size > MAX_FILE_SIZE) {
+    showToast("FileSizeLimitExceeded", "error");
+    e.target.value = "";
+    return;
+  }
+  showToast("Uploading", "success");
+  try {
+    let uploadFile = file;
     try {
-      // 💡 プロフィール画像をアップロード前に圧縮
-      const compressedFile = await compressImage(file);
-      const fileName = `${currentUser.id}-${Date.now()}.jpeg`;
-      const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, compressedFile);
-      if (uploadError) throw uploadError;
-      const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
-      setEditAvatar(data.publicUrl);
-      showToast("画像のアップロードが完了しました！そのまま保存を押してください", "success");
-    } catch (err) {
-      showToast("画像のアップロードに失敗しました", "error");
+      uploadFile = await compressImage(file);
+    } catch (compressErr) {
+      uploadFile = file;
     }
-  };
+    const fileName = `avatar_${currentUser.id}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.jpeg`;
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, uploadFile);
+    if (uploadError) {
+      showToast("UploadFailed", "error");
+      return;
+    }
+    const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
+    if (data && data.publicUrl) {
+      setEditAvatar(data.publicUrl);
+      showToast("Success", "success");
+    }
+  } catch (err) {
+    showToast("SystemError", "error");
+  } finally {
+    e.target.value = "";
+  }
+};
   // 💡 チャットで画像・ファイルを送る機能（画像の場合は自動圧縮）
   const handleChatFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     let file = e.target.files?.[0];
@@ -1963,31 +2547,50 @@ function MainApp() {
     }
   };
   const sendVoiceMessage = async () => {
-    if (!draftVoice || !currentUser || !activeChatUserId) return;
-    showToast("音声を送信中...", "success");
-    const fileName = `voice-${currentUser.id}-${Date.now()}.webm`;
-    const tempVoice = draftVoice;
-    cancelVoiceRecording(); // UIをリセットして閉じる
-    const { error } = await supabase.storage.from('avatars').upload(fileName, tempVoice.blob);
-    if (error) { showToast("音声の送信に失敗しました", "error"); return; }
-    const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
-    const tempId = Date.now().toString();
-    const fileText = `[VOICE]${data.publicUrl}`;
-    const newMsg = { id: tempId, senderId: currentUser.id, text: fileText, timestamp: Date.now(), isRead: false };
-    setChatHistory(prev => ({ ...prev, [activeChatUserId]: [...(prev[activeChatUserId] || []), newMsg as any] }));
-    const { data: dbData } = await supabase.from('chat_messages').insert([{ sender_id: currentUser.id, target_id: activeChatUserId, text: fileText }]).select().single();
+  if (!draftVoice || !currentUser || !activeChatUserId) {
+    return;
+  }
+  const MAX_AUDIO_SIZE = 15 * 1024 * 1024;
+  if (draftVoice.blob.size > MAX_AUDIO_SIZE) {
+    showToast("AudioSizeLimitExceeded", "error");
+    return;
+  }
+  const tempVoice = draftVoice;
+  cancelVoiceRecording();
+  const tempId = `msg_voice_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  const tempFileText = `[VOICE]${tempVoice.url}`;
+  const newTempMsg = { id: tempId, senderId: currentUser.id, text: tempFileText, timestamp: Date.now(), isRead: false };
+  setChatHistory(prev => ({ ...prev, [activeChatUserId]: [...(prev[activeChatUserId] || []), newTempMsg as any] }));
+  try {
+    const fileName = `voice_${currentUser.id}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.webm`;
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, tempVoice.blob);
+    if (uploadError) {
+      throw uploadError;
+    }
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(fileName);
+    const realFileText = `[VOICE]${urlData.publicUrl}`;
+    const { data: dbData, error: dbError } = await supabase
+      .from('chat_messages')
+      .insert([{ sender_id: currentUser.id, target_id: activeChatUserId, text: realFileText }])
+      .select()
+      .single();
+    if (dbError) {
+      throw dbError;
+    }
     if (dbData) {
       setChatHistory(prev => {
         const history = prev[activeChatUserId] || [];
-        return { ...prev, [activeChatUserId]: history.map(m => m.id === tempId ? { ...m, id: dbData.id } as any : m) };
+        return { ...prev, [activeChatUserId]: history.map(m => m.id === tempId ? { ...m, id: dbData.id, text: realFileText } as any : m) };
       });
     }
-  };
+  } catch (err) {
+    showToast("VoiceSendFailed", "error");
+    setChatHistory(prev => ({ ...prev, [activeChatUserId]: (prev[activeChatUserId] || []).filter(m => m.id !== tempId) }));
+  }
+};
   const toggleFollow = async (targetUserId: string) => {
     if (!currentUser || !currentUser.id) return;
-    
     const isFollowing = followedUsers.has(targetUserId);
-
     setFollowedUsers(prev => {
       const next = new Set(prev);
       if (isFollowing) {
@@ -1997,7 +2600,6 @@ function MainApp() {
       }
       return next;
     });
-
     setAllFollows(prev => {
       if (isFollowing) {
         return prev.filter(f => !(f.follower_id === currentUser.id && f.following_id === targetUserId));
@@ -2005,7 +2607,6 @@ function MainApp() {
         return [...prev, { follower_id: currentUser.id, following_id: targetUserId }];
       }
     });
-
     try {
       if (isFollowing) {
         const { error } = await supabase
@@ -2013,14 +2614,12 @@ function MainApp() {
           .delete()
           .eq('follower_id', currentUser.id)
           .eq('following_id', targetUserId);
-        
         if (error) throw error;
         showToast(`${t('follow')}を解除しました`, "success");
       } else {
         const { error } = await supabase
           .from('follows')
           .insert([{ follower_id: currentUser.id, following_id: targetUserId }]);
-          
         if (error) throw error;
         showToast(`${t('follow')}しました！`, "success");
       }
@@ -2034,7 +2633,6 @@ function MainApp() {
         }
         return next;
       });
-      
       setAllFollows(prev => {
         if (isFollowing) {
           return [...prev, { follower_id: currentUser.id, following_id: targetUserId }];
@@ -2042,7 +2640,6 @@ function MainApp() {
           return prev.filter(f => !(f.follower_id === currentUser.id && f.following_id === targetUserId));
         }
       });
-      
       showToast("処理に失敗しました", "error");
     }
   };
@@ -2055,12 +2652,10 @@ function MainApp() {
         return next;
       });
       handleGoBack();
-
       try {
         const { error } = await supabase
           .from('blocks')
           .insert([{ blocker_id: currentUser.id, blocked_id: userId }]);
-        
         if (error) throw error;
         showToast("ユーザーをブロックしました", "success");
       } catch (err) {
@@ -2075,26 +2670,21 @@ function MainApp() {
       }
     }
   };
-
   const [showBlockedUsersModal, setShowBlockedUsersModal] = useState(false);
   const displayBlockedUsers = useMemo(() => allProfiles.filter(u => blockedUsers.has(u.id)), [allProfiles, blockedUsers]);
-
   const handleUnblockUser = async (userId: string) => {
     if (!currentUser) return;
-    
     setBlockedUsers(prev => {
       const next = new Set(prev);
       next.delete(userId);
       return next;
     });
-
     try {
       const { error } = await supabase
         .from('blocks')
         .delete()
         .eq('blocker_id', currentUser.id)
         .eq('blocked_id', userId);
-        
       if (error) throw error;
       showToast("ブロックを解除しました", "success");
     } catch (err) {
@@ -2107,7 +2697,6 @@ function MainApp() {
       showToast("通信エラーが発生しました", "error");
     }
   };
-
   useEffect(() => {
     if (!currentUser) return;
     const fetchBlockedUsers = async () => {
@@ -2116,7 +2705,6 @@ function MainApp() {
           .from('blocks')
           .select('blocked_id')
           .eq('blocker_id', currentUser.id);
-        
         if (data && !error) {
           setBlockedUsers(new Set(data.map((d: any) => d.blocked_id)));
         }
@@ -2133,7 +2721,6 @@ function MainApp() {
         const { error } = await supabase
           .from('reports')
           .insert([{ reporter_id: currentUser.id, reported_id: userId, type: 'user' }]);
-        
         if (error) throw error;
         showToast("通報が完了しました。ご協力ありがとうございます。", "success");
       } catch (err: any) {
@@ -2155,84 +2742,143 @@ function MainApp() {
     else { showToast("URLをクリップボードにコピーしました。"); }
   };
   const handleLogin = async () => {
-    setIsAuthLoading(true);
+  if (!email || !password) {
+    showToast("ValidationError", "error");
+    return;
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    showToast("InvalidEmailFormat", "error");
+    return;
+  }
+  setIsAuthLoading(true);
+  try {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      showToast(error.message, "error");
+    } else if (data.user) {
+      setCurrentUser(data.user);
+      setIsLoggedIn(true);
+      showToast("Success", "success");
+    }
+  } catch (err) {
+    showToast("SystemError", "error");
+  } finally {
     setIsAuthLoading(false);
-    if (error) { showToast("ログイン失敗: " + error.message, "error"); }
-    else { setCurrentUser(data.user); setIsLoggedIn(true); showToast("ログインしました", "success"); }
-  };
+  }
+};
   const saveProfileChanges = async () => {
-    if (!currentUser) return;
-    const sanitizeUrl = (url: string) => {
-      if (!url) return "";
-      try {
-        const u = new URL(url.trim());
-        return u.origin + u.pathname;
-      } catch (e) {
-        return url.trim();
-      }
-    };
-    const cleanTwitter = sanitizeUrl(editTwitter);
-    const cleanInstagram = sanitizeUrl(editInstagram);
-    const newHashtags = (editHashtags || "").split(',').map(s => s.trim()).filter(s => s);
-    const newLiveHistory = (editLiveHistory || "").split(',').map(s => s.trim()).filter(s => s);
-
+  if (!currentUser) return;
+  const tName = editName.trim();
+  const tHandle = editHandle.trim().replace(/^@/, '');
+  const tBio = editBio.trim();
+  if (!tName || tName.length > 50) {
+    showToast("InvalidNameLength", "error");
+    return;
+  }
+  if (!/^[A-Za-z0-9_]{3,20}$/.test(tHandle)) {
+    showToast("InvalidHandleFormat", "error");
+    return;
+  }
+  if (tBio.length > 160) {
+    showToast("BioTooLong", "error");
+    return;
+  }
+  const escapeHtml = (str: string) => {
+    return str.replace(/[<&>]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c));
+  };
+  const safeBio = escapeHtml(tBio);
+  const sanitizeUrl = (url: string) => {
+    if (!url) return "";
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ 
-          name: editName, 
-          handle: editHandle, 
-          bio: editBio, 
-          avatar: editAvatar, 
-          twitterUrl: cleanTwitter, 
-          instagramUrl: cleanInstagram,
-          is_private: editIsPrivate,
-          hashtags: newHashtags,
-          liveHistory: newLiveHistory
-        })
-        .eq('id', currentUser.id);
-
-      if (error) throw error;
-
-      const updatedProfileData = {
-        name: editName, 
-        handle: editHandle, 
-        bio: editBio, 
-        avatar: editAvatar, 
-        twitterUrl: cleanTwitter, 
-        instagramUrl: cleanInstagram,
-        isPrivate: editIsPrivate,
-        hashtags: newHashtags,
-        liveHistory: newLiveHistory
-      };
-
-      setMyProfile(prev => ({ ...prev, ...updatedProfileData } as any));
-      setAllProfiles(prev => prev.map(p => p.id === currentUser.id ? { ...p, ...updatedProfileData } as any : p));
-      
-      setIsEditingProfile(false);
-      showToast("プロフィールを保存しました！", "success");
-    } catch (err: any) {
-      console.error(err);
-      showToast("保存に失敗しました: " + (err.message || "通信エラー"), "error");
+      const u = new URL(url.trim());
+      if (u.protocol !== "http:" && u.protocol !== "https:") {
+        return "";
+      }
+      return u.origin + u.pathname;
+    } catch {
+      return "";
     }
   };
-  const handleSignUp = async () => {
-    const pwRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
-    if (!pwRegex.test(password)) {
-      showToast("パスワードは8文字以上で、英語と数字を両方含めてください", "error");
+  const cleanTwitter = sanitizeUrl(editTwitter);
+  const cleanInstagram = sanitizeUrl(editInstagram);
+  const newHashtags = (editHashtags || "").split(',').map(s => s.trim()).filter(Boolean);
+  const newLiveHistory = (editLiveHistory || "").split(',').map(s => s.trim()).filter(Boolean);
+  try {
+    const dbUpdateData = {
+      name: tName,
+      handle: tHandle,
+      bio: safeBio,
+      avatar: editAvatar,
+      twitterUrl: cleanTwitter,
+      instagramUrl: cleanInstagram,
+      isPrivate: editIsPrivate,
+      hashtags: newHashtags,
+      liveHistory: newLiveHistory
+    };
+    const { error } = await supabase
+      .from('profiles')
+      .update(dbUpdateData)
+      .eq('id', currentUser.id);
+    if (error) {
+      showToast("UpdateFailed", "error");
       return;
     }
-    setIsAuthLoading(true);
+    setMyProfile(prev => ({ ...prev, ...dbUpdateData } as any));
+    setAllProfiles(prev => prev.map(p => p.id === currentUser.id ? { ...p, ...dbUpdateData } as any : p));
+    setIsEditingProfile(false);
+    showToast("Success", "success");
+  } catch (err) {
+    showToast("SystemError", "error");
+  }
+};
+  const handleSignUp = async () => {
+  if (!email || !password) {
+    showToast("ValidationError", "error");
+    return;
+  }
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(email)) {
+    showToast("InvalidEmailFormat", "error");
+    return;
+  }
+  const pwRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+  if (!pwRegex.test(password)) {
+    showToast("WeakPassword", "error");
+    return;
+  }
+  setIsAuthLoading(true);
+  try {
     const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) { showToast("登録失敗: " + error.message, "error"); setIsAuthLoading(false); return; }
-    if (data.user && data.user.identities && data.user.identities.length === 0) { showToast("このメールアドレスはすでに登録されています", "error"); setIsAuthLoading(false); return; }
+    if (error) {
+      showToast(error.message, "error");
+      return;
+    }
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      showToast("EmailAlreadyInUse", "error");
+      return;
+    }
     if (data.user) {
-      await supabase.from('profiles').insert([{ id: data.user.id, name: email.split('@')[0], handle: email.split('@')[0], avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80", bio: "よろしくお願いします！" }]);
+      const defaultName = email.split('@')[0];
+      const { error: profileError } = await supabase.from('profiles').insert([{
+        id: data.user.id,
+        name: defaultName,
+        handle: defaultName,
+        avatar: "/default-avatar.png",
+        bio: "Hello"
+      }]);
+      if (profileError) {
+        showToast("ProfileCreationError", "error");
+        return;
+      }
       setSignupSuccess(true);
     }
+  } catch (err) {
+    showToast("SystemError", "error");
+  } finally {
     setIsAuthLoading(false);
-  }; // ⬅️ おそらくこの「 }; 」が消えてしまっていたのがエラーの原因だ！
+  }
+};
   // 💡 ステップ8: ログアウト・退会機能の完全実装
   const handleLogout = async () => {
     showToast(t('logout') + "しています...");
@@ -2241,32 +2887,20 @@ function MainApp() {
     window.location.href = '/';
   };
   const handleDeleteAccount = async () => {
-    if (!currentUser) return;
-    showToast("アカウントのデータを完全に消去しています...", "success");
-    try {
-      // 1. 関連するすべてのデータを並行して一気に消去する
-      await Promise.all([
-        supabase.from('vibes').delete().eq('user_id', currentUser.id),
-        supabase.from('likes').delete().eq('user_id', currentUser.id),
-        supabase.from('comments').delete().eq('user_id', currentUser.id),
-        supabase.from('follows').delete().eq('follower_id', currentUser.id),
-        supabase.from('follows').delete().eq('following_id', currentUser.id),
-        supabase.from('notifications').delete().eq('user_id', currentUser.id),
-        supabase.from('chat_messages').delete().eq('sender_id', currentUser.id)
-      ]);
-      // 2. プロフィールを削除
-      await supabase.from('profiles').delete().eq('id', currentUser.id);
-      // 3. 💡 【重要】ここが動画で抜けていた部分！Supabaseのユーザー自体を消滅させる
-      const { error: rpcError } = await supabase.rpc('delete_user', { target_id: currentUser.id });
-      if (rpcError) throw rpcError;
-      // 4. ログアウトして画面を初期化
-      await supabase.auth.signOut();
-      window.location.href = '/';
-    } catch (e) {
-      console.error("退会エラー詳細:", e);
-      showToast("退会処理中にエラーが発生しました", "error");
+  if (!currentUser) return;
+  showToast("DeletingAccount", "success");
+  try {
+    const { error: rpcError } = await supabase.rpc('delete_user', { target_id: currentUser.id });
+    if (rpcError) {
+      showToast("DeleteFailed", "error");
+      return;
     }
-  };
+    await supabase.auth.signOut();
+    window.location.href = '/';
+  } catch (err) {
+    showToast("SystemError", "error");
+  }
+};
   const DrumrollPickerModal = () => {
     const monthList = useMemo(() => Array.from({ length: 12 }, (_, i) => i + 1), []);
     const yearList = useMemo(() => Array.from({ length: 10 }, (_, i) => 2024 + i), []);
@@ -2377,6 +3011,7 @@ function MainApp() {
           const userVibes = vibes.filter(v => v.user.id === myProfile.id);
           const v = userVibes.find(x => x.year === currentYear && x.month === currentMonth && x.dayIndex === day);
           return (
+
             <div key={i} className="flex items-start gap-5 relative z-10">
               <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm transition-colors mt-2 ${v ? 'bg-[#1c1c1e] border-2 border-[#1DB954] text-white shadow-[0_0_15px_rgba(29,185,84,0.2)]' : 'bg-black border border-zinc-800 text-zinc-600'}`}>
                 {day}
@@ -2433,54 +3068,90 @@ function MainApp() {
       </div>
     </div>
   );
-  const renderFeedCard = (s: Song) => (
-    <div key={s.id} className="bg-[#1c1c1e] border border-zinc-800/50 rounded-[24px] p-5 shadow-lg relative z-0">
-      <div className="flex justify-between items-start mb-5">
-        <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => { if (s.user.id !== 'me') { setViewingUser(s.user); setActiveTab('other_profile'); } else { setActiveTab('profile'); } }}>
-          <img src={s.user.avatar} loading="lazy" decoding="async" alt="avatar" className="w-10 h-10 rounded-full object-cover" />
-          <div>
-            <p className="text-sm font-bold">{s.user.name}</p>
-            <p className="text-[10px] text-zinc-500">@{s.user.handle} • {displayLocalTime(s.timestamp, timeZone)}</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleShareVibe(s); }} className="text-zinc-500 hover:text-white p-1"><IconShareExternal /></button>
-          {(s.user.id === myProfile.id || s.user.id === currentUser?.id || s.user.id === 'me') && <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteVibe(s.id); }} className="text-[10px] font-bold text-zinc-600 hover:text-red-500 uppercase tracking-widest p-1">削除</button>}
-        </div>
-      </div>
-      <div className="flex items-center gap-4 mb-5">
-        <div className="relative w-20 h-20 rounded-full overflow-hidden border border-zinc-700 group flex-shrink-0">
-          <img src={s.imgUrl} loading="lazy" decoding="async" alt="cover" className={`w-full h-full object-cover ${playingSong === s.previewUrl ? 'animate-[spin_4s_linear_infinite]' : ''}`} />
-          <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
-            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePlay(s.previewUrl); }} className="w-10 h-10 bg-black/60 rounded-full flex items-center justify-center text-white pointer-events-auto shadow-lg hover:scale-105 transition-transform relative z-50">
-              {playingSong === s.previewUrl ? <IconStop /> : <IconPlay />}
-            </button>
-          </div>
+const renderFeedCard = (s: Song) => (
+  <div key={s.id} className="bg-[#1c1c1e] border border-zinc-800/50 rounded-[24px] p-5 shadow-lg relative z-0">
+    <div className="flex justify-between items-start mb-5">
+      <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => { if (s.user.id !== 'me') { setViewingUser(s.user); setActiveTab('other_profile'); } else { setActiveTab('profile'); } }}>
+        <div className="relative w-10 h-10 flex-shrink-0">
+          <Image src={s.user.avatar || '/default-avatar.png'} alt="avatar" fill className="rounded-full object-cover" sizes="40px" unoptimized />
         </div>
         <div className="flex-1 overflow-hidden">
-          <p className="font-bold text-lg truncate">{s.title}</p>
-          <p onClick={(e) => handleArtistClick(e, s.artistId, s.artist, s.imgUrl)} className="text-xs text-zinc-400 hover:text-[#1DB954] cursor-pointer inline-block mt-1 relative z-10">{s.artist}</p>
+          <p className="text-sm font-bold truncate">{s.user.name}</p>
+          <p className="text-[10px] text-zinc-500 truncate">@{s.user.handle} • {displayLocalTime(s.timestamp, timeZone)}</p>
         </div>
       </div>
-      <p className="text-xs mb-5">{parseMention(s.caption)}</p>
-      <div className="flex gap-6 border-t border-zinc-800/60 pt-4">
-        <button onClick={() => toggleLike(s.id)} className="flex items-center gap-2"><IconHeart filled={s.isLiked} />{formatCount(s.likes)}</button>
-        <button onClick={() => setActiveCommentSongId(activeCommentSongId === s.id ? null : s.id)} className="flex items-center gap-2"><IconComment />{formatCount(s.comments.length)}</button>
+      <div className="flex items-center gap-2">
+        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleShareVibe(s); }} className="text-zinc-500 hover:text-white p-1"><IconShareExternal /></button>
+        {(s.user.id === myProfile.id || s.user.id === currentUser?.id || s.user.id === 'me') && <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteVibe(s.id); }} className="text-[10px] font-bold text-zinc-600 hover:text-red-500 uppercase tracking-widest p-1">削除</button>}
       </div>
-      {activeCommentSongId === s.id && (
-        <div className="mt-4 bg-black border border-zinc-800/80 rounded-xl p-4 animate-fade-in">
-          <div className="flex flex-col gap-3 mb-4 max-h-[100px] overflow-y-auto scrollbar-hide">
-            {s.comments.map(c => (<div key={c.id} className="text-[11px]"><span className="font-bold text-[#1DB954] mr-2">@{c.user.handle}</span><span className="text-zinc-300">{c.text}</span></div>))}
-            {s.comments.length === 0 && <p className="text-[10px] text-zinc-500">まだコメントはありません</p>}
-          </div>
-          <form onSubmit={(e) => { e.preventDefault(); submitComment(s.id); }} className="flex gap-2 items-center">
-            <input type="text" placeholder="コメントを追加..." value={commentInput} onChange={e => setCommentInput(e.target.value)} className="flex-1 bg-[#1c1c1e] rounded-full px-4 py-2 text-xs focus:outline-none" />
-            <button type="submit" className="text-[10px] font-bold text-black bg-white px-4 py-2 rounded-full">Post</button>
-          </form>
-        </div>
-      )}
     </div>
-  );
+    <div className="flex items-center gap-4 mb-5">
+      <div className="relative w-20 h-20 rounded-full overflow-hidden border border-zinc-700 group flex-shrink-0">
+        <Image src={s.imgUrl} alt="cover" fill className={`object-cover ${playingSong === s.previewUrl ? 'animate-[spin_4s_linear_infinite]' : ''}`} sizes="80px" unoptimized />
+        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
+          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePlay(s.previewUrl); }} className="w-10 h-10 bg-black/60 rounded-full flex items-center justify-center text-white pointer-events-auto shadow-lg hover:scale-105 transition-transform relative z-50">
+            {playingSong === s.previewUrl ? <IconStop /> : <IconPlay />}
+          </button>
+        </div>
+      </div>
+      <div className="flex-1 overflow-hidden">
+        <p className="font-bold text-lg truncate">{s.title}</p>
+        <p onClick={(e) => handleArtistClick(e, s.artistId, s.artist, s.imgUrl)} className="text-xs text-zinc-400 hover:text-[#1DB954] cursor-pointer inline-block mt-1 relative z-10 truncate max-w-full">{s.artist}</p>
+      </div>
+    </div>
+    <p className="text-xs mb-5 leading-relaxed">{parseMention(s.caption)}</p>
+    <div className="flex gap-6 border-t border-zinc-800/60 pt-4">
+      <button onClick={() => toggleLike(s.id)} className="flex items-center gap-2"><IconHeart filled={s.isLiked} />{formatCount(s.likes)}</button>
+      <button onClick={() => setActiveCommentSongId(activeCommentSongId === s.id ? null : s.id)} className="flex items-center gap-2"><IconComment />{formatCount(s.comments.length)}</button>
+    </div>
+    {activeCommentSongId === s.id && (
+      <div className="mt-4 bg-black border border-zinc-800/80 rounded-xl p-4 animate-fade-in">
+        <div className="flex flex-col gap-4 mb-4 max-h-[150px] overflow-y-auto scrollbar-hide">
+          {s.comments.map(c => (
+            <div key={c.id} className="text-[11px] flex items-start gap-2">
+              <span className="font-bold text-[#1DB954] shrink-0">@{c.user.handle}</span>
+              <span className="text-zinc-300 leading-relaxed break-words">{c.text}</span>
+            </div>
+          ))}
+          {s.comments.length === 0 && <p className="text-[10px] text-zinc-500">まだコメントはありません</p>}
+        </div>
+        <form onSubmit={(e) => { e.preventDefault(); submitComment(s.id); }} className="flex gap-2 items-center">
+          <input type="text" placeholder="コメントを追加..." value={commentInput} onChange={e => setCommentInput(e.target.value)} className="flex-1 bg-[#1c1c1e] rounded-full px-4 py-2 text-xs focus:outline-none" />
+          <button type="submit" className="text-[10px] font-bold text-black bg-white px-4 py-2 rounded-full shrink-0">Post</button>
+        </form>
+      </div>
+    )}
+  </div>
+);
+  useEffect(() => {
+    const hasOpenModal = 
+      showSettingsMenu || showRevenueDashboard || isEditingProfile || showBlockedUsersModal || 
+      showAppInfoModal || showUserListModal !== null || showMutualFriendsModal || showWriteArticleModal || 
+      showPublishSettingsModal || showCoinChargeModal || showCommCalendar || showMatchFilterModal || 
+      showCreateGroupModal || showCreateCommunityModal || showNotifications || showDeleteAccountConfirm || 
+      showAdminDashboard || showPastArticleModal || showDrumrollModal || showCommDrumroll || 
+      showDraftSaveDialog || showPostOverrideConfirm !== null || draftSong !== null || 
+      viewingChatImage !== null || viewingArticle !== null || activeArtistProfile !== null || activeAlbumProfile !== null;
+
+    if (hasOpenModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => { 
+      document.body.style.overflow = ''; 
+    };
+  }, [
+    showSettingsMenu, showRevenueDashboard, isEditingProfile, showBlockedUsersModal, 
+    showAppInfoModal, showUserListModal, showMutualFriendsModal, showWriteArticleModal, 
+    showPublishSettingsModal, showCoinChargeModal, showCommCalendar, showMatchFilterModal, 
+    showCreateGroupModal, showCreateCommunityModal, showNotifications, showDeleteAccountConfirm, 
+    showAdminDashboard, showPastArticleModal, showDrumrollModal, showCommDrumroll, 
+    showDraftSaveDialog, showPostOverrideConfirm, draftSong, viewingChatImage, viewingArticle,
+    activeArtistProfile, activeAlbumProfile
+  ]);
+
   if (isInitializing) return <div className="min-h-screen bg-black flex items-center justify-center"><h1 className="text-5xl font-black italic text-white animate-pulse">Echoes.</h1></div>;
   if (!isLoggedIn) return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 animate-fade-in relative">
@@ -2510,15 +3181,104 @@ function MainApp() {
               </>
             ) : (
               <>
-                <button onClick={handleSignUp} disabled={isAuthLoading} className="w-full bg-[#1DB954] text-black font-bold py-3.5 rounded-xl mt-4 disabled:opacity-50 transition-transform active:scale-95">{isAuthLoading ? "処理中..." : "登録する"}</button>
+                <div className="flex items-start gap-2 mt-4 px-1">
+  <input type="checkbox" id="terms-checkbox" className="mt-1 w-4 h-4 rounded border-zinc-700 bg-black accent-[#1DB954] cursor-pointer shrink-0" />
+  <label htmlFor="terms-checkbox" className="text-xs text-zinc-400 leading-relaxed cursor-pointer select-none">
+    <button type="button" className="text-[#1DB954] hover:underline" onClick={(e) => { 
+      e.preventDefault(); 
+      e.stopPropagation(); 
+      setShowAppInfoModal({ 
+        title: "利用規約", 
+        content: "第1条（適用）\n本規約は、ユーザーと本アプリ「Echoes」の利用に関わる一切の関係に適用されます。\n\n第2条（禁止事項）\nユーザーは、以下の行為をしてはなりません。\n・法令または公序良俗に違反する行為\n・著作権、商標権などの知的財産権を侵害する行為\n・他のユーザーや第三者を誹謗中傷する行為\n・スパム、宣伝、勧誘を目的とする行為\n\n第3条（免責事項）\n運営は、本アプリに起因してユーザーに生じたあらゆる損害について、一切の責任を負いません。\n\n第4条（規約の変更）\n運営は、必要と判断した場合には、いつでも本規約を変更することができるものとします。" 
+      }); 
+    }}>利用規約</button>と
+    <button type="button" className="text-[#1DB954] hover:underline" onClick={(e) => { 
+      e.preventDefault(); 
+      e.stopPropagation(); 
+      setShowAppInfoModal({ 
+        title: "プライバシーポリシー", 
+        content: "1. 取得する情報\n本アプリは、アカウント登録時のメールアドレス、プロフィール情報、投稿された文章や画像、音声を取得します。\n\n2. 利用目的\n取得した情報は、本サービスの提供、ユーザー間のコミュニケーションの円滑化、AIによるおすすめコンテンツの提示のために利用されます。\n\n3. 第三者提供\n本アプリは、法令に定めがある場合を除き、ユーザーの同意を得ることなく第三者に個人情報を提供することはありません。\n\n4. データの削除\nユーザーはアカウント設定から退会処理を行うことで、紐づくすべてのデータをシステムから完全に消去することができます。" 
+      }); 
+    }}>プライバシーポリシー</button>に同意します。
+  </label>
+</div>
+                <button 
+                  onClick={() => {
+                    const cb = document.getElementById('terms-checkbox') as HTMLInputElement;
+                    if (cb && !cb.checked) {
+                      showToast("利用規約とプライバシーポリシーへの同意が必要です", "error");
+                      return;
+                    }
+                    handleSignUp();
+                  }} 
+                  disabled={isAuthLoading} 
+                  className="w-full bg-[#1DB954] text-black font-bold py-3.5 rounded-xl mt-4 disabled:opacity-50 transition-transform active:scale-95"
+                >
+                  {isAuthLoading ? "処理中..." : "登録する"}
+                </button>
                 <p className="text-center text-xs text-zinc-500 mt-4">すでにアカウントをお持ちですか？ <button onClick={() => { setAuthMode('login'); setEmail(""); setPassword(""); }} className="text-white font-bold hover:underline">ログイン</button></p>
               </>
             )}
           </>
         )}
       </div>
+      {showAppInfoModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[950] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowAppInfoModal(null)}>
+          <div className="bg-[#1c1c1e] border border-zinc-800 p-8 rounded-3xl w-full max-w-sm shadow-2xl relative text-center" onClick={e => e.stopPropagation()}>
+            <div className="mx-auto w-12 h-12 bg-black rounded-full flex items-center justify-center mb-4 text-white"><IconInfo /></div>
+            <h3 className="font-bold text-lg mb-4 text-white">{showAppInfoModal.title}</h3>
+            <div className="max-h-[50vh] overflow-y-auto mb-8 scrollbar-hide text-left">
+              <p className="text-sm text-zinc-400 leading-relaxed whitespace-pre-line">{showAppInfoModal.content}</p>
+            </div>
+            <button onClick={() => setShowAppInfoModal(null)} className="w-full py-3 bg-white text-black rounded-xl text-sm font-bold uppercase hover:bg-zinc-200 transition-colors">閉じる</button>
+          </div>
+        </div>
+      )}
     </div>
   );
+  function handleSpotifyLogin(event: React.MouseEvent<HTMLButtonElement>): void {
+    event.preventDefault();
+    const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
+    if (!clientId) {
+      showToast("Spotify client ID is not configured", "error");
+      return;
+    }
+
+    const redirectUri = window.location.origin + '/';
+    const scope = 'user-read-private user-read-email';
+
+    const randomString = (length: number) =>
+      Array.from(crypto.getRandomValues(new Uint8Array(length)))
+        .map((b) => ('0' + (b % 36).toString(36)).slice(-1))
+        .join('');
+
+    const codeVerifier = randomString(64);
+    localStorage.setItem('code_verifier', codeVerifier);
+
+    const toBase64Url = (buffer: ArrayBuffer) =>
+      btoa(String.fromCharCode(...new Uint8Array(buffer)))
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+
+    crypto.subtle.digest('SHA-256', new TextEncoder().encode(codeVerifier))
+      .then((digest) => {
+        const codeChallenge = toBase64Url(digest);
+        const params = new URLSearchParams({
+          response_type: 'code',
+          client_id: clientId,
+          scope,
+          redirect_uri: redirectUri,
+          code_challenge_method: 'S256',
+          code_challenge: codeChallenge,
+        });
+        window.location.href = `https://accounts.spotify.com/authorize?${params.toString()}`;
+      })
+      .catch(() => {
+        showToast("Spotify login initialization failed", "error");
+      });
+  }
+
   return (
     <main className="min-h-screen bg-black text-white pb-24 font-sans relative selection:bg-zinc-800 overflow-x-hidden">
       <audio ref={audioRef} onEnded={() => setPlayingSong(null)} />
@@ -2747,7 +3507,6 @@ function MainApp() {
              　{Array.from({ length: new Date(commCalDate.getFullYear(), commCalDate.getMonth() + 1, 0).getDate() }).map((_, i) => {
                 const day = i + 1;
                 const dateStr = `${commCalDate.getFullYear()}-${(commCalDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                
                 const eventsToday = realCommunities.filter(c => c.date === dateStr && (c.memberCount >= 10 || c.isJoined));
                 const isSelected = selectedModalDate === dateStr;
                 return (
@@ -2764,7 +3523,6 @@ function MainApp() {
                 );
               })}
             </div>
-            
             <div className="flex-1 overflow-y-auto scrollbar-hide mt-4 border-t border-zinc-800 pt-4">
               {selectedModalDate ? (
                 <div className="flex flex-col gap-3 animate-fade-in">
@@ -2825,7 +3583,6 @@ function MainApp() {
                   const participants = activeCommunityDetail.memberCount <= 1 
                     ? [me].slice(0, activeCommunityDetail.memberCount)
                     : [me, ...allProfiles.filter(u => u.id !== me.id)].slice(0, activeCommunityDetail.memberCount);
-                  
                   return (
                     <>
                       {participants.slice(0, 3).map(u => <img key={u.id} src={u.avatar} className="w-9 h-9 rounded-full border-2 border-[#1c1c1e] object-cover" />)}
@@ -2901,7 +3658,6 @@ function MainApp() {
                   )}
                   <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                     {!isMe && sender && <span className="text-[10px] text-zinc-500 mb-1 ml-1">{sender.name}</span>}
-                    
                     {/* 💡 長押し（スマホ）＆右クリック（PC）で送信取り消しメニューを出す */}
                     <div
                       onContextMenu={(e) => { e.preventDefault(); if (isMe) setActiveCommentSongId(msg.id); }}
@@ -2957,7 +3713,6 @@ function MainApp() {
                       ) : (
                         <p className="text-[15px] font-medium leading-snug">{msg.text}</p>
                       )}
-
                       {/* 💡 コンテキストメニュー（右クリック・長押しで出現） */}
                       {activeCommentSongId === msg.id && isMe && (
                         <>
@@ -2972,7 +3727,6 @@ function MainApp() {
                           </div>
                         </>
                       )}
-
                       {/* 💡 送信取消の美しい確認モーダル */}
                       {activeCommentSongId === msg.id + '_confirm' && isMe && (
                         <div className="fixed inset-0 z-[1300] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={(e) => { e.stopPropagation(); setActiveCommentSongId(null); }}>
@@ -3027,20 +3781,17 @@ function MainApp() {
               </div>
             </div>
           )}
-
           {/* 💡 音楽選択モーダル（投稿作成画面風UI・最前面表示） */}
           {showChatMusicSelector && (
             <div className="fixed inset-0 z-[1200] flex flex-col justify-end animate-fade-in">
               <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setShowChatMusicSelector(false); setSelectedChatSong(null); setChatMusicComment(""); }}></div>
               <div className={`bg-[#1c1c1e] rounded-t-[32px] w-full pb-10 pt-4 px-4 relative z-10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-all duration-300 ${selectedChatSong ? 'h-[85vh]' : 'h-[70vh]'} flex flex-col`}>
                 <div className="w-12 h-1.5 bg-zinc-700 rounded-full mx-auto mb-4 cursor-pointer" onClick={() => { setShowChatMusicSelector(false); setSelectedChatSong(null); setChatMusicComment(""); }}></div>
-                
                 <div className="flex justify-between items-center mb-4 px-2 shrink-0">
                   <div className="w-8"></div>
                   <h3 className="text-[15px] font-bold text-white flex items-center gap-2"><IconMusic /> {selectedChatSong ? '音楽を確認' : '音楽をシェア'}</h3>
                   <button onClick={() => { setShowChatMusicSelector(false); setSelectedChatSong(null); setChatMusicComment(""); }} className="w-8 h-8 bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors"><IconCross /></button>
                 </div>
-
                 {!selectedChatSong ? (
                   // 曲選択モード（検索UI）
                   <>
@@ -3063,7 +3814,6 @@ function MainApp() {
                         </>
                       )}
                       {!searchQuery && trendingSongs.length > 0 && <p className="text-[10px] font-bold text-zinc-500 uppercase px-2 pt-2 pb-1 flex items-center"><IconTrend />Trending Now</p>}
-                      
                       {(searchQuery && searchResults.length > 0 ? searchResults : trendingSongs).map((song, i) => (
                         <div key={i} className="flex items-center gap-3 p-3 bg-zinc-800/30 hover:bg-zinc-800 rounded-2xl cursor-pointer transition-colors group" onClick={() => setSelectedChatSong(song)}>
                           <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-zinc-800">
@@ -3081,40 +3831,83 @@ function MainApp() {
                 ) : (
                   // 曲確認・送信モード（投稿作成画面風UI）
                   (() => {
-                    const handleSendMusicShare = () => {
-                      if (!activeChatUserId || !currentUser) return;
-                      const now = Date.now();
-                      
-                      // 1. 音楽カードを先に送信
-                      const fileText = `[MUSIC]${selectedChatSong.trackId}|${selectedChatSong.trackName}|${selectedChatSong.artistName}|${selectedChatSong.artworkUrl100}|${selectedChatSong.previewUrl}`;
-                      const tempId = now.toString() + "_music";
-                      setChatHistory(prev => ({ ...prev, [activeChatUserId]: [...(prev[activeChatUserId] || []), { id: tempId, senderId: currentUser.id, text: fileText, timestamp: now, isRead: false } as any] }));
-                      
-                      supabase.from('chat_messages').insert([{ sender_id: currentUser.id, target_id: activeChatUserId, text: fileText }]).select().single().then(({data}) => {
-                        if (data) {
-                          setChatHistory(prev => ({ ...prev, [activeChatUserId]: (prev[activeChatUserId] || []).map(m => m.id === tempId ? { ...m, id: data.id } as any : m) }));
-                        }
-                      });
+                    const handleSendMusicShare = async () => {
+  if (!activeChatUserId || !currentUser || !selectedChatSong) return;
 
-                      // 2. テキストがあれば後に送信
-                      if (chatMusicComment.trim()) {
-                        const text = chatMusicComment;
-                        const tempTextId = (now + 1).toString() + "_text";
-                        setChatHistory(prev => ({ ...prev, [activeChatUserId]: [...(prev[activeChatUserId] || []), { id: tempTextId, senderId: currentUser.id, text: text, timestamp: now + 1, isRead: false } as any] }));
-                        supabase.from('chat_messages').insert([{ sender_id: currentUser.id, target_id: activeChatUserId, text: text }]).select().single().then(({data}) => {
-                          if (data) setChatHistory(prev => ({ ...prev, [activeChatUserId]: prev[activeChatUserId].map(m => m.id === tempTextId ? { ...m, id: data.id } as any : m) }));
-                        });
-                      }
-                      
-                      // モーダルや裏の画面を全て閉じてチャットに戻る
-                      setShowChatMusicSelector(false);
-                      setSelectedChatSong(null);
-                      setChatMusicComment("");
-                      setSearchQuery("");
-                      setActiveArtistProfile(null);
-                      setActiveAlbumProfile(null);
-                    };
+  const commentText = chatMusicComment.trim();
+  if (commentText.length > 500) {
+    showToast("TextLimitExceeded", "error");
+    return;
+  }
 
+  const escapeHtml = (str: string) => str.replace(/[<&>|]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '|': '&#124;' }[c] || c));
+  
+  const safeTrackName = escapeHtml(selectedChatSong.trackName || "");
+  const safeArtistName = escapeHtml(selectedChatSong.artistName || "");
+  const safeComment = escapeHtml(commentText);
+
+  const now = Date.now();
+  const tempMusicId = `msg_music_${now}_${Math.random().toString(36).substring(2, 9)}`;
+  const tempTextId = `msg_text_${now}_${Math.random().toString(36).substring(2, 9)}`;
+
+  const fileText = `[MUSIC]${selectedChatSong.trackId}|${safeTrackName}|${safeArtistName}|${selectedChatSong.artworkUrl100}|${selectedChatSong.previewUrl}`;
+
+  const newMessages = [{ id: tempMusicId, senderId: currentUser.id, text: fileText, timestamp: now, isRead: false }];
+  if (safeComment) {
+    newMessages.push({ id: tempTextId, senderId: currentUser.id, text: safeComment, timestamp: now + 1, isRead: false });
+  }
+
+  setChatHistory(prev => ({
+    ...prev,
+    [activeChatUserId]: [...(prev[activeChatUserId] || []), ...(newMessages as any)]
+  }));
+
+  setShowChatMusicSelector(false);
+  setSelectedChatSong(null);
+  setChatMusicComment("");
+  setSearchQuery("");
+  setActiveArtistProfile(null);
+  setActiveAlbumProfile(null);
+
+  try {
+    const { data: musicData, error: musicError } = await supabase
+      .from('chat_messages')
+      .insert([{ sender_id: currentUser.id, target_id: activeChatUserId, text: fileText }])
+      .select()
+      .single();
+
+    if (musicError) throw musicError;
+
+    let textData = null;
+    if (safeComment) {
+      const { data, error: textError } = await supabase
+        .from('chat_messages')
+        .insert([{ sender_id: currentUser.id, target_id: activeChatUserId, text: safeComment }])
+        .select()
+        .single();
+      if (textError) throw textError;
+      textData = data;
+    }
+
+    setChatHistory(prev => {
+      const history = prev[activeChatUserId] || [];
+      return {
+        ...prev,
+        [activeChatUserId]: history.map(m => {
+          if (m.id === tempMusicId) return { ...m, id: musicData.id };
+          if (safeComment && m.id === tempTextId && textData) return { ...m, id: textData.id };
+          return m;
+        }) as any
+      };
+    });
+  } catch (err) {
+    showToast("MessageSendFailed", "error");
+    setChatHistory(prev => ({
+      ...prev,
+      [activeChatUserId]: (prev[activeChatUserId] || []).filter(m => m.id !== tempMusicId && m.id !== tempTextId)
+    }));
+  }
+};
                     return (
                       <div className="flex-1 flex flex-col gap-6 animate-fade-in p-2">
                         <div className="flex items-center gap-4 bg-black p-4 rounded-2xl border border-zinc-800">
@@ -3125,7 +3918,6 @@ function MainApp() {
                           </div>
                           <button onClick={() => setSelectedChatSong(null)} className="text-zinc-600 hover:text-white transition-colors"><IconCross /></button>
                         </div>
-
                         <div className="flex-1 bg-black rounded-2xl border border-zinc-800 p-4 flex flex-col relative">
                           {currentUser && (
                             <div className="flex items-center gap-2 mb-3">
@@ -3136,7 +3928,6 @@ function MainApp() {
                           <textarea value={chatMusicComment} onChange={e => setChatMusicComment(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); handleSendMusicShare(); } }} placeholder="この曲について話そう..." className="w-full flex-1 bg-transparent text-white text-sm resize-none focus:outline-none scrollbar-hide" />
                           <div className="absolute bottom-3 right-3 text-xs text-zinc-600">{chatMusicComment.length}/100</div>
                         </div>
-
                         <button onClick={handleSendMusicShare} className="w-full bg-[#1DB954] text-black font-bold rounded-full py-4 flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shadow-lg">
                           <IconSend /> チャットに送信
                         </button>
@@ -3144,7 +3935,7 @@ function MainApp() {
                     );
                   })()
                 )}
-              </div>ss
+              </div>
             </div>
           )}
           {/* 💡 マイクボタンを押した時に開く録音パネル (LINE風) */}
@@ -3294,7 +4085,6 @@ function MainApp() {
                   const isChatGroup = activeChatUserId.startsWith('g');
                   let memberList = allProfiles;
                   let displayCount = 0;
-                  
                   if (isChatGroup) {
                     const g = chatGroups.find(x => x.id === activeChatUserId);
                     if (g) {
@@ -3315,7 +4105,6 @@ function MainApp() {
                   } else {
                     displayCount = memberList.length;
                   }
-                  
                   return (
                     <div className="flex flex-col animate-fade-in">
                       <div className="p-4 flex items-center gap-4 cursor-pointer hover:bg-[#1c1c1e] transition-colors" onClick={async () => {
@@ -3433,7 +4222,6 @@ function MainApp() {
               </div>
             </div>
           )}
-
           {/* 全画面ビューア (チャット全体で使えるように移動) */}
           {viewingChatImage && (
             <div className="fixed inset-0 bg-black z-[1300] flex flex-col animate-fade-in">
@@ -3455,11 +4243,9 @@ function MainApp() {
                   )}
                 </div>
               </div>
-              
               <div className="flex-1 flex items-center justify-center overflow-hidden relative cursor-pointer" onClick={() => setIsViewerUiHidden(!isViewerUiHidden)}>
                 <img src={viewingChatImage.text.replace('[IMAGE]', '')} className="max-w-full max-h-full object-contain" onClick={(e) => e.stopPropagation()} />
               </div>
-              
               <div className={`flex items-center justify-around p-6 bg-gradient-to-t from-black/80 to-transparent absolute bottom-0 w-full z-10 transition-opacity duration-300 ${isViewerUiHidden ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                 <button onClick={async (e) => {
                   e.stopPropagation();
@@ -3654,17 +4440,26 @@ function MainApp() {
           <div className="absolute top-4 right-4 w-full max-w-sm bg-[#1c1c1e] border border-zinc-800 rounded-3xl p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6"><h3 className="font-bold text-lg">{t('notifications')}</h3><button onClick={() => setShowNotifications(false)} className="text-zinc-500 hover:text-white"><IconCross /></button></div>
             <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto pr-2 scrollbar-hide">
-              {notifications.map((n) => (
-                <div key={n.id} onClick={() => { setNotifications(prev => prev.map(p => p.id === n.id ? { ...p, read: true } : p)); }} className="flex items-start gap-4 p-3 rounded-2xl hover:bg-zinc-800/50 transition-colors cursor-pointer relative">
-                  {!n.read && <div className="absolute top-4 right-4 w-2 h-2 bg-[#1DB954] rounded-full"></div>}
-                  <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center flex-shrink-0 text-white">
-                    {n.type === 'follow' ? <IconUserPlus /> : n.type === 'like' ? <IconHeart filled={true} /> : n.type === 'vibe_request' ? <IconSparkles /> : n.type === 'match' ? <IconMatchTab /> : <IconComment />}
-                  </div>
-                  <div><p className={`text-sm ${n.read ? 'text-zinc-400 font-normal' : 'text-white font-bold'}`}>{n.text}</p><p className="text-[10px] text-zinc-500 mt-1">{n.time}</p></div>
-                </div>
-              ))}
-              {notifications.length === 0 && <p className="text-zinc-500 text-xs text-center py-4">No new notifications</p>}
-            </div>
+  {notifications.map((n) => (
+    <div key={n.id} onClick={async () => { 
+      if (n.read) return;
+      setNotifications(prev => prev.map(p => p.id === n.id ? { ...p, read: true } : p));
+      try {
+        const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', n.id);
+        if (error) throw error;
+      } catch (err) {
+        setNotifications(prev => prev.map(p => p.id === n.id ? { ...p, read: false } : p));
+      }
+    }} className="flex items-start gap-4 p-3 rounded-2xl hover:bg-zinc-800/50 transition-colors cursor-pointer relative">
+      {!n.read && <div className="absolute top-4 right-4 w-2 h-2 bg-[#1DB954] rounded-full"></div>}
+      <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center flex-shrink-0 text-white">
+        {n.type === 'follow' ? <IconUserPlus /> : n.type === 'like' ? <IconHeart filled={true} /> : n.type === 'vibe_request' ? <IconSparkles /> : n.type === 'match' ? <IconMatchTab /> : <IconComment />}
+      </div>
+      <div><p className={`text-sm ${n.read ? 'text-zinc-400 font-normal' : 'text-white font-bold'}`}>{n.text}</p><p className="text-[10px] text-zinc-500 mt-1">{n.time}</p></div>
+    </div>
+  ))}
+  {notifications.length === 0 && <p className="text-zinc-500 text-xs text-center py-4">No new notifications</p>}
+</div>
           </div>
         </div>
       )}
@@ -3673,15 +4468,48 @@ function MainApp() {
           <div className="flex items-center px-4 py-4 border-b border-zinc-900 sticky top-0 bg-black/90 backdrop-blur-md z-10"><button onClick={() => setShowSettingsMenu(false)}><IconChevronLeft /></button><h2 className="text-white font-bold text-lg mx-auto pr-8">{t('settings')}</h2></div>
           <div className="px-4 py-6">
             <div className="bg-[#1c1c1e] rounded-[22px] p-4 flex items-center justify-between mb-8 cursor-pointer" onClick={() => { setShowSettingsMenu(false); openEditProfile(); }}><div className="flex items-center gap-4"><img src={myProfile.avatar} className="w-12 h-12 rounded-full object-cover border border-zinc-800" /><div><p className="font-bold text-lg">{myProfile.name}</p><p className="text-sm text-zinc-500">@{myProfile.handle}</p></div></div><IconChevronRight /></div>
+            <p className="text-xs font-bold text-zinc-500 mb-2 px-2">クリエイターツール</p>
+            <div className="bg-[#1c1c1e] rounded-2xl mb-8 flex flex-col">
+              <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-zinc-800/50 transition-colors" onClick={async () => {
+                setShowSettingsMenu(false);
+                setShowRevenueDashboard(true);
+                if (currentUser) {
+                  const { data } = await supabase.from('transactions').select('*').eq('receiver_id', currentUser.id);
+                  if (data) {
+                    let total = 0, article = 0, gift = 0;
+                    data.forEach(tx => {
+                      total += tx.amount;
+                      if (tx.transaction_type?.startsWith('article')) article += tx.amount;
+                      if (tx.transaction_type?.startsWith('gift')) gift += tx.amount;
+                    });
+                    const history = data.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+                    setRevenueData({ total, article, gift, history });
+                  }
+                }
+              }}>
+                <div className="flex items-center gap-3 text-yellow-500"><IconYen /><p className="font-bold text-sm text-white">収益ダッシュボード</p></div>
+                <IconChevronRight />
+              </div>
+            </div>
             <p className="text-xs font-bold text-zinc-500 mb-2 px-2">{t('features')}</p>
             <div className="bg-[#1c1c1e] rounded-2xl mb-8"><div className="flex items-center justify-between p-4"><div className="flex items-center gap-3"><IconMusic /><p className="font-bold text-sm">{t('audio')}</p></div><button onClick={() => setSettings({ ...settings, audio: !settings.audio })} className={`w-12 h-6 rounded-full p-1 transition-colors ${settings.audio ? 'bg-[#1DB954]' : 'bg-zinc-700'}`}><div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${settings.audio ? 'translate-x-6' : 'translate-x-0'}`}></div></button></div></div>
             <p className="text-xs font-bold text-zinc-500 mb-2 px-2">{t('settings')}</p>
-            <div className="bg-[#1c1c1e] rounded-2xl mb-8 flex flex-col">
-              <div className="flex items-center justify-between p-4 border-b border-zinc-800/50"><div className="flex items-center gap-3"><IconBell /><p className="font-bold text-sm">{t('notifications')}</p></div><button onClick={() => { setSettings({ ...settings, notifications: !settings.notifications }); }} className={`w-12 h-6 rounded-full p-1 transition-colors ${settings.notifications ? 'bg-[#1DB954]' : 'bg-zinc-700'}`}><div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${settings.notifications ? 'translate-x-6' : 'translate-x-0'}`}></div></button></div>
+            <div className="bg-[#1c1c1e] rounded-2xl mb-8 flex flex-col">
+              <div className="flex items-center justify-between p-4 border-b border-zinc-800/50">
+                <div className="flex items-center gap-3">
+                  <IconMusic />
+                  <p className="font-bold text-sm">Spotify連携</p>
+                </div>
+                {spotifyAccessToken ? (
+                  <span className="text-[10px] font-bold text-[#1DB954] bg-[#1DB954]/10 px-3 py-1 rounded-full border border-[#1DB954]/20">連携済み</span>
+                ) : (
+                  <button onClick={handleSpotifyLogin} className="px-4 py-1.5 bg-[#1DB954] text-black font-bold text-xs rounded-full hover:scale-105 transition-transform shadow-md">連携する</button>
+                )}
+              </div>
+              <div className="flex items-center justify-between p-4 border-b border-zinc-800/50"><div className="flex items-center gap-3"><IconBell /><p className="font-bold text-sm">{t('notifications')}</p></div><button onClick={() => { setSettings({ ...settings, notifications: !settings.notifications }); }} className={`w-12 h-6 rounded-full p-1 transition-colors ${settings.notifications ? 'bg-[#1DB954]' : 'bg-zinc-700'}`}><div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${settings.notifications ? 'translate-x-6' : 'translate-x-0'}`}></div></button></div>
               <div className="flex items-center justify-between p-4 border-b border-zinc-800/50"><div className="flex items-center gap-3"><IconLockSetting /><p className="font-bold text-sm">{t('privateAcc')}</p></div><button onClick={() => { setEditIsPrivate(!myProfile.isPrivate); setMyProfile({ ...myProfile, isPrivate: !myProfile.isPrivate }); }} className={`w-12 h-6 rounded-full p-1 transition-colors ${myProfile.isPrivate ? 'bg-white' : 'bg-zinc-700'}`}><div className={`w-4 h-4 rounded-full shadow-md transform transition-transform ${myProfile.isPrivate ? 'translate-x-6 bg-black' : 'translate-x-0 bg-white'}`}></div></button></div>
               <div className="relative flex items-center justify-between p-4 border-b border-zinc-800/50 cursor-pointer"><div className="flex items-center gap-3"><IconClock /><p className="font-bold text-sm">{t('timezone')}: {timeZone.split('/').pop()?.replace('_', ' ')}</p></div><IconChevronRight /><select value={timeZone} onChange={(e) => setTimeZone(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"><optgroup label="Asia"><option value="Asia/Tokyo">Tokyo (JST)</option><option value="Asia/Seoul">Seoul (KST)</option><option value="Asia/Shanghai">Shanghai (CST)</option></optgroup><optgroup label="America"><option value="America/New_York">New York (EST/EDT)</option><option value="America/Los_Angeles">Los Angeles (PST/PDT)</option></optgroup><optgroup label="Europe"><option value="Europe/London">London (GMT/BST)</option><option value="Europe/Paris">Paris (CET/CEST)</option></optgroup></select></div>
               <div className="relative flex items-center justify-between p-4 cursor-pointer"><div className="flex items-center gap-3"><IconGlobe /><p className="font-bold text-sm">{t('language')}: {language}</p></div><IconChevronRight /><select value={language} onChange={(e) => setLanguage(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"><option value="日本語">日本語</option><option value="English">English</option><option value="中文">中文</option></select></div>
-              {/* 💡 ブロックリスト画面を開くボタン */}
               <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-zinc-800/50 transition-colors" onClick={() => { setShowSettingsMenu(false); setShowBlockedUsersModal(true); }}><div className="flex items-center gap-3"><IconLock /><p className="font-bold text-sm">ブロックしたユーザー</p></div><IconChevronRight /></div>
             </div>
             <p className="text-xs font-bold text-zinc-500 mb-2 px-2">{t('appInfo')}</p>
@@ -3691,7 +4519,6 @@ function MainApp() {
               <div className="flex items-center justify-between p-4 border-b border-zinc-800/50 cursor-pointer" onClick={() => setShowAppInfoModal({ title: t('help'), content: "サポート窓口: echos.jpn@gmail.com\n\n24時間以内に担当者がお答えします。" })}><div className="flex items-center gap-3"><IconHelp /><p className="font-bold text-sm">{t('help')}</p></div><IconChevronRight /></div>
               <div className="flex items-center justify-between p-4 cursor-pointer" onClick={() => setShowAppInfoModal({ title: t('appInfo'), content: "バージョン: 42.0.0\n\nEchoesは、音楽を通じて日々の記録を残す新しい形のSNSです。" })}><div className="flex items-center gap-3"><IconInfo /><p className="font-bold text-sm">{t('appInfo')}</p></div><IconChevronRight /></div>
             </div>
-            {/* 💡 修正5: 指定メアドだけが見える管理者ダッシュボード */}
             {currentUser?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL && (
               <>
                 <p className="text-xs font-bold text-red-500 mb-2 px-2">{t('adminOnly')}</p>
@@ -3704,8 +4531,100 @@ function MainApp() {
               </>
             )}
             <button onClick={() => setShowLogoutConfirm(true)} className="w-full bg-[#1c1c1e] hover:bg-zinc-900 transition-colors text-white font-bold py-4 rounded-2xl text-center mb-4 shadow-sm">{t('logout')}</button>
-            {/* 💡 アカウント退会ボタン */}
             <button onClick={() => setShowDeleteAccountConfirm(true)} className="w-full bg-transparent border border-red-500/30 hover:bg-red-500/10 transition-colors text-red-500 font-bold py-4 rounded-2xl text-center mb-10 shadow-sm">{t('deleteAccFull')}</button>
+          </div>
+        </div>
+      )}
+      {showRevenueDashboard && (
+        <div className="fixed inset-0 bg-black/95 z-[1500] flex flex-col animate-fade-in" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center p-4 border-b border-zinc-900 sticky top-0 bg-black/90 backdrop-blur-md z-10">
+            <button onClick={() => setShowRevenueDashboard(false)} className="p-2 -ml-2 text-white hover:opacity-80 transition-opacity"><IconChevronLeft /></button>
+            <h2 className="text-white font-bold text-lg mx-auto pr-8">収益ダッシュボード</h2>
+          </div>
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 scrollbar-hide">
+            {(() => {
+              const validHistory = revenueData.history.filter(tx => tx.transaction_type !== 'charge');
+              const paidTotal = validHistory.filter(tx => tx.transaction_type?.endsWith('_paid')).reduce((sum, tx) => sum + tx.amount, 0);
+              const jpyRevenue = Math.floor(paidTotal * 0.5);
+              const canWithdraw = jpyRevenue >= 1000;
+              
+              return (
+                <>
+                  <div className="bg-gradient-to-br from-[#1DB954]/20 to-[#1DB954]/5 border border-[#1DB954]/30 rounded-[32px] p-8 mb-4 flex flex-col items-center text-center shadow-[0_0_40px_rgba(29,185,84,0.15)] relative overflow-hidden">
+                    <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-transparent via-[#1DB954] to-transparent opacity-50"></div>
+                    <p className="text-[#1DB954] text-[10px] font-black uppercase tracking-widest mb-3">引き出し可能な売上金</p>
+                    <div className="flex items-end gap-1 mb-3">
+                      <span className="text-2xl font-bold text-white mb-1">¥</span>
+                      <span className="text-5xl font-black text-white tracking-tighter">{jpyRevenue.toLocaleString()}</span>
+                    </div>
+                    <p className="text-[10px] text-zinc-400 font-bold bg-black/40 px-3 py-1 rounded-full border border-zinc-800 mb-6">
+                      換金対象: 有償 {paidTotal.toLocaleString()} C (レート: 1C = 0.5円)
+                    </p>
+                    <button 
+                      disabled={!canWithdraw}
+                      onClick={() => showToast(canWithdraw ? "振込申請画面へ移動します（準備中）" : "引き出しは1,000円から可能です", canWithdraw ? "success" : "error")}
+                      className={`w-full py-3.5 rounded-full font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 ${canWithdraw ? 'bg-white text-black hover:bg-zinc-200 active:scale-95' : 'bg-black/50 text-zinc-500 border border-zinc-700 cursor-not-allowed'}`}
+                    >
+                      {canWithdraw ? '振込申請をする' : '1,000円以上で引き出し可能'}
+                    </button>
+                  </div>
+                  <div className="bg-[#1c1c1e] border border-zinc-800 rounded-3xl p-5 mb-6 flex items-center justify-between shadow-inner">
+                    <div className="flex flex-col">
+                      <span className="text-zinc-400 text-[10px] font-bold mb-1">累計獲得コイン (無償分含む)</span>
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full flex items-center justify-center text-black shadow-md">
+                          <span className="text-[12px] font-black mt-[1px]">C</span>
+                        </div>
+                        <span className="text-xl font-black text-white">{revenueData.total.toLocaleString()}</span>
+                      </div>
+                    </div>
+                    <div className="flex gap-4 text-[10px] font-bold text-zinc-500 text-right">
+                      <div className="flex flex-col"><span className="mb-0.5">記事</span><span className="text-white">{revenueData.article.toLocaleString()}</span></div>
+                      <div className="flex flex-col"><span className="mb-0.5">ギフト</span><span className="text-white">{revenueData.gift.toLocaleString()}</span></div>
+                    </div>
+                  </div>
+                  <h3 className="font-bold text-xs text-zinc-500 mb-4 px-2 uppercase tracking-widest flex items-center gap-2"><IconList /> 取引履歴</h3>
+                  <div className="flex flex-col gap-3">
+                    {validHistory.length > 0 ? validHistory.map((tx: any) => {
+                      const isGift = tx.transaction_type?.startsWith('gift');
+                      const isPaid = tx.transaction_type?.endsWith('_paid');
+                      const sender = allProfiles.find(u => u.id === tx.sender_id);
+                      return (
+                        <div key={tx.id} className="bg-[#1c1c1e] p-4 rounded-2xl border border-zinc-800 flex items-center justify-between shadow-sm relative overflow-hidden">
+                          {isPaid && <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#1DB954]"></div>}
+                          <div className="flex items-center gap-3 pl-1">
+                            <img src={sender?.avatar || '/default-avatar.png'} className="w-10 h-10 rounded-full object-cover border border-zinc-700 shrink-0" />
+                            <div className="flex flex-col justify-center">
+                              <p className="font-bold text-sm text-white leading-tight mb-1.5">{sender?.name || 'ユーザー'}</p>
+                              <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 mb-0.5">
+                                <div className="w-3 h-3 flex items-center justify-center opacity-80">
+                                  {isGift ? <IconSparkles /> : <IconArticle />}
+                                </div>
+                                <span>{isGift ? 'サポートを受け取りました' : '記事が購入されました'}</span>
+                                <span className={isPaid ? 'text-[#1DB954] font-bold ml-1' : 'text-zinc-500 ml-1'}>
+                                  ({isPaid ? '有償' : '無償'})
+                                </span>
+                              </div>
+                              <p className="text-[9px] text-zinc-600">{new Date(tx.created_at).toLocaleDateString('ja-JP')} {new Date(tx.created_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</p>
+                            </div>
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className={`font-black text-lg ${isPaid ? 'text-[#1DB954]' : 'text-yellow-500'}`}>+{tx.amount.toLocaleString()}</p>
+                            <p className="text-[9px] text-zinc-500">コイン</p>
+                          </div>
+                        </div>
+                      )
+                    }) : (
+                      <div className="text-center py-16 bg-[#1c1c1e] rounded-3xl border border-zinc-800 border-dashed">
+                        <div className="w-12 h-12 bg-zinc-900 rounded-full flex items-center justify-center text-zinc-600 mx-auto mb-3"><IconYen /></div>
+                        <p className="text-zinc-400 text-sm font-bold">まだ収益データがありません</p>
+                        <p className="text-[10px] text-zinc-500 mt-2 px-6">有料記事を公開するか、<br/>サポートを受けるとここに履歴が表示されます。</p>
+                      </div>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
       )}
@@ -4316,14 +5235,33 @@ function MainApp() {
                 <button onClick={handleGoBack} className="relative z-50 p-3 pointer-events-auto"><IconChevronLeft /></button>
               ) : (
                 <div className="w-10"></div>
-              )}
-              {activeTab === 'profile' && (
-                <button onClick={() => setShowSettingsMenu(true)} className="ml-auto relative z-50 p-3 text-white hover:text-zinc-300 pointer-events-auto">
-                  <IconSettings />
-                </button>
-              )}
-            </div>
-            <div className="relative"><img src={activeTab === 'profile' ? myProfile.avatar : viewingUser?.avatar} className="w-[100px] h-[100px] rounded-full object-cover mb-4 shadow-xl border border-zinc-800" /></div>
+              )}
+              {activeTab === 'profile' && (
+                <div className="flex items-center gap-3 ml-auto relative z-50 pointer-events-auto">
+                  <button 
+                    onClick={() => setShowCoinChargeModal(true)}
+                    className="flex flex-col items-end justify-center bg-[#1c1c1e] hover:bg-zinc-800 border border-zinc-800 px-4 py-1.5 rounded-2xl transition-all active:scale-95 shadow-sm flex-shrink-0"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full flex items-center justify-center text-black shadow-inner border border-yellow-300/50 flex-shrink-0">
+                        <span className="text-[9px] font-black leading-none mt-[1px]">C</span>
+                      </div>
+                      <span className="text-sm font-bold text-white whitespace-nowrap">
+                        {(Number((myProfile as any).free_coin) || 0) + (Number((myProfile as any).paid_coin) || 0)} 
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-[9px] font-bold text-zinc-500 mt-0.5">
+                      <span>有償 {Number((myProfile as any).paid_coin) || 0}</span>
+                      <span>無償 {Number((myProfile as any).free_coin) || 0}</span>
+                    </div>
+                  </button>
+                  <button onClick={() => setShowSettingsMenu(true)} className="w-9 h-9 bg-[#1c1c1e] border border-zinc-800 rounded-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all shadow-sm active:scale-95 flex-shrink-0">
+                    <IconSettings />
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="relative"><img src={activeTab === 'profile' ? myProfile.avatar : viewingUser?.avatar} className="w-[100px] h-[100px] rounded-full object-cover mb-4 shadow-xl border border-zinc-800" /></div>
             <h2 className="text-[22px] font-bold flex items-center">{activeTab === 'profile' ? myProfile.name : viewingUser?.name}</h2>
             <p className="text-sm text-zinc-500 font-bold mt-1">@{activeTab === 'profile' ? myProfile.handle : viewingUser?.handle}</p>
             {activeTab === 'profile' && myStreak > 0 && (<div className="mt-3 flex items-center bg-[#1c1c1e] border border-orange-500/30 px-3 py-1.5 rounded-full shadow-sm"><IconFlame /><span className="text-[11px] font-bold text-orange-400">{myStreak}日連続記録中</span></div>)}
@@ -4451,18 +5389,16 @@ function MainApp() {
       {/* 💡 記事を書く（投稿）モーダル (note風UI) */}
       {showWriteArticleModal && (
         <div className="fixed inset-0 bg-[#121212] z-[1000] flex flex-col animate-fade-in">
-          {/* ヘッダー */}
           <div className="flex justify-between items-center px-4 py-3 border-b border-zinc-800/50">
-            <button onClick={handleCloseModal} className="w-8 h-8 bg-zinc-800/50 hover:bg-zinc-800 rounded-full flex items-center justify-center text-zinc-400 transition-colors">
-              <IconCross />
+            <button onClick={handleCloseModal} className="p-2 -ml-2 text-white hover:opacity-80 transition-opacity shrink-0">
+              <IconChevronLeft />
             </button>
             <div className="flex items-center gap-4 text-sm font-bold text-zinc-400">
-              <button className="hover:text-white transition-colors"><IconDots /></button>
-              {lastSaved && <span className="text-[10px] font-normal">{lastSaved} 保存済</span>}
-              <button onClick={handleSaveDraft} className="hover:text-white transition-colors">下書き保存</button>
-              <button onClick={handlePostArticle} className="text-white hover:text-[#1DB954] transition-colors">投稿</button>
-            </div>
-          </div>
+              {lastSaved && <span className="text-[10px] font-normal hidden sm:inline">{lastSaved} 保存済</span>}
+              <button onClick={handleSaveDraft} className="hover:text-white transition-colors hidden sm:block">下書き保存</button>
+              <button onClick={() => setShowPublishSettingsModal(true)} className="text-white hover:text-[#1DB954] transition-colors ml-1 px-4 py-1.5 bg-[#1DB954]/20 text-[#1DB954] font-bold rounded-full border border-[#1DB954]/50">公開設定</button>
+            </div>
+          </div>
           {/* エディタ部分 */}
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 relative">
             <div className="relative mb-2">
@@ -4786,12 +5722,179 @@ function MainApp() {
                 </div>
               </div>
             </div>
-          )}
-        </div>
-      )}
-      {/* 💡 記事の詳細（読む）画面 */}
-      {viewingArticle && (
-        <div className="fixed inset-0 bg-black z-[950] flex flex-col animate-fade-in overflow-y-auto">
+          )}
+        </div>
+      )}
+      {showPublishSettingsModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[1100] flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowPublishSettingsModal(false)}>
+          <div className="bg-[#1c1c1e] border border-zinc-800 rounded-[32px] w-full max-w-md overflow-hidden shadow-2xl relative flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-5 border-b border-zinc-800/50">
+              <h3 className="font-bold text-lg text-white">公開設定</h3>
+              <button onClick={() => setShowPublishSettingsModal(false)} className="w-8 h-8 bg-zinc-800/50 hover:bg-zinc-800 rounded-full flex items-center justify-center text-zinc-400 transition-colors">
+                <IconCross />
+              </button>
+            </div>
+            <div className="p-6 flex flex-col gap-6">
+              <div>
+                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">プレビュー</p>
+                <div className="bg-black rounded-2xl border border-zinc-800 overflow-hidden">
+                  <img src={newArticleCover || '/default-bg.jpg'} className="w-full h-32 object-cover" />
+                  <div className="p-4">
+                    <p className="font-bold text-base text-white truncate">{newArticleTitle || "無題の記事"}</p>
+                    <div className="flex items-center gap-2 mt-3">
+                      <img src={myProfile.avatar} className="w-5 h-5 rounded-full object-cover border border-zinc-700" />
+                      <span className="text-xs text-zinc-400">{myProfile.name}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-black rounded-2xl border border-zinc-800 p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-[#1DB954]/10 flex items-center justify-center text-[#1DB954]">
+                      <IconYen />
+                    </div>
+                    <div>
+                      <p className="font-bold text-sm text-white">有料記事として公開</p>
+                      <p className="text-[10px] text-zinc-500 mt-0.5">※本文に有料エリアの区切り線が必要です</p>
+                    </div>
+                  </div>
+                  <button onClick={() => setIsArticlePremium(!isArticlePremium)} className={`w-12 h-6 rounded-full p-1 transition-colors relative ${isArticlePremium ? 'bg-[#1DB954]' : 'bg-zinc-700'}`}>
+                    <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${isArticlePremium ? 'translate-x-6' : 'translate-x-0'}`}></div>
+                  </button>
+                </div>
+                {isArticlePremium && (
+                  <div className="mt-4 pt-4 border-t border-zinc-800 animate-fade-in flex items-center justify-between">
+                    <p className="text-sm font-bold text-zinc-300">販売価格</p>
+                    <div className="flex items-center gap-2">
+                      <input type="number" min="1" value={articlePriceInput} onChange={(e) => setArticlePriceInput(parseInt(e.target.value) || 0)} className="w-24 bg-[#1c1c1e] border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white text-right focus:outline-none focus:border-[#1DB954]" />
+                      <span className="font-bold text-zinc-400">コイン</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <button onClick={handlePostArticle} disabled={isPosting} className="w-full py-4 bg-[#1DB954] text-black rounded-xl text-sm font-bold shadow-lg hover:scale-[1.02] transition-transform disabled:opacity-50 mt-2">
+                {isPosting ? "投稿中..." : "この記事を投稿する"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showCoinChargeModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[1200] flex justify-center items-end sm:items-center animate-fade-in" onClick={() => {
+          if (!isCharging) {
+            setShowCoinChargeModal(false);
+            setSelectedChargePlan(null);
+          }
+        }}>
+          <div className="bg-[#1c1c1e] w-full sm:max-w-md h-[90vh] sm:h-auto sm:max-h-[85vh] rounded-t-[32px] sm:rounded-[32px] overflow-hidden shadow-2xl relative flex flex-col" onClick={e => e.stopPropagation()}>
+            {/* ヘッダー */}
+            <div className="flex items-center justify-between p-4 bg-[#1c1c1e] shrink-0 border-b border-zinc-800/50 relative z-20">
+              <div className="w-10">
+                {selectedChargePlan ? (
+                  <button onClick={() => !isCharging && setSelectedChargePlan(null)} className="w-8 h-8 flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
+                    <IconChevronLeft />
+                  </button>
+                ) : (
+                  <button onClick={() => setShowCoinChargeModal(false)} className="w-8 h-8 bg-zinc-800 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors">
+                    <IconCross />
+                  </button>
+                )}
+              </div>
+              <h3 className="font-bold text-[15px] text-white tracking-wide">{selectedChargePlan ? '決済の確認' : 'コインチャージ'}</h3>
+              <div className="w-10"></div>
+            </div>
+            <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-col bg-[#121212]">
+              {!selectedChargePlan ? (
+                <div className="animate-fade-in flex flex-col">
+                  {/* 保有コイン表示 */}
+                  <div className="flex flex-col items-center justify-center py-4 bg-[#1c1c1e] border-b border-zinc-800 shrink-0 w-full gap-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-zinc-400 text-sm font-bold">保有</span>
+                      <div className="w-5 h-5 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full flex items-center justify-center text-black shadow-sm">
+                        <span className="text-[12px] font-black leading-none mt-[1px]">C</span>
+                      </div>
+                      <span className="text-xl font-black text-white">{(Number((myProfile as any).free_coin) || 0) + (Number((myProfile as any).paid_coin) || 0)}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-[10px] font-bold text-zinc-500">
+                      <span>有償 {Number((myProfile as any).paid_coin) || 0} C</span>
+                      <span>無償 {Number((myProfile as any).free_coin) || 0} C</span>
+                    </div>
+                  </div>
+                  {/* リスト表示 */}
+                  <div className="flex flex-col px-4 pb-8">
+                    {[
+                      { coins: 100, price: 140 },
+                      { coins: 300, price: 420 },
+                      { coins: 500, price: 700 },
+                      { coins: 700, price: 980 },
+                      { coins: 1030, price: 1400, bonus: "30コインお得！" },
+                      { coins: 2070, price: 2800, bonus: "70コインお得！" },
+                      { coins: 3140, price: 4200, bonus: "140コインお得！" },
+                      { coins: 5260, price: 7000, bonus: "260コインお得！" },
+                      { coins: 10550, price: 14000, bonus: "550コインお得！" }
+                    ].map((plan, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between py-4 border-b border-zinc-800/60 last:border-0"
+                      >
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-3">
+                            <div className="w-[18px] h-[18px] bg-[#d4af37] rounded-full flex items-center justify-center text-black shadow-sm shrink-0">
+                              <span className="text-[10px] font-black leading-none mt-[0.5px]">C</span>
+                            </div>
+                            <span className="font-bold text-[17px] text-white tracking-wide">{plan.coins.toLocaleString()}</span>
+                          </div>
+                          {plan.bonus && (
+                            <span className="text-zinc-400 text-[11px] font-medium mt-1 ml-[30px] tracking-wide">{plan.bonus}</span>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => setSelectedChargePlan(plan)}
+                          className="bg-white text-black font-black px-5 py-2.5 rounded-full text-sm hover:bg-zinc-200 transition-colors active:scale-95 w-[90px] text-center shrink-0 shadow-sm"
+                        >
+                          ¥{plan.price.toLocaleString()}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="animate-fade-in flex flex-col w-full h-full p-6">
+                  <div className="mb-10 flex flex-col items-center text-center mt-6">
+                    <div className="w-16 h-16 bg-[#d4af37] rounded-full flex items-center justify-center text-black shadow-[0_0_20px_rgba(212,175,55,0.2)] mb-5 border border-yellow-500/20">
+                      <span className="text-3xl font-black leading-none mt-[2px]">C</span>
+                    </div>
+                    <h4 className="text-white font-black text-[32px] mb-2 tracking-tighter">{selectedChargePlan.coins.toLocaleString()}</h4>
+                    <p className="text-zinc-400 text-sm font-bold">決済金額: ¥{selectedChargePlan.price.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-[#1c1c1e] border border-zinc-800 rounded-2xl p-5 mb-auto shadow-inner">
+                    <div className="flex items-start gap-3">
+                      <div className="text-zinc-500 mt-0.5"><IconLock /></div>
+                      <p className="text-[11px] text-zinc-400 leading-relaxed text-left">
+                        安全な決済システム（Stripe）へ移動します。クレジットカード情報は暗号化され、当アプリには一切保存されません。
+                      </p>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => handleChargeCoins()} 
+                    disabled={isCharging} 
+                    className="w-full py-4 mt-8 bg-white text-black rounded-full text-[15px] font-black shadow-xl hover:bg-zinc-200 transition-colors disabled:opacity-50 flex justify-center items-center gap-2 active:scale-95"
+                  >
+                    {isCharging ? (
+                      <span className="flex items-center gap-2"><div className="w-5 h-5 border-[3px] border-black border-t-transparent rounded-full animate-spin"></div>接続中...</span>
+                    ) : (
+                      <>決済画面へ進む <IconChevronRight /></>
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      {viewingArticle && (
+        <div className="fixed inset-0 bg-black z-[950] flex flex-col animate-fade-in overflow-y-auto">
           <div className="relative w-full h-[40vh] flex-shrink-0">
             <img src={viewingArticle.coverUrl} className="w-full h-full object-cover opacity-80" />
             <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black"></div>
@@ -4804,27 +5907,124 @@ function MainApp() {
             </div>
             <h1 className="text-2xl font-black text-white leading-snug mb-8">{viewingArticle.title}</h1>
             <div className="flex items-center justify-between mb-8 pb-8 border-b border-zinc-900 cursor-pointer" onClick={() => { setViewingArticle(null); setViewingUser(viewingArticle.author); setActiveTab('other_profile'); }}>
-              <div className="flex items-center gap-3">
-                <img src={viewingArticle.author.avatar} className="w-10 h-10 rounded-full object-cover border border-zinc-800" />
-                <div>
-                  <p className="font-bold text-sm text-white flex items-center gap-1">{viewingArticle.author.name} {viewingArticle.author.isVerified && <IconVerified />}</p>
-                  <p className="text-[10px] text-zinc-500">@{viewingArticle.author.handle}</p>
-                </div>
-              </div>
-              <button className="px-4 py-1.5 border border-zinc-700 rounded-full text-[10px] font-bold text-white hover:bg-zinc-800 transition-colors">Follow</button>
-            </div>
-           <div 
-              className="text-sm text-zinc-300 leading-loose whitespace-pre-wrap mb-12 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-white [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-white [&_h3]:mt-4 [&_h3]:mb-2 [&_blockquote]:border-l-4 [&_blockquote]:border-zinc-500 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-zinc-400 [&_ul]:list-disc [&_ul]:list-inside [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:list-inside [&_ol]:my-2 [&_li]:mb-1 [&_hr]:my-6 [&_hr]:border-zinc-700"
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(viewingArticle.content) }}
-            />
-            {/* 記事のいいね＆コメント欄 */}
-            <div className="border-t border-zinc-900 pt-8 pb-12">
-              <div className="flex gap-6 mb-8">
-                <button onClick={() => toggleArticleLike(viewingArticle.id)} className={`flex items-center gap-2 font-bold ${viewingArticle.isLiked ? 'text-[#1DB954]' : 'text-zinc-400 hover:text-white'}`}>
-                  <IconHeart filled={viewingArticle.isLiked} /> {viewingArticle.likes} Likes
-                </button>
-                <div className="flex items-center gap-2 font-bold text-zinc-400"><IconComment /> {viewingArticle.comments.length} Comments</div>
-              </div>
+              <div className="flex items-center gap-3">
+                <img src={viewingArticle.author.avatar} className="w-10 h-10 rounded-full object-cover border border-zinc-800" />
+                <div>
+                  <p className="font-bold text-sm text-white flex items-center gap-1">{viewingArticle.author.name} {viewingArticle.author.isVerified && <IconVerified />}</p>
+                  <p className="text-[10px] text-zinc-500">@{viewingArticle.author.handle}</p>
+                </div>
+              </div>
+              <button className="px-4 py-1.5 border border-zinc-700 rounded-full text-[10px] font-bold text-white hover:bg-zinc-800 transition-colors">Follow</button>
+            </div>
+            <div className="text-sm text-zinc-300 leading-loose whitespace-pre-wrap mb-12 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-white [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-white [&_h3]:mt-4 [&_h3]:mb-2 [&_blockquote]:border-l-4 [&_blockquote]:border-zinc-500 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-zinc-400 [&_ul]:list-disc [&_ul]:list-inside [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:list-inside [&_ol]:my-2 [&_li]:mb-1 [&_hr]:my-6 [&_hr]:border-zinc-700">
+              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(viewingArticle.content) }} />
+              {viewingArticle.price > 0 && (
+                <div className="mt-8 relative">
+                  {hasPurchasedArticle || viewingArticle.author.id === currentUser?.id ? (
+                    <div className="border-t border-[#1DB954]/30 pt-6 mt-6 animate-fade-in">
+                      <div className="flex items-center gap-2 mb-6 text-[#1DB954] font-bold text-xs bg-[#1DB954]/10 w-fit px-4 py-2 rounded-full border border-[#1DB954]/20 shadow-sm">
+                        <IconLockSetting />
+                        <span>有料コンテンツをアンロックしました</span>
+                      </div>
+                      <div className="text-sm text-zinc-300 leading-loose whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(viewingArticle.premium_content || "") }} />
+                    </div>
+                  ) : (
+                    <div className="border-t border-zinc-800 pt-6 mt-6 relative overflow-hidden rounded-3xl">
+                      <div className="filter blur-md opacity-30 select-none pointer-events-none h-[320px] overflow-hidden">
+                        <p>ここに有料限定のテキストが入ります。ライブの裏話や、特別なセットリストの解説、個人的な音楽の考察などが読めるようになります。アーティストの活動を支援するために、ぜひコインを使って続きを読んでみてください。応援がクリエイターの力になります...</p>
+                        <br/>
+                        <p>さらに深い音楽の話や、ここでしか見られない特別なコンテンツをお楽しみください。あなたのサポートが、次の素晴らしい作品を生み出す原動力となります。</p>
+                        <br/>
+                        <p>Echoesで新しい音楽の発見を。</p>
+                      </div>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/90 to-transparent p-6 text-center z-10">
+                        <div className="w-14 h-14 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full flex items-center justify-center text-black shadow-[0_0_20px_rgba(250,204,21,0.2)] mb-4 border border-yellow-300/50">
+                          <IconLock />
+                        </div>
+                        <p className="text-white font-black text-xl mb-2 tracking-tight">この続きは有料コンテンツです</p>
+                        <div className="flex flex-col items-center gap-3 mb-8 w-full max-w-[260px] mt-4">
+                          <div className="w-full flex items-center justify-between bg-[#1c1c1e] border border-zinc-800 px-5 py-3.5 rounded-2xl shadow-inner">
+                            <span className="text-xs font-bold text-zinc-400">記事の価格</span>
+                            <div className="flex items-center gap-2">
+                              <div className="w-4 h-4 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full flex items-center justify-center text-black shadow-sm">
+                                <span className="text-[9px] font-black leading-none mt-[0.5px]">C</span>
+                              </div>
+                              <span className="text-xl font-black text-white leading-none">{viewingArticle.price}</span>
+                            </div>
+                          </div>
+                          <div className="w-full flex items-center justify-between bg-transparent border border-zinc-800 px-5 py-3 rounded-xl cursor-pointer hover:bg-zinc-800/50 transition-colors" onClick={() => setShowCoinChargeModal(true)}>
+                            <span className="text-[10px] font-bold text-zinc-500">現在の所持コイン</span>
+                            <div className="flex items-center gap-1.5">
+                              <div className="w-3.5 h-3.5 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full flex items-center justify-center text-black shadow-sm">
+                                <span className="text-[8px] font-black leading-none mt-[0.5px]">C</span>
+                              </div>
+                              <span className="text-sm font-bold text-zinc-300 leading-none">{(myProfile as any).coin_balance || 0}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => {
+                            if (((myProfile as any).coin_balance || 0) < viewingArticle.price) {
+                              setShowCoinChargeModal(true);
+                              showToast("コインが不足しています。チャージしてください。", "error");
+                            } else {
+                              handlePurchaseArticle(viewingArticle);
+                            }
+                          }}
+                          className="bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-black py-4 px-10 rounded-full shadow-[0_0_20px_rgba(250,204,21,0.3)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 w-full max-w-[280px] text-sm"
+                        >
+                          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+                          記事をアンロック
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            {/* 記事のいいね＆コメント欄 */}
+            <div className="border-t border-zinc-900 pt-8 pb-12">
+              {/* 💡 クリエイターサポート（投げ銭）機能 */}
+              {viewingArticle.author.id !== currentUser?.id && (
+                <div className="bg-[#121212] border border-zinc-800 rounded-[24px] p-6 mb-10 flex flex-col items-center shadow-lg animate-fade-in">
+                  <h3 className="font-black text-lg text-white mb-2 tracking-tight">クリエイターをサポート</h3>
+                  <p className="text-xs text-zinc-400 mb-6 text-center leading-relaxed">この記事が気に入ったら、コインを贈って応援しよう！<br/>あなたのサポートが次の作品の原動力になります。</p>
+                  <div className="flex gap-3 w-full justify-center">
+                    {[100, 500, 1000].map(amount => (
+                      <button key={amount} onClick={async () => {
+                        if (!currentUser) return showToast("ログインが必要です", "error");
+                        const currentBalance = Number((myProfile as any).coin_balance) || 0;
+                        if (currentBalance < amount) {
+                          setShowCoinChargeModal(true);
+                          return showToast("コインが不足しています。チャージしてください。", "error");
+                        }
+                        if (window.confirm(`${amount}C を贈りますか？`)) {
+                          try {
+                            const { error } = await supabase.from('transactions').insert([{ sender_id: currentUser.id, receiver_id: viewingArticle.author.id, amount, transaction_type: 'gift', target_id: viewingArticle.id }]);
+                            if (error) throw error;
+                            const newBalance = currentBalance - amount;
+                            await supabase.from('profiles').update({ coin_balance: newBalance }).eq('id', currentUser.id);
+                            setMyProfile(prev => ({ ...prev, coin_balance: newBalance } as any));
+                            await supabase.from('notifications').insert([{ user_id: viewingArticle.author.id, sender_id: currentUser.id, type: 'gift', text: `${myProfile.name}さんから ${amount}C のサポートが届きました！🎁` }]);
+                            showToast("クリエイターをサポートしました！", "success");
+                          } catch (e) { showToast("エラーが発生しました", "error"); }
+                        }
+                      }} className="flex flex-col items-center justify-center p-3 w-[80px] sm:w-[100px] bg-black border border-zinc-800 rounded-2xl hover:border-yellow-500/50 hover:bg-yellow-500/5 transition-all group active:scale-95 shadow-sm">
+                        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full flex items-center justify-center text-black shadow-md mb-2 group-hover:scale-110 transition-transform">
+                          <span className="text-sm sm:text-base font-black mt-0.5">C</span>
+                        </div>
+                        <span className="font-black text-sm sm:text-base text-white">{amount}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <div className="flex gap-6 mb-8">
+                <button onClick={() => toggleArticleLike(viewingArticle.id)} className={`flex items-center gap-2 font-bold ${viewingArticle.isLiked ? 'text-[#1DB954]' : 'text-zinc-400 hover:text-white'}`}>
+                  <IconHeart filled={viewingArticle.isLiked} /> {viewingArticle.likes} Likes
+                </button>
+                <div className="flex items-center gap-2 font-bold text-zinc-400"><IconComment /> {viewingArticle.comments.length} Comments</div>
+              </div>
               {/* 💡 コメント一覧の表示 */}
               {viewingArticle.comments.length > 0 && (
                 <div className="flex flex-col gap-5 mb-8">
@@ -4855,7 +6055,12 @@ function MainApp() {
         </div>
       )}
       {/* 💡 コンポーネント化したミニプレイヤー */}
-      <MiniPlayer activeTrackInfo={activeTrackInfo} playingSong={playingSong} togglePlay={togglePlay} />
+      <MiniPlayer 
+        activeTrackInfo={activeTrackInfo} 
+        playingSong={playingSong} 
+        togglePlay={togglePlay} 
+        spotifyAccessToken={spotifyAccessToken}
+      />
     </main>
   );
 }
