@@ -31,6 +31,38 @@ const mockProfile = {
   coin_balance: 0,
 };
 
+const mockTaggedProfile = {
+  id: 'tagged-user',
+  name: 'Band Mate',
+  handle: 'band_mate',
+  avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&q=80',
+  bio: 'Tagged music friend',
+  followers: 0,
+  following: 0,
+  isPrivate: false,
+  category: 'suggested',
+  hashtags: ['邦ロック'],
+  liveHistory: ['VIVA LA ROCK'],
+  age: 22,
+  gender: 'other',
+};
+
+const mockUntaggedProfile = {
+  id: 'untagged-user',
+  name: 'Jazz Friend',
+  handle: 'jazz_friend',
+  avatar: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&q=80',
+  bio: 'Different music friend',
+  followers: 0,
+  following: 0,
+  isPrivate: false,
+  category: 'suggested',
+  hashtags: ['ジャズ'],
+  liveHistory: [],
+  age: 24,
+  gender: 'other',
+};
+
 function createMockSession() {
   return {
     access_token: 'e2e-access-token',
@@ -67,7 +99,7 @@ function getSupabaseStorageKey() {
   return `sb-${projectRef}-auth-token`;
 }
 
-async function mockLoggedInSupabase(page: Page) {
+async function mockLoggedInSupabase(page: Page, profile = mockProfile) {
   const storageKey = getSupabaseStorageKey();
   test.skip(!storageKey, 'NEXT_PUBLIC_SUPABASE_URL is required for the mocked login test.');
   if (!storageKey) return;
@@ -105,6 +137,23 @@ async function mockLoggedInSupabase(page: Page) {
   });
 
   await page.route('https://itunes.apple.com/**', async (route) => {
+    const url = new URL(route.request().url());
+    const term = url.searchParams.get('term') || '';
+    if (/vaundy/i.test(term)) {
+      await route.fulfill({
+        json: {
+          results: [
+            {
+              artistId: 123,
+              artistName: 'Vaundy',
+              artworkUrl60: 'https://example.com/vaundy-60.jpg',
+              artworkUrl100: 'https://example.com/vaundy-100.jpg',
+            },
+          ],
+        },
+      });
+      return;
+    }
     await route.fulfill({ json: { results: [] } });
   });
 
@@ -114,11 +163,15 @@ async function mockLoggedInSupabase(page: Page) {
     const accept = route.request().headers().accept || '';
 
     if (table === 'profiles') {
-      if (accept.includes('application/vnd.pgrst.object+json')) {
-        await route.fulfill({ json: mockProfile });
+      if (route.request().method() === 'PATCH') {
+        await route.fulfill({ json: {} });
         return;
       }
-      await route.fulfill({ json: [mockProfile] });
+      if (accept.includes('application/vnd.pgrst.object+json')) {
+        await route.fulfill({ json: profile });
+        return;
+      }
+      await route.fulfill({ json: [profile, mockTaggedProfile, mockUntaggedProfile] });
       return;
     }
 
@@ -209,4 +262,48 @@ test('主要タブをクリックしても画面が真っ白にならない', as
     await page.getByRole('button', { name: new RegExp(tab, 'i') }).click();
     await expectPageNotBlank(page);
   }
+});
+
+test('Discoverで音楽タグからユーザーを絞り込める', async ({ page }) => {
+  await mockLoggedInSupabase(page);
+  await page.goto('/');
+
+  await page.getByRole('button', { name: /Discover/i }).click();
+  await expect(page.getByRole('button', { name: '#邦ロック' })).toBeVisible();
+  await expect(page.getByText('Band Mate')).toBeVisible();
+  await expect(page.getByText('Jazz Friend')).toBeVisible();
+
+  await page.getByRole('button', { name: '#邦ロック' }).click();
+
+  await expect(page.getByText('Band Mate')).toBeVisible();
+  await expect(page.getByText('Jazz Friend')).not.toBeVisible();
+  await page.getByRole('button', { name: 'Clear' }).click();
+  await expect(page.getByText('Jazz Friend')).toBeVisible();
+});
+
+test('初回オンボーディングでプロフィールと音楽タグを保存できる', async ({ page }) => {
+  const emptyMusicProfile = { ...mockProfile, hashtags: [], liveHistory: [] };
+  await mockLoggedInSupabase(page, emptyMusicProfile);
+  await page.goto('/');
+
+  await expect(page.getByRole('heading', { name: 'プロフィールを作りましょう' })).toBeVisible();
+
+  await page.getByPlaceholder('名前').fill('New Echo');
+  await page.getByPlaceholder('ユーザーID').fill('new_echo');
+  await page.getByRole('button', { name: 'テクノ' }).click();
+  await page.getByLabel('好きなアーティスト検索').fill('Vaundy');
+  await page.getByRole('button', { name: /Vaundy/ }).click();
+  await page.getByRole('button', { name: 'FUJI ROCK' }).click();
+  await page.getByPlaceholder('自分でハッシュタグを追加').fill('深夜に聴きたい');
+  await page.getByPlaceholder('自分でハッシュタグを追加').press('Enter');
+  await page.getByPlaceholder('自分でライブ参戦歴を追加').fill('Zepp Tokyo');
+  await page.getByPlaceholder('自分でライブ参戦歴を追加').press('Enter');
+  await page.getByRole('button', { name: '保存して始める' }).click();
+
+  await expect(page.getByRole('heading', { name: 'プロフィールを作りましょう' })).not.toBeVisible();
+  await page.getByRole('button', { name: /Profile/i }).click();
+  await expect(page.getByText('@new_echo')).toBeVisible();
+  await expect(page.getByText('#テクノ')).toBeVisible();
+  await expect(page.getByText('#Vaundy')).toBeVisible();
+  await expect(page.getByText('#深夜に聴きたい')).toBeVisible();
 });

@@ -59,6 +59,8 @@ type ProfileSectionProps = {
   onProfileTabChange: (mode: "my_vibes" | "liked") => void;
 };
 
+const displayMusicTag = (value: string) => value.replace(/^(genre|artist|tag):/, "");
+
 export function ProfileSection({
   activeTab,
   myProfile,
@@ -142,7 +144,7 @@ export function ProfileSection({
         </div>
       )}
       <p className="text-zinc-300 text-sm mt-4 text-center max-w-xs">{profile?.bio}</p>
-      <div className="flex flex-col items-center mt-3 gap-2 w-full max-w-xs"><div className="flex flex-wrap justify-center gap-1.5">{profile?.hashtags?.map((h, i) => (<span key={i} className="px-2 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded text-[10px]">#{h}</span>))}</div></div>
+      <div className="flex flex-col items-center mt-3 gap-2 w-full max-w-xs"><div className="flex flex-wrap justify-center gap-1.5">{profile?.hashtags?.map((h, i) => (<span key={i} className="px-2 py-0.5 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded text-[10px]">#{displayMusicTag(h)}</span>))}</div></div>
       <div className="flex gap-4 mt-4">
         {twitterUrl && (
           <a href={twitterUrl} target="_blank" rel="noopener noreferrer" className="w-12 h-12 rounded-full bg-black border border-zinc-800 flex items-center justify-center text-white hover:scale-105 transition-transform shadow-md">

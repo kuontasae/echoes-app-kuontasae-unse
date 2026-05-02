@@ -20,12 +20,56 @@ import { ChatMessages } from './components/chat/ChatMessages';
 import { ChatRoomHeader } from './components/chat/ChatRoomHeader';
 import { MiniPlayer } from './components/MiniPlayer';
 import { displayLocalTime, formatCount } from './utils/formatters';
+import { COIN_CHARGE_PLANS, type CoinChargePlan } from './coinPlans';
 import { useSearchParams } from 'next/navigation';
 
 const fetcher = async (url: string) => {
   const res = await fetch(url);
   if (!res.ok) throw new Error("NetworkError");
   return res.json();
+};
+
+type CoinFields = {
+  coin_balance?: number;
+  free_coin?: number;
+  paid_coin?: number;
+};
+
+type StripeConnectStatus = {
+  connected: boolean;
+  detailsSubmitted: boolean;
+  payoutsEnabled: boolean;
+  lastPayoutFailure?: {
+    code?: string | null;
+    message?: string | null;
+  } | null;
+};
+
+const getAvailableCoins = (profile: CoinFields) => {
+  const splitBalance = (Number(profile.free_coin) || 0) + (Number(profile.paid_coin) || 0);
+  return splitBalance > 0 ? splitBalance : Number(profile.coin_balance) || 0;
+};
+
+const DEFAULT_ONBOARDING_GENRES = ["邦ロック", "J-POP", "K-POP", "洋楽", "ヒップホップ", "R&B", "EDM", "テクノ", "ジャズ", "アニソン", "ボカロ", "アイドル"];
+const DEFAULT_ONBOARDING_HASHTAGS = ["フェス勢", "ライブ好き", "チルい曲", "カラオケ好き", "音楽友達募集", "新譜チェック", "推し活", "レコード好き"];
+const DEFAULT_ONBOARDING_LIVE_HISTORY = ["VIVA LA ROCK", "ROCK IN JAPAN", "FUJI ROCK", "SUMMER SONIC", "COUNTDOWN JAPAN", "METROCK", "RISING SUN", "SWEET LOVE SHOWER"];
+const MUSIC_TAG_PREFIXES = ["genre:", "artist:", "tag:"] as const;
+const makeMusicTag = (category: "genre" | "artist" | "tag", value: string) => `${category}:${value.trim().replace(/^#/, '')}`;
+const getMusicTagLabel = (value: string) => MUSIC_TAG_PREFIXES.reduce((label, prefix) => label.startsWith(prefix) ? label.slice(prefix.length) : label, value);
+const isMusicTagCategory = (value: string, category: "genre" | "artist" | "tag") => value.startsWith(`${category}:`);
+const isOnboardingLiveCandidate = (value: string) => /(live|ライブ|フェス|ツアー|公演|ドーム|スタジアム|rock|fuji|summer|sonic|viva|metrock|japan|countdown|rising|sweet)/i.test(value);
+
+const toChatMessage = (msg: any): ChatMessage => {
+  const isGroup = String(msg.target_id || "").startsWith('g') || String(msg.target_id || "").startsWith('com');
+  const calculatedReadCount = isGroup ? (msg.read_count || (msg.is_read ? 1 : 0)) : 0;
+  return {
+    id: msg.id,
+    senderId: msg.sender_id,
+    text: msg.text,
+    timestamp: new Date(msg.created_at).getTime(),
+    isRead: msg.is_read,
+    readCount: calculatedReadCount,
+  } as any;
 };
 // 💡 本物の歯車アイコン
 const IconSettings = () => <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>;
@@ -529,7 +573,7 @@ function MainApp() {
   const [showPublishSettingsModal, setShowPublishSettingsModal] = useState(false);
   const [showCoinChargeModal, setShowCoinChargeModal] = useState(false);
   const [isCharging, setIsCharging] = useState(false);
-  const [selectedChargePlan, setSelectedChargePlan] = useState<{ coins: number, price: number } | null>(null);
+  const [selectedChargePlan, setSelectedChargePlan] = useState<CoinChargePlan | null>(null);
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
@@ -541,26 +585,38 @@ function MainApp() {
         showToast("決済をキャンセルしました", "error");
         window.history.replaceState(null, '', window.location.pathname);
       }
+      const stripeConnectStatus = urlParams.get('stripe_connect');
+      if (stripeConnectStatus === 'return') {
+        showToast("換金設定を確認しています", "success");
+        window.history.replaceState(null, '', window.location.pathname);
+      } else if (stripeConnectStatus === 'refresh') {
+        showToast("換金設定をもう一度開始してください", "error");
+        window.history.replaceState(null, '', window.location.pathname);
+      }
     }
   }, []);
   const [cardInfo, setCardInfo] = useState({ number: "", expiry: "", cvc: "", name: "" });
-  const handleChargeCoins = async (coinAmount?: number) => {
+  const handleChargeCoins = async () => {
   if (!currentUser) return;
-  const finalCoins = selectedChargePlan ? selectedChargePlan.coins : (coinAmount || 0);
-  if (finalCoins <= 0) {
+  if (!selectedChargePlan) {
     showToast("InvalidCoinAmount", "error");
     return;
   }
   setIsCharging(true);
   try {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (sessionError || !accessToken) {
+      throw new Error("Unauthorized");
+    }
     const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}/api/create-checkout-session`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
       body: JSON.stringify({
-        userId: currentUser.id,
-        coins: finalCoins,
-        successUrl: `${window.location.origin}/?payment=success`,
-        cancelUrl: `${window.location.origin}/?payment=cancel`
+        planId: selectedChargePlan.id,
       })
     });
     if (!response.ok) {
@@ -967,7 +1023,8 @@ const handleSaveDraft = () => {
     }
   };
   const handleUnlockArticle = (article: any) => {
-    if (((myProfile as any).coin_balance || 0) < article.price) {
+    const currentBalance = getAvailableCoins(myProfile as User & CoinFields);
+    if (currentBalance < article.price) {
       setShowCoinChargeModal(true);
       showToast("コインが不足しています。チャージしてください。", "error");
     } else {
@@ -979,7 +1036,7 @@ const handleSaveDraft = () => {
       showToast("ログインが必要です", "error");
       return;
     }
-    const currentBalance = Number((myProfile as any).coin_balance) || 0;
+    const currentBalance = getAvailableCoins(myProfile as User & CoinFields);
     if (currentBalance < amount) {
       setShowCoinChargeModal(true);
       showToast("コインが不足しています。チャージしてください。", "error");
@@ -987,12 +1044,29 @@ const handleSaveDraft = () => {
     }
     if (!window.confirm(`${amount}C を贈りますか？`)) return;
     try {
-      const { error } = await supabase.from('transactions').insert([{ sender_id: currentUser.id, receiver_id: viewingArticle.author.id, amount, transaction_type: 'gift', target_id: viewingArticle.id }]);
-      if (error) throw error;
-      const newBalance = currentBalance - amount;
-      await supabase.from('profiles').update({ coin_balance: newBalance }).eq('id', currentUser.id);
-      setMyProfile(prev => ({ ...prev, coin_balance: newBalance } as any));
-      await supabase.from('notifications').insert([{ user_id: viewingArticle.author.id, sender_id: currentUser.id, type: 'gift', text: `${myProfile.name}さんから ${amount}C のサポートが届きました！🎁` }]);
+      const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+      if (sessionError || !accessToken) {
+        throw new Error("Unauthorized");
+      }
+      const response = await fetch('/api/send-article-gift', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ articleId: viewingArticle.id, amount }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "GiftSendFailed");
+      }
+      setMyProfile(prev => ({
+        ...prev,
+        coin_balance: data.coin_balance,
+        free_coin: data.free_coin,
+        paid_coin: data.paid_coin,
+      } as User & CoinFields));
       showToast("クリエイターをサポートしました！", "success");
     } catch (e) {
       showToast("エラーが発生しました", "error");
@@ -1134,9 +1208,46 @@ const handleSaveDraft = () => {
     };
     fetchJoinedCommunities();
   }, [currentUser, realCommunities]);
+  useEffect(() => {
+    if (!currentUser) return;
+    let isMounted = true;
+    const fetchJoinedGroups = async () => {
+      try {
+        const { data: memberships, error: membershipError } = await supabase
+          .from('group_members')
+          .select('group_id')
+          .eq('user_id', currentUser.id);
+        if (membershipError) throw membershipError;
+        const groupIds = [...new Set((memberships || []).map((m: any) => m.group_id).filter(Boolean))];
+        if (groupIds.length === 0) {
+          if (isMounted) setChatGroups([]);
+          return;
+        }
+        const [{ data: groups, error: groupsError }, { data: members, error: membersError }] = await Promise.all([
+          supabase.from('chat_groups').select('id, name, avatar').in('id', groupIds),
+          supabase.from('group_members').select('group_id, user_id').in('group_id', groupIds),
+        ]);
+        if (groupsError || membersError) throw groupsError || membersError;
+        if (!isMounted) return;
+        setChatGroups((groups || []).map((group: any) => ({
+          id: group.id,
+          name: group.name,
+          avatar: group.avatar,
+          memberIds: (members || []).filter((member: any) => member.group_id === group.id).map((member: any) => member.user_id),
+        })));
+      } catch (err) {
+        console.warn(err);
+      }
+    };
+    fetchJoinedGroups();
+    return () => {
+      isMounted = false;
+    };
+  }, [currentUser]);
   const [matchIndex, setMatchIndex] = useState(0);
   const [showMatchFilterModal, setShowMatchFilterModal] = useState(false);
   const [matchFilter, setMatchFilter] = useState({ artists: [] as any[], hashtags: [] as string[], liveHistories: [] as string[], ageMin: 18, ageMax: 100, gender: "All" });
+  const [peopleMusicFilter, setPeopleMusicFilter] = useState({ hashtags: [] as string[], liveHistories: [] as string[] });
   const [filterArtistInput, setFilterArtistInput] = useState("");
   const [filterArtistSuggestions, setFilterArtistSuggestions] = useState<any[]>([]);
   const [filterHashtagInput, setFilterHashtagInput] = useState("");
@@ -1176,7 +1287,7 @@ const handleSaveDraft = () => {
     return allProfiles.filter(u => {
       if (u.id === currentUser?.id || blockedUsers.has(u.id) || followedUsers.has(u.id)) return false;
       if (matchFilter.artists.length > 0 && !matchFilter.artists.some(fa => u.topArtists?.map((x: any) => x.toLowerCase())?.includes(fa.artistName.toLowerCase()))) return false;
-      if (matchFilter.hashtags.length > 0 && !matchFilter.hashtags.some(fh => u.hashtags?.map((x: any) => x.toLowerCase())?.includes(fh.toLowerCase()))) return false;
+      if (matchFilter.hashtags.length > 0 && !matchFilter.hashtags.some(fh => u.hashtags?.map((x: any) => getMusicTagLabel(x).toLowerCase())?.includes(fh.toLowerCase()))) return false;
       if (matchFilter.liveHistories.length > 0 && !matchFilter.liveHistories.some(fl => u.liveHistory?.map((x: any) => x.toLowerCase())?.includes(fl.toLowerCase()))) return false;
       if (u.age && (u.age < matchFilter.ageMin || u.age > matchFilter.ageMax)) return false;
       if (matchFilter.gender !== "All" && u.gender !== matchFilter.gender.toLowerCase()) return false;
@@ -1204,7 +1315,7 @@ const handleSaveDraft = () => {
   const draftAudioRef = useRef<HTMLAudioElement | null>(null);
   const [draftVoice, setDraftVoice] = useState<{ blob: Blob, url: string } | null>(null);
   const [chatHistory, setChatHistory] = useState<Record<string, ChatMessage[]>>({});
-  const [chatGroups, setChatGroups] = useState<ChatGroup[]>([{ id: "g1", name: "ROCK IN JAPAN 参戦組", memberIds: ["u1", "u4"], avatar: "https://images.unsplash.com/photo-1459749411175-04bf5292ceea?w=400&q=80" }]);
+  const [chatGroups, setChatGroups] = useState<ChatGroup[]>([]);
   const [chatCommunities, setChatCommunities] = useState<LiveCommunity[]>([]);
   const suggestedCommunities = useMemo(() => {
     // // 💡 3人以上の異なるユーザーから通報されたものは、一般リストから「検疫（非表示）」にする
@@ -1267,14 +1378,87 @@ const handleSaveDraft = () => {
   const currentMonth = calendarDate.getMonth() + 1;
   const daysInMonth = new Date(currentYear, currentMonth, 0).getDate();
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [showInitialOnboarding, setShowInitialOnboarding] = useState(false);
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showRevenueDashboard, setShowRevenueDashboard] = useState(false);
-  const [revenueData, setRevenueData] = useState<{ total: number, article: number, gift: number, history: any[] }>({ total: 0, article: 0, gift: 0, history: [] });
+  const [revenueData, setRevenueData] = useState<{ total: number, article: number, gift: number, history: any[] }>({ total: 0, article: 0, gift: 0, history: [] });
+  const [stripeConnectStatus, setStripeConnectStatus] = useState<StripeConnectStatus>({ connected: false, detailsSubmitted: false, payoutsEnabled: false });
+  const [isStartingStripeConnect, setIsStartingStripeConnect] = useState(false);
+  const [isRequestingPayout, setIsRequestingPayout] = useState(false);
   const [showAdminDashboard, setShowAdminDashboard] = useState(false); // 💡 運営ダッシュボード用の箱
   const [showVibeMatchDetails, setShowVibeMatchDetails] = useState(false);
   const [showAppInfoModal, setShowAppInfoModal] = useState<{ title: string, content: string } | null>(null);
   const [showUserListModal, setShowUserListModal] = useState<'FOLLOWERS' | 'FOLLOWING' | null>(null);
   const [modalSearchQuery, setModalSearchQuery] = useState("");
+  const getAuthAccessToken = async () => {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    if (sessionError || !accessToken) throw new Error("Unauthorized");
+    return accessToken;
+  };
+  const loadRevenueDashboard = async () => {
+    if (!currentUser) return;
+    setShowSettingsMenu(false);
+    setShowRevenueDashboard(true);
+    const { data } = await supabase.from('transactions').select('*').eq('receiver_id', currentUser.id);
+    if (data) {
+      let total = 0, article = 0, gift = 0;
+      data.forEach(tx => {
+        total += tx.amount;
+        if (tx.transaction_type?.startsWith('article')) article += tx.amount;
+        if (tx.transaction_type?.startsWith('gift')) gift += tx.amount;
+      });
+      const history = data.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      setRevenueData({ total, article, gift, history });
+    }
+    try {
+      const accessToken = await getAuthAccessToken();
+      const response = await fetch('/api/stripe-connect/status', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (response.ok) {
+        setStripeConnectStatus(await response.json());
+      }
+    } catch (err) {
+      setStripeConnectStatus({ connected: false, detailsSubmitted: false, payoutsEnabled: false });
+    }
+  };
+  const startStripeConnectOnboarding = async () => {
+    if (!currentUser || isStartingStripeConnect) return;
+    setIsStartingStripeConnect(true);
+    try {
+      const accessToken = await getAuthAccessToken();
+      const response = await fetch('/api/stripe-connect/onboarding', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const data = await response.json();
+      if (!response.ok || !data.onboardingUrl) throw new Error(data.error || "ConnectOnboardingFailed");
+      window.location.href = data.onboardingUrl;
+    } catch (err) {
+      showToast("換金設定を開始できませんでした", "error");
+      setIsStartingStripeConnect(false);
+    }
+  };
+  const requestCreatorPayout = async () => {
+    if (!currentUser || isRequestingPayout) return;
+    setIsRequestingPayout(true);
+    try {
+      const accessToken = await getAuthAccessToken();
+      const response = await fetch('/api/payouts/request', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "PayoutRequestFailed");
+      showToast(`¥${Number(data.amountJpy).toLocaleString()} の振込申請を受け付けました`, "success");
+      await loadRevenueDashboard();
+    } catch (err) {
+      showToast("振込申請に失敗しました", "error");
+    } finally {
+      setIsRequestingPayout(false);
+    }
+  };
   const [editName, setEditName] = useState(myProfile.name);
   const [editHandle, setEditHandle] = useState(myProfile.handle);
   const [editBio, setEditBio] = useState(myProfile.bio);
@@ -1284,6 +1468,14 @@ const handleSaveDraft = () => {
   const [editLiveHistory, setEditLiveHistory] = useState(myProfile.liveHistory?.join(', ') || "");
   const [editTwitter, setEditTwitter] = useState((myProfile as any).twitterUrl || "");
   const [editInstagram, setEditInstagram] = useState((myProfile as any).instagramUrl || "");
+  const [onboardingArtistInput, setOnboardingArtistInput] = useState("");
+  const [onboardingHashtagInput, setOnboardingHashtagInput] = useState("");
+  const [onboardingLiveInput, setOnboardingLiveInput] = useState("");
+  const [onboardingGenres, setOnboardingGenres] = useState<string[]>([]);
+  const [onboardingArtists, setOnboardingArtists] = useState<string[]>([]);
+  const [onboardingHashtags, setOnboardingHashtags] = useState<string[]>([]);
+  const [onboardingLiveHistory, setOnboardingLiveHistory] = useState<string[]>([]);
+  const [debouncedOnboardingArtistInput, setDebouncedOnboardingArtistInput] = useState("");
   const [viewingUserStats, setViewingUserStats] = useState({ followers: 0, following: 0 });
   useEffect(() => {
     if (!viewingUser) return;
@@ -1439,6 +1631,17 @@ const handleSaveDraft = () => {
       .sort((a, b) => b.postCount - a.postCount)
       .slice(0, 5);
   }, [allProfiles, currentUser, blockedUsers, vibes]);
+  const hasPeopleMusicFilter = peopleMusicFilter.hashtags.length > 0 || peopleMusicFilter.liveHistories.length > 0;
+  const matchesPeopleMusicFilter = React.useCallback((u: User) => {
+    const userHashtags = (u.hashtags || []).map(h => getMusicTagLabel(h).toLowerCase());
+    const userLiveHistories = (u.liveHistory || []).map(l => l.toLowerCase());
+    const matchesHashtag = peopleMusicFilter.hashtags.length === 0 || peopleMusicFilter.hashtags.some(h => userHashtags.includes(h.toLowerCase()));
+    const matchesLiveHistory = peopleMusicFilter.liveHistories.length === 0 || peopleMusicFilter.liveHistories.some(l => userLiveHistories.includes(l.toLowerCase()));
+    return matchesHashtag && matchesLiveHistory;
+  }, [peopleMusicFilter]);
+  const filteredSuggestedFriends = useMemo(() => suggestedFriends.filter(({ user }) => matchesPeopleMusicFilter(user)), [suggestedFriends, matchesPeopleMusicFilter]);
+  const filteredSimilarMusicUsers = useMemo(() => similarMusicUsers.filter(({ user }) => matchesPeopleMusicFilter(user)), [similarMusicUsers, matchesPeopleMusicFilter]);
+  const filteredPopularUsers = useMemo(() => popularUsers.filter(({ user }) => matchesPeopleMusicFilter(user)), [popularUsers, matchesPeopleMusicFilter]);
   // 💡 プロフィール表示用の共通の友達リスト
   const mutualFriendsList = useMemo(() => {
     if (!viewingUser) return [];
@@ -1478,6 +1681,20 @@ const handleSaveDraft = () => {
         profile = newProfile;
       }
       setMyProfile(prev => ({ ...prev, ...profile }));
+      const hasMusicProfile = (profile.hashtags || []).length > 0 || (profile.liveHistory || []).length > 0;
+      if (!hasMusicProfile) {
+        setEditName(profile.name || "");
+        setEditHandle(profile.handle || "");
+        setEditAvatar(profile.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80");
+        setOnboardingGenres([]);
+        setOnboardingArtists([]);
+        setOnboardingHashtags([]);
+        setOnboardingLiveHistory([]);
+        setOnboardingArtistInput("");
+        setOnboardingHashtagInput("");
+        setOnboardingLiveInput("");
+        setShowInitialOnboarding(true);
+      }
       const { data: followingData } = await supabase.from('follows').select('following_id').eq('follower_id', session.user.id);
       // 💡 全ユーザーのフォロー・フォロワー関係を取得（共通の友達計算用）
       const { data: allFollowsData } = await supabase.from('follows').select('*');
@@ -1488,14 +1705,7 @@ const handleSaveDraft = () => {
       const { data: blocksData } = await supabase.from('blocks').select('blocked_id').eq('blocker_id', session.user.id);
       if (blocksData) setBlockedUsers(new Set(blocksData.map(d => d.blocked_id)));
       if (followersData) setMyFollowers(new Set(followersData.map(d => d.follower_id)));
-      // 💡 初期状態なら、自動的にプロフィール設定画面をポップアップさせる
-      if (profile.bio === "よろしくお願いします！") {
-        setEditName(profile.name);
-        setEditHandle(profile.handle);
-        setEditBio("");
-        setIsEditingProfile(true); // これが編集画面を開く魔法のスイッチだ
-        showToast("初めまして！プロフィールを設定しましょう", "success");
-      }
+      if (!hasMusicProfile) showToast("好きな音楽を登録して、つながりやすくしましょう", "success");
     };
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -1654,39 +1864,46 @@ const handleSaveDraft = () => {
     return () => observer.disconnect();
   }, [hasMoreVibes, isLoadingVibes, vibePage]);
   // 💡 監視用の「分身（Ref）」を作ることで、再接続のループを防ぐ
-const activeChatUserIdRef = useRef<string | null>(activeChatUserId);
-useEffect(() => {
-  activeChatUserIdRef.current = activeChatUserId;
-}, [activeChatUserId]);
-useEffect(() => {
-  if (!currentUser) return;
-  let isMounted = true;
-
-  const fetchChats = async () => {
-    try {
-      const { data } = await supabase.from('chat_messages').select('*').order('created_at', { ascending: true });
-      if (data && isMounted) {
-        const history: Record<string, ChatMessage[]> = {};
-        data.forEach(msg => {
-          const isGroup = msg.target_id.startsWith('g') || msg.target_id.startsWith('com');
-          const partnerId = isGroup ? msg.target_id : (msg.sender_id === currentUser.id ? msg.target_id : msg.sender_id);
-          if (!history[partnerId]) history[partnerId] = [];
-          
-          const calculatedReadCount = isGroup ? (msg.read_count || (msg.is_read ? 1 : 0)) : 0;
-          
-          history[partnerId].push({ 
-            id: msg.id, 
-            senderId: msg.sender_id, 
-            text: msg.text, 
-            timestamp: new Date(msg.created_at).getTime(), 
-            isRead: msg.is_read,
-            readCount: calculatedReadCount
-          } as any);
-        });
-        setChatHistory(history);
-      }
-    } catch (e) {}
-  };
+	const activeChatUserIdRef = useRef<string | null>(activeChatUserId);
+	useEffect(() => {
+	  activeChatUserIdRef.current = activeChatUserId;
+	}, [activeChatUserId]);
+		const chatGroupIds = useMemo(() => chatGroups.map(g => g.id), [chatGroups]);
+		const chatCommunityIds = useMemo(() => chatCommunities.map(c => c.id), [chatCommunities]);
+		const canAccessChatTarget = React.useCallback((targetId: string) => {
+		  if (!targetId.startsWith('g') && !targetId.startsWith('com')) return true;
+		  return chatGroupIds.includes(targetId) || chatCommunityIds.includes(targetId);
+		}, [chatGroupIds, chatCommunityIds]);
+	useEffect(() => {
+	  if (!currentUser) return;
+	  let isMounted = true;
+	
+	  const fetchChats = async () => {
+	    try {
+	      const filters = [
+	        `sender_id.eq.${currentUser.id}`,
+	        `target_id.eq.${currentUser.id}`,
+	        ...chatGroupIds.map(id => `target_id.eq.${id}`),
+	        ...chatCommunityIds.map(id => `target_id.eq.${id}`),
+	      ];
+	      const { data, error } = await supabase
+	        .from('chat_messages')
+	        .select('*')
+	        .or(filters.join(','))
+	        .order('created_at', { ascending: true });
+	      if (error) throw error;
+	      if (data && isMounted) {
+	        const history: Record<string, ChatMessage[]> = {};
+	        data.forEach(msg => {
+	          const isGroup = msg.target_id.startsWith('g') || msg.target_id.startsWith('com');
+	          const partnerId = isGroup ? msg.target_id : (msg.sender_id === currentUser.id ? msg.target_id : msg.sender_id);
+	          if (!history[partnerId]) history[partnerId] = [];
+	          history[partnerId].push(toChatMessage(msg));
+	        });
+	        setChatHistory(history);
+	      }
+	    } catch (e) {}
+	  };
 
   const fetchNotifications = async () => {
     try {
@@ -1700,60 +1917,67 @@ useEffect(() => {
   fetchChats();
   fetchNotifications();
 
-  const channel = supabase.channel(`rt_${currentUser.id}`)
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, async (payload) => {
-      const msg = payload.new;
-      if (msg.sender_id === currentUser.id) return;
-      
-      const isGroup = msg.target_id.startsWith('g') || msg.target_id.startsWith('com');
-      const partnerId = isGroup ? msg.target_id : msg.sender_id;
-      let isRead = msg.is_read;
-      
-      const currentActiveId = activeChatUserIdRef.current;
+	  let channel = supabase.channel(`rt_${currentUser.id}`);
+	  const readableChatTargets = [currentUser.id, ...chatGroupIds, ...chatCommunityIds];
+	  const handleChatInsert = async (payload: any) => {
+	    const msg = payload.new;
+	    if (msg.sender_id === currentUser.id) return;
+	    const isGroup = msg.target_id.startsWith('g') || msg.target_id.startsWith('com');
+	    const partnerId = isGroup ? msg.target_id : msg.sender_id;
+	    let isRead = msg.is_read;
+	    const currentActiveId = activeChatUserIdRef.current;
 
-      if (currentActiveId === partnerId) {
-        isRead = true;
-        await supabase.from('chat_messages').update({ is_read: true }).eq('id', msg.id);
-      } else {
-        const { data: senderData } = await supabase.from('profiles').select('name').eq('id', msg.sender_id).single();
-        const senderName = senderData ? senderData.name : "NewMessage";
-        const msgPreview = msg.text.startsWith('[IMAGE]') ? "Image" : msg.text.startsWith('[FILE]') ? "File" : msg.text.startsWith('[VOICE]') ? "Voice" : msg.text;
-        showToast(`${senderName}: ${msgPreview}`);
-      }
-      
-      const newChatMsg = { id: msg.id, senderId: msg.sender_id, text: msg.text, timestamp: new Date(msg.created_at).getTime(), isRead: isRead };
-      setChatHistory(prev => ({ ...prev, [partnerId]: [...(prev[partnerId] || []), newChatMsg as any] }));
-    })
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_messages' }, (payload) => {
-      const updatedMsg = payload.new;
-      setChatHistory(prev => {
-        const newHistory = { ...prev };
-        Object.keys(newHistory).forEach(pId => { newHistory[pId] = newHistory[pId].map(m => (m.id === updatedMsg.id ? { ...m, isRead: updatedMsg.is_read } as any : m)); });
-        return newHistory;
-      });
-    })
-    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_messages' }, (payload) => {
-      const deletedMsgId = payload.old.id;
-      setChatHistory(prev => {
-        const newHistory = { ...prev };
-        Object.keys(newHistory).forEach(pId => { newHistory[pId] = newHistory[pId].filter(m => m.id !== deletedMsgId); });
-        return newHistory;
-      });
-    })
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications' }, (payload) => {
-      if (payload.new.user_id === currentUser.id) {
-        const newNotif = { id: payload.new.id, type: payload.new.type, text: payload.new.text, time: "Now", read: payload.new.is_read };
-        setNotifications(prev => [newNotif as any, ...prev]);
-        showToast("Success", "success");
-      }
-    })
-    .subscribe();
+	    if (currentActiveId === partnerId) {
+	      isRead = true;
+	      await supabase.from('chat_messages').update({ is_read: true }).eq('id', msg.id);
+	    } else {
+	      const { data: senderData } = await supabase.from('profiles').select('name').eq('id', msg.sender_id).single();
+	      const senderName = senderData ? senderData.name : "NewMessage";
+	      const msgPreview = msg.text.startsWith('[IMAGE]') ? "Image" : msg.text.startsWith('[FILE]') ? "File" : msg.text.startsWith('[VOICE]') ? "Voice" : msg.text;
+	      showToast(`${senderName}: ${msgPreview}`);
+	    }
+
+	    const newChatMsg = { ...toChatMessage(msg), isRead };
+	    setChatHistory(prev => ({ ...prev, [partnerId]: [...(prev[partnerId] || []), newChatMsg] }));
+	  };
+	  const handleChatUpdate = (payload: any) => {
+	    const updatedMsg = payload.new;
+	    setChatHistory(prev => {
+	      const newHistory = { ...prev };
+	      Object.keys(newHistory).forEach(pId => { newHistory[pId] = newHistory[pId].map(m => (m.id === updatedMsg.id ? { ...m, isRead: updatedMsg.is_read } as any : m)); });
+	      return newHistory;
+	    });
+	  };
+	  const handleChatDelete = (payload: any) => {
+	    const deletedMsgId = payload.old.id;
+	    setChatHistory(prev => {
+	      const newHistory = { ...prev };
+	      Object.keys(newHistory).forEach(pId => { newHistory[pId] = newHistory[pId].filter(m => m.id !== deletedMsgId); });
+	      return newHistory;
+	    });
+	  };
+
+	  readableChatTargets.forEach(targetId => {
+	    channel = channel
+	      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages', filter: `target_id=eq.${targetId}` }, handleChatInsert)
+	      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_messages', filter: `target_id=eq.${targetId}` }, handleChatUpdate)
+	      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_messages', filter: `target_id=eq.${targetId}` }, handleChatDelete);
+	  });
+	  channel = channel
+	    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_messages', filter: `sender_id=eq.${currentUser.id}` }, handleChatUpdate)
+	    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_messages', filter: `sender_id=eq.${currentUser.id}` }, handleChatDelete)
+	    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUser.id}` }, (payload) => {
+	      const newNotif = { id: payload.new.id, type: payload.new.type, text: payload.new.text, time: "Now", read: payload.new.is_read };
+	      setNotifications(prev => [newNotif as any, ...prev]);
+	      showToast("Success", "success");
+	    })
+	    .subscribe();
 
   return () => { 
     isMounted = false;
     supabase.removeChannel(channel); 
   };
-}, [currentUser]);
+	}, [currentUser, chatGroupIds, chatCommunityIds]);
 
  // 💡 最重要: activeChatUserId を依存リストから消し去ることで、無限リロードを阻止！
   useEffect(() => {
@@ -1860,6 +2084,29 @@ useEffect(() => {
       setFilterArtistSuggestions([]);
     }
   }, [debouncedFilterArtistInput, filterArtistData, filterArtistError]);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedOnboardingArtistInput(onboardingArtistInput), 400);
+    return () => clearTimeout(timer);
+  }, [onboardingArtistInput]);
+  const { data: onboardingArtistData, error: onboardingArtistError } = useSWR(
+    debouncedOnboardingArtistInput.trim() ? `https://itunes.apple.com/search?term=${encodeURIComponent(debouncedOnboardingArtistInput)}&entity=song&country=jp&limit=10` : null,
+    fetcher
+  );
+  const onboardingArtistSuggestions = useMemo(() => {
+    if (!onboardingArtistData?.results) return [];
+    const unique: { artistId: number, artistName: string, artworkUrl: string }[] = [];
+    const seen = new Set();
+    onboardingArtistData.results.forEach((r: any) => {
+      if (!seen.has(r.artistId)) {
+        seen.add(r.artistId);
+        unique.push({ artistId: r.artistId, artistName: r.artistName, artworkUrl: r.artworkUrl60 });
+      }
+    });
+    return unique.slice(0, 5);
+  }, [onboardingArtistData]);
+  useEffect(() => {
+    if (onboardingArtistError) showToast("Artist Search Error", "error");
+  }, [onboardingArtistError]);
   const { data: artistData, error: artistError } = useSWR(
     activeArtistProfile ? `https://itunes.apple.com/search?term=${encodeURIComponent(activeArtistProfile.artistName)}&entity=song&country=jp&limit=50` : null,
     fetcher
@@ -1909,7 +2156,14 @@ useEffect(() => {
     }
     setIsAlbumLoading(false);
   }, [activeAlbumProfile?.collectionId, albumData, albumError]);
-  const allAvailableHashtags = useMemo(() => { const s = new Set<string>(); allProfiles.forEach(u => u.hashtags?.forEach(h => s.add(h))); return Array.from(s); }, [allProfiles]);
+  const allAvailableHashtags = useMemo(() => {
+    const s = new Set<string>();
+    allProfiles.forEach(u => u.hashtags?.forEach(h => {
+      if (isMusicTagCategory(h, "artist")) return;
+      s.add(getMusicTagLabel(h));
+    }));
+    return Array.from(s);
+  }, [allProfiles]);
   const allAvailableLiveHistories = useMemo(() => { const s = new Set<string>(); allProfiles.forEach(u => u.liveHistory?.forEach(l => s.add(l))); return Array.from(s); }, [allProfiles]);
   const vibeMatchData = useMemo(() => {
     if (!viewingUser) return null;
@@ -2131,9 +2385,13 @@ useEffect(() => {
     }
   }
 };
- const submitChatMessage = async (targetId: string) => {
-  if (!currentUser) return;
-  const textToSend = chatMessageInput.trim();
+	 const submitChatMessage = async (targetId: string) => {
+	  if (!currentUser) return;
+	  if (!canAccessChatTarget(targetId)) {
+	    showToast("Unauthorized", "error");
+	    return;
+	  }
+	  const textToSend = chatMessageInput.trim();
   const attachmentsToSend = [...pendingAttachments];
   if (!textToSend && attachmentsToSend.length === 0) {
     return;
@@ -2508,10 +2766,15 @@ const handleDeleteCommunity = async (id: string) => {
   }
 };
   // 💡 チャットで画像・ファイルを送る機能（画像の場合は自動圧縮）
-  const handleChatFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    let file = e.target.files?.[0];
-    if (!file || !currentUser || !activeChatUserId) return;
-    showToast("ファイルを送信しています...", "success");
+	  const handleChatFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+	    let file = e.target.files?.[0];
+	    if (!file || !currentUser || !activeChatUserId) return;
+	    if (!canAccessChatTarget(activeChatUserId)) {
+	      showToast("Unauthorized", "error");
+	      e.target.value = "";
+	      return;
+	    }
+	    showToast("ファイルを送信しています...", "success");
     const isImage = file.type.startsWith('image/');
     try {
       // 💡 画像なら圧縮し、それ以外のファイル（PDFなど）はそのまま扱う
@@ -2586,11 +2849,15 @@ const handleDeleteCommunity = async (id: string) => {
       setIsPlayingDraft(true);
     }
   };
-  const sendVoiceMessage = async () => {
-  if (!draftVoice || !currentUser || !activeChatUserId) {
-    return;
-  }
-  const MAX_AUDIO_SIZE = 15 * 1024 * 1024;
+	  const sendVoiceMessage = async () => {
+	  if (!draftVoice || !currentUser || !activeChatUserId) {
+	    return;
+	  }
+	  if (!canAccessChatTarget(activeChatUserId)) {
+	    showToast("Unauthorized", "error");
+	    return;
+	  }
+	  const MAX_AUDIO_SIZE = 15 * 1024 * 1024;
   if (draftVoice.blob.size > MAX_AUDIO_SIZE) {
     showToast("AudioSizeLimitExceeded", "error");
     return;
@@ -2872,6 +3139,89 @@ const handleDeleteCommunity = async (id: string) => {
     showToast("SystemError", "error");
   }
 };
+  const addOnboardingTag = (
+    value: string,
+    setValue: (value: string) => void,
+    items: string[],
+    setItems: React.Dispatch<React.SetStateAction<string[]>>
+  ) => {
+    const nextValue = value.trim().replace(/^#/, '');
+    if (!nextValue) return;
+    if (items.some(item => item.toLowerCase() === nextValue.toLowerCase())) {
+      setValue("");
+      return;
+    }
+    setItems(prev => [...prev, nextValue].slice(0, 8));
+    setValue("");
+  };
+  const removeOnboardingTag = (value: string, setItems: React.Dispatch<React.SetStateAction<string[]>>) => {
+    setItems(prev => prev.filter(item => item !== value));
+  };
+  const handleOnboardingTextKeyDown = (
+    event: React.KeyboardEvent<HTMLInputElement>,
+    value: string,
+    setValue: (value: string) => void,
+    items: string[],
+    setItems: React.Dispatch<React.SetStateAction<string[]>>
+  ) => {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    addOnboardingTag(value, setValue, items, setItems);
+  };
+  const saveInitialOnboarding = async () => {
+    if (!currentUser) return;
+    const tName = editName.trim();
+    const tHandle = editHandle.trim().replace(/^@/, '');
+    if (!tName || tName.length > 50) {
+      showToast("InvalidNameLength", "error");
+      return;
+    }
+    if (!/^[A-Za-z0-9_]{3,20}$/.test(tHandle)) {
+      showToast("InvalidHandleFormat", "error");
+      return;
+    }
+    const newHashtags = [
+      ...onboardingGenres.map(tag => makeMusicTag("genre", tag)),
+      ...onboardingArtists.map(tag => makeMusicTag("artist", tag)),
+      ...onboardingHashtags.map(tag => makeMusicTag("tag", tag)),
+    ]
+      .map(tag => tag.trim().replace(/^#/, ''))
+      .filter(Boolean)
+      .filter((tag, index, arr) => arr.findIndex(item => item.toLowerCase() === tag.toLowerCase()) === index);
+    const newLiveHistory = onboardingLiveHistory
+      .map(item => item.trim())
+      .filter(Boolean)
+      .filter((item, index, arr) => arr.findIndex(x => x.toLowerCase() === item.toLowerCase()) === index);
+
+    if (newHashtags.length === 0 && newLiveHistory.length === 0) {
+      showToast("好きな音楽を1つ以上追加してください", "error");
+      return;
+    }
+
+    try {
+      const dbUpdateData = {
+        name: tName,
+        handle: tHandle,
+        avatar: editAvatar,
+        hashtags: newHashtags,
+        liveHistory: newLiveHistory
+      };
+      const { error } = await supabase
+        .from('profiles')
+        .update(dbUpdateData)
+        .eq('id', currentUser.id);
+      if (error) {
+        showToast("UpdateFailed", "error");
+        return;
+      }
+      setMyProfile(prev => ({ ...prev, ...dbUpdateData } as any));
+      setAllProfiles(prev => prev.map(p => p.id === currentUser.id ? { ...p, ...dbUpdateData } as any : p));
+      setShowInitialOnboarding(false);
+      showToast("音楽プロフィールを保存しました", "success");
+    } catch (err) {
+      showToast("SystemError", "error");
+    }
+  };
   const handleSignUp = async () => {
   if (!email || !password) {
     showToast("ValidationError", "error");
@@ -3135,7 +3485,7 @@ const renderFeedCard = (s: Song) => (
 );
   useEffect(() => {
     const hasOpenModal = 
-      showSettingsMenu || showRevenueDashboard || isEditingProfile || showBlockedUsersModal || 
+      showSettingsMenu || showRevenueDashboard || isEditingProfile || showInitialOnboarding || showBlockedUsersModal || 
       showAppInfoModal || showUserListModal !== null || showMutualFriendsModal || showWriteArticleModal || 
       showPublishSettingsModal || showCoinChargeModal || showCommCalendar || showMatchFilterModal || 
       showCreateGroupModal || showCreateCommunityModal || showNotifications || showDeleteAccountConfirm || 
@@ -3153,7 +3503,7 @@ const renderFeedCard = (s: Song) => (
       document.body.style.overflow = ''; 
     };
   }, [
-    showSettingsMenu, showRevenueDashboard, isEditingProfile, showBlockedUsersModal, 
+    showSettingsMenu, showRevenueDashboard, isEditingProfile, showInitialOnboarding, showBlockedUsersModal, 
     showAppInfoModal, showUserListModal, showMutualFriendsModal, showWriteArticleModal, 
     showPublishSettingsModal, showCoinChargeModal, showCommCalendar, showMatchFilterModal, 
     showCreateGroupModal, showCreateCommunityModal, showNotifications, showDeleteAccountConfirm, 
@@ -3161,6 +3511,89 @@ const renderFeedCard = (s: Song) => (
     showDraftSaveDialog, showPostOverrideConfirm, draftSong, viewingChatImage, viewingArticle,
     activeArtistProfile, activeAlbumProfile
   ]);
+
+  const onboardingGenreCandidates = useMemo(() => {
+    const fromProfiles = allProfiles
+      .flatMap(profile => profile.hashtags || [])
+      .filter(tag => isMusicTagCategory(tag, "genre"))
+      .map(getMusicTagLabel);
+    return [...new Set([...DEFAULT_ONBOARDING_GENRES, ...fromProfiles])].slice(0, 16);
+  }, [allProfiles]);
+  const onboardingHashtagCandidates = useMemo(() => {
+    const fromProfiles = allProfiles
+      .flatMap(profile => profile.hashtags || [])
+      .filter(tag => isMusicTagCategory(tag, "tag"))
+      .map(getMusicTagLabel);
+    return [...new Set([...DEFAULT_ONBOARDING_HASHTAGS, ...fromProfiles])].slice(0, 16);
+  }, [allProfiles]);
+  const onboardingLiveCandidates = useMemo(() => {
+    const fromProfiles = allProfiles
+      .flatMap(profile => profile.liveHistory || [])
+      .filter(isOnboardingLiveCandidate);
+    return [...new Set([...DEFAULT_ONBOARDING_LIVE_HISTORY, ...fromProfiles])].slice(0, 16);
+  }, [allProfiles]);
+  const toggleOnboardingChoice = (
+    value: string,
+    items: string[],
+    setItems: React.Dispatch<React.SetStateAction<string[]>>
+  ) => {
+    if (items.includes(value)) {
+      setItems(prev => prev.filter(item => item !== value));
+      return;
+    }
+    setItems(prev => [...prev, value].slice(0, 8));
+  };
+  const renderOnboardingChipPicker = (
+    label: string,
+    candidates: string[],
+    items: string[],
+    setItems: React.Dispatch<React.SetStateAction<string[]>>,
+    prefix = ""
+  ) => (
+    <div>
+      <label className="text-[10px] text-zinc-500 ml-1 mb-2 block font-bold">{label}</label>
+      <div className="flex flex-wrap gap-2">
+        {candidates.map(candidate => {
+          const isSelected = items.includes(candidate);
+          return (
+            <button
+              key={candidate}
+              type="button"
+              onClick={() => toggleOnboardingChoice(candidate, items, setItems)}
+              className={`px-3 py-2 rounded-full border text-[11px] font-bold transition-colors ${isSelected ? 'bg-[#1DB954] border-[#1DB954] text-black' : 'bg-black border-zinc-800 text-zinc-300 hover:text-white'}`}
+            >
+              {prefix}{candidate}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+  const renderOnboardingTextAdd = (
+    placeholder: string,
+    value: string,
+    setValue: (value: string) => void,
+    items: string[],
+    setItems: React.Dispatch<React.SetStateAction<string[]>>
+  ) => (
+    <div className="flex gap-2 mt-2">
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => handleOnboardingTextKeyDown(e, value, setValue, items, setItems)}
+        placeholder={placeholder}
+        className="min-w-0 flex-1 bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-zinc-500"
+      />
+      <button
+        type="button"
+        onClick={() => addOnboardingTag(value, setValue, items, setItems)}
+        className="px-4 bg-white text-black rounded-xl text-xs font-bold shrink-0"
+      >
+        追加
+      </button>
+    </div>
+  );
 
   if (isInitializing) return <div className="min-h-screen bg-black flex items-center justify-center"><h1 className="text-5xl font-black italic text-white animate-pulse">Echoes.</h1></div>;
   if (!isLoggedIn) return (
@@ -3692,10 +4125,14 @@ const renderFeedCard = (s: Song) => (
                 ) : (
                   // 曲確認・送信モード（投稿作成画面風UI）
                   (() => {
-                    const handleSendMusicShare = async () => {
-  if (!activeChatUserId || !currentUser || !selectedChatSong) return;
+	                    const handleSendMusicShare = async () => {
+	  if (!activeChatUserId || !currentUser || !selectedChatSong) return;
+	  if (!canAccessChatTarget(activeChatUserId)) {
+	    showToast("Unauthorized", "error");
+	    return;
+	  }
 
-  const commentText = chatMusicComment.trim();
+	  const commentText = chatMusicComment.trim();
   if (commentText.length > 500) {
     showToast("TextLimitExceeded", "error");
     return;
@@ -4124,12 +4561,12 @@ const renderFeedCard = (s: Song) => (
               </div>
               <div className="relative">
                 <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Hashtag / Live</label>
-                {matchFilter.hashtags.length > 0 && (<div className="flex flex-wrap gap-2 mb-3">{matchFilter.hashtags.map(h => (<div key={h} className="flex items-center bg-zinc-800 rounded-full px-3 py-1 gap-2"><span className="text-xs font-bold text-white">#{h}</span><button onClick={() => setMatchFilter({ ...matchFilter, hashtags: matchFilter.hashtags.filter(fh => fh !== h) })} className="text-zinc-500 hover:text-white ml-1"><IconCross /></button></div>))}</div>)}
+                {matchFilter.hashtags.length > 0 && (<div className="flex flex-wrap gap-2 mb-3">{matchFilter.hashtags.map(h => (<div key={h} className="flex items-center bg-zinc-800 rounded-full px-3 py-1 gap-2"><span className="text-xs font-bold text-white">#{getMusicTagLabel(h)}</span><button onClick={() => setMatchFilter({ ...matchFilter, hashtags: matchFilter.hashtags.filter(fh => fh !== h) })} className="text-zinc-500 hover:text-white ml-1"><IconCross /></button></div>))}</div>)}
                 {matchFilter.liveHistories.length > 0 && (<div className="flex flex-wrap gap-2 mb-3">{matchFilter.liveHistories.map(l => (<div key={l} className="flex items-center bg-zinc-800 rounded-full px-3 py-1 gap-2"><span className="text-xs font-bold text-white"><IconTicket /> {l}</span><button onClick={() => setMatchFilter({ ...matchFilter, liveHistories: matchFilter.liveHistories.filter(fl => fl !== l) })} className="text-zinc-500 hover:text-white ml-1"><IconCross /></button></div>))}</div>)}
                 <input type="text" placeholder="例: 邦ロック, VIVA LA ROCK" value={filterHashtagInput} onChange={e => setFilterHashtagInput(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-zinc-500" />
                 {filterHashtagInput && (
                   <div className="absolute top-full left-0 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden z-50">
-                    {allAvailableHashtags.filter(h => h.toLowerCase().includes(filterHashtagInput.toLowerCase())).slice(0, 3).map(h => (<div key={h} onMouseDown={(e) => { e.preventDefault(); if (!matchFilter.hashtags.includes(h)) setMatchFilter({ ...matchFilter, hashtags: [...matchFilter.hashtags, h] }); setFilterHashtagInput(""); }} className="p-3 text-xs text-white hover:bg-zinc-700 cursor-pointer border-b border-zinc-700 last:border-0">#{h}</div>))}
+                    {allAvailableHashtags.filter(h => h.toLowerCase().includes(filterHashtagInput.toLowerCase())).slice(0, 3).map(h => (<div key={h} onMouseDown={(e) => { e.preventDefault(); if (!matchFilter.hashtags.includes(h)) setMatchFilter({ ...matchFilter, hashtags: [...matchFilter.hashtags, h] }); setFilterHashtagInput(""); }} className="p-3 text-xs text-white hover:bg-zinc-700 cursor-pointer border-b border-zinc-700 last:border-0">#{getMusicTagLabel(h)}</div>))}
                     {allAvailableLiveHistories.filter(l => l.toLowerCase().includes(filterHashtagInput.toLowerCase())).slice(0, 3).map(l => (<div key={l} onMouseDown={(e) => { e.preventDefault(); if (!matchFilter.liveHistories.includes(l)) setMatchFilter({ ...matchFilter, liveHistories: [...matchFilter.liveHistories, l] }); setFilterHashtagInput(""); }} className="p-3 text-xs text-white hover:bg-zinc-700 cursor-pointer border-b border-zinc-700 last:border-0"><IconTicket /> {l}</div>))}
                   </div>
                 )}
@@ -4267,23 +4704,7 @@ const renderFeedCard = (s: Song) => (
             <div className="bg-[#1c1c1e] rounded-[22px] p-4 flex items-center justify-between mb-8 cursor-pointer" onClick={() => { setShowSettingsMenu(false); openEditProfile(); }}><div className="flex items-center gap-4"><img src={myProfile.avatar} className="w-12 h-12 rounded-full object-cover border border-zinc-800" /><div><p className="font-bold text-lg">{myProfile.name}</p><p className="text-sm text-zinc-500">@{myProfile.handle}</p></div></div><IconChevronRight /></div>
             <p className="text-xs font-bold text-zinc-500 mb-2 px-2">クリエイターツール</p>
             <div className="bg-[#1c1c1e] rounded-2xl mb-8 flex flex-col">
-              <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-zinc-800/50 transition-colors" onClick={async () => {
-                setShowSettingsMenu(false);
-                setShowRevenueDashboard(true);
-                if (currentUser) {
-                  const { data } = await supabase.from('transactions').select('*').eq('receiver_id', currentUser.id);
-                  if (data) {
-                    let total = 0, article = 0, gift = 0;
-                    data.forEach(tx => {
-                      total += tx.amount;
-                      if (tx.transaction_type?.startsWith('article')) article += tx.amount;
-                      if (tx.transaction_type?.startsWith('gift')) gift += tx.amount;
-                    });
-                    const history = data.sort((a,b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-                    setRevenueData({ total, article, gift, history });
-                  }
-                }
-              }}>
+	              <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-zinc-800/50 transition-colors" onClick={loadRevenueDashboard}>
                 <div className="flex items-center gap-3 text-yellow-500"><IconYen /><p className="font-bold text-sm text-white">収益ダッシュボード</p></div>
                 <IconChevronRight />
               </div>
@@ -4357,13 +4778,29 @@ const renderFeedCard = (s: Song) => (
                     <p className="text-[10px] text-zinc-400 font-bold bg-black/40 px-3 py-1 rounded-full border border-zinc-800 mb-6">
                       換金対象: 有償 {paidTotal.toLocaleString()} C (レート: 1C = 0.5円)
                     </p>
-                    <button 
-                      disabled={!canWithdraw}
-                      onClick={() => showToast(canWithdraw ? "振込申請画面へ移動します（準備中）" : "引き出しは1,000円から可能です", canWithdraw ? "success" : "error")}
-                      className={`w-full py-3.5 rounded-full font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 ${canWithdraw ? 'bg-white text-black hover:bg-zinc-200 active:scale-95' : 'bg-black/50 text-zinc-500 border border-zinc-700 cursor-not-allowed'}`}
-                    >
-                      {canWithdraw ? '振込申請をする' : '1,000円以上で引き出し可能'}
-                    </button>
+	                    <div className="w-full bg-black/35 border border-zinc-800 rounded-2xl p-3 mb-3 text-left">
+	                      <p className="text-[10px] font-bold text-zinc-500 mb-1">換金設定</p>
+	                      <p className="text-xs text-zinc-300 leading-relaxed">
+	                        {stripeConnectStatus.lastPayoutFailure ? `前回の振込に失敗しました: ${stripeConnectStatus.lastPayoutFailure.message || stripeConnectStatus.lastPayoutFailure.code || '振込先情報を確認してください。'}` : stripeConnectStatus.payoutsEnabled ? 'Stripeの本人確認と振込先登録が完了しています。' : stripeConnectStatus.connected ? 'Stripeの本人確認または振込先登録が未完了です。' : '換金にはStripeで本人確認と振込先登録が必要です。'}
+	                      </p>
+	                    </div>
+	                    {!stripeConnectStatus.payoutsEnabled ? (
+	                      <button
+	                        onClick={startStripeConnectOnboarding}
+	                        disabled={isStartingStripeConnect}
+	                        className="w-full py-3.5 rounded-full font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 bg-white text-black hover:bg-zinc-200 active:scale-95 disabled:opacity-50"
+	                      >
+	                        {isStartingStripeConnect ? '接続中...' : stripeConnectStatus.connected ? '換金設定を続ける' : '換金設定を開始する'}
+	                      </button>
+	                    ) : (
+	                      <button 
+	                        disabled={!canWithdraw || isRequestingPayout}
+	                        onClick={requestCreatorPayout}
+	                        className={`w-full py-3.5 rounded-full font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 ${canWithdraw ? 'bg-white text-black hover:bg-zinc-200 active:scale-95' : 'bg-black/50 text-zinc-500 border border-zinc-700 cursor-not-allowed'}`}
+	                      >
+	                        {isRequestingPayout ? '申請中...' : canWithdraw ? '振込申請をする' : '1,000円以上で引き出し可能'}
+	                      </button>
+	                    )}
                   </div>
                   <div className="bg-[#1c1c1e] border border-zinc-800 rounded-3xl p-5 mb-6 flex items-center justify-between shadow-inner">
                     <div className="flex flex-col">
@@ -4557,6 +4994,138 @@ const renderFeedCard = (s: Song) => (
         onTwitterChange={setEditTwitter}
         onInstagramChange={setEditInstagram}
       />
+      {showInitialOnboarding && (
+        <div className="fixed inset-0 bg-black/90 z-[520] flex items-center justify-center p-6 animate-fade-in">
+          <div className="bg-[#1c1c1e] w-full max-w-sm rounded-[24px] p-6 flex flex-col gap-5 shadow-2xl max-h-[86vh] overflow-y-auto">
+            <div>
+              <div className="w-12 h-12 rounded-full bg-[#1DB954]/20 text-[#1DB954] flex items-center justify-center mb-4">
+                <IconHeadphones />
+              </div>
+              <h3 className="font-bold text-xl mb-2">プロフィールを作りましょう</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                名前と好きな音楽を登録すると、プロフィールとDiscoverのマッチングに反映されます。
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-[11px] font-bold text-white">プロフィール</p>
+              <div className="flex items-center gap-4">
+                <div className="relative w-20 h-20 shrink-0 group cursor-pointer">
+                  <img src={editAvatar} alt="" className="w-full h-full rounded-full object-cover opacity-80 group-hover:opacity-60" />
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><IconCamera /></div>
+                  <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" aria-label="プロフィール画像" />
+                </div>
+                <div className="min-w-0 flex-1 space-y-2">
+                  <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="名前" className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-zinc-500" />
+                  <div className="flex items-center bg-black border border-zinc-800 rounded-xl overflow-hidden focus-within:border-zinc-500">
+                    <span className="pl-3 text-zinc-500 font-bold">@</span>
+                    <input type="text" value={editHandle} onChange={(e) => setEditHandle(e.target.value)} placeholder="ユーザーID" className="min-w-0 w-full bg-transparent p-3 text-sm text-white focus:outline-none" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <p className="text-[11px] font-bold text-white">音楽の好み</p>
+              {renderOnboardingChipPicker(
+                "好きなジャンル",
+                onboardingGenreCandidates,
+                onboardingGenres,
+                setOnboardingGenres
+              )}
+              <div>
+                <label className="text-[10px] text-zinc-500 ml-1 mb-2 block font-bold">好きなアーティスト</label>
+                <input
+                  type="text"
+                  value={onboardingArtistInput}
+                  onChange={(e) => setOnboardingArtistInput(e.target.value)}
+                  placeholder="アーティストを検索"
+                  aria-label="好きなアーティスト検索"
+                  className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-zinc-500"
+                />
+                {onboardingArtists.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {onboardingArtists.map(artist => (
+                      <button
+                        key={artist}
+                        type="button"
+                        onClick={() => removeOnboardingTag(artist, setOnboardingArtists)}
+                        className="px-3 py-1.5 bg-[#1DB954] text-black rounded-full text-[11px] font-bold"
+                      >
+                        {artist} ×
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {onboardingArtistInput.trim() && (
+                  <div className="mt-2 bg-black border border-zinc-800 rounded-xl overflow-hidden">
+                    {onboardingArtistSuggestions.length > 0 ? onboardingArtistSuggestions.map(artist => (
+                      <button
+                        key={artist.artistId}
+                        type="button"
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          addOnboardingTag(artist.artistName, setOnboardingArtistInput, onboardingArtists, setOnboardingArtists);
+                        }}
+                        className="w-full flex items-center gap-3 p-3 text-left text-xs text-white hover:bg-zinc-800 border-b border-zinc-900 last:border-0"
+                      >
+                        <img src={artist.artworkUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
+                        <span className="font-bold truncate">{artist.artistName}</span>
+                      </button>
+                    )) : (
+                      <p className="p-3 text-[11px] text-zinc-500">候補を検索しています</p>
+                    )}
+                  </div>
+                )}
+              </div>
+              {renderOnboardingChipPicker(
+                "ハッシュタグ",
+                onboardingHashtagCandidates,
+                onboardingHashtags,
+                setOnboardingHashtags,
+                "#"
+              )}
+              {renderOnboardingTextAdd(
+                "自分でハッシュタグを追加",
+                onboardingHashtagInput,
+                setOnboardingHashtagInput,
+                onboardingHashtags,
+                setOnboardingHashtags
+              )}
+              {renderOnboardingChipPicker(
+                "ライブ参戦歴",
+                onboardingLiveCandidates,
+                onboardingLiveHistory,
+                setOnboardingLiveHistory
+              )}
+              {renderOnboardingTextAdd(
+                "自分でライブ参戦歴を追加",
+                onboardingLiveInput,
+                setOnboardingLiveInput,
+                onboardingLiveHistory,
+                setOnboardingLiveHistory
+              )}
+            </div>
+
+            <div className="flex gap-3 sticky bottom-0 bg-[#1c1c1e] pt-2">
+              <button
+                type="button"
+                onClick={() => setShowInitialOnboarding(false)}
+                className="flex-1 py-3.5 border border-zinc-800 rounded-xl text-xs font-bold text-zinc-300 hover:bg-zinc-800 transition-colors"
+              >
+                あとで
+              </button>
+              <button
+                type="button"
+                onClick={saveInitialOnboarding}
+                className="flex-1 py-3.5 bg-[#1DB954] text-black rounded-xl text-xs font-bold hover:brightness-110 transition-colors"
+              >
+                保存して始める
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {showAppInfoModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[950] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowAppInfoModal(null)}>
           <div className="bg-[#1c1c1e] border border-zinc-800 p-8 rounded-3xl w-full max-w-sm shadow-2xl relative text-center" onClick={e => e.stopPropagation()}>
@@ -4651,9 +5220,37 @@ const renderFeedCard = (s: Song) => (
                     </div>
                   )}
                 </div>
+                {(allAvailableHashtags.length > 0 || allAvailableLiveHistories.length > 0) && (
+                  <div className="mb-8 px-1">
+                    <div className="flex items-center justify-between mb-3 px-1">
+                      <p className="text-xs font-bold text-white">Music Tags</p>
+                      {hasPeopleMusicFilter && (
+                        <button onClick={() => setPeopleMusicFilter({ hashtags: [], liveHistories: [] })} className="text-[10px] font-bold text-zinc-500 hover:text-white transition-colors">Clear</button>
+                      )}
+                    </div>
+                    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                      {allAvailableHashtags.slice(0, 8).map(h => {
+                        const isSelected = peopleMusicFilter.hashtags.includes(h);
+                        return (
+                          <button key={h} onClick={() => setPeopleMusicFilter(prev => ({ ...prev, hashtags: isSelected ? prev.hashtags.filter(x => x !== h) : [...prev.hashtags, h] }))} className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap border transition-colors ${isSelected ? 'bg-[#1DB954] border-[#1DB954] text-black' : 'bg-[#1c1c1e] border-zinc-800 text-zinc-400 hover:text-white'}`}>
+                            #{getMusicTagLabel(h)}
+                          </button>
+                        );
+                      })}
+                      {allAvailableLiveHistories.slice(0, 6).map(l => {
+                        const isSelected = peopleMusicFilter.liveHistories.includes(l);
+                        return (
+                          <button key={l} onClick={() => setPeopleMusicFilter(prev => ({ ...prev, liveHistories: isSelected ? prev.liveHistories.filter(x => x !== l) : [...prev.liveHistories, l] }))} className={`px-3 py-1.5 rounded-full text-[11px] font-bold whitespace-nowrap border transition-colors flex items-center gap-1.5 ${isSelected ? 'bg-[#1DB954] border-[#1DB954] text-black' : 'bg-[#1c1c1e] border-zinc-800 text-zinc-400 hover:text-white'}`}>
+                            <IconTicket /> {l}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <div className="mb-10">
                   <p className="text-xs font-bold text-white mb-4 px-2">おすすめの友達</p>
-                  {suggestedFriends.length > 0 ? suggestedFriends.map(({ user: u, mutualCount }) => (
+                  {filteredSuggestedFriends.length > 0 ? filteredSuggestedFriends.map(({ user: u, mutualCount }) => (
                     <div key={u.id} className="flex items-center justify-between py-3 px-3 hover:bg-zinc-800/30 rounded-2xl transition-colors">
                       <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => { setViewingUser(u); setActiveTab('other_profile'); }}>
                         <img src={u.avatar} className="w-[52px] h-[52px] rounded-full object-cover border border-zinc-800" />
@@ -4665,11 +5262,11 @@ const renderFeedCard = (s: Song) => (
                       </div>
                       <button onClick={() => toggleFollow(u.id)} className={`px-5 py-2 rounded-full text-[11px] font-bold transition-colors ${followedUsers.has(u.id) ? 'bg-transparent border border-zinc-700 text-zinc-400' : 'bg-zinc-800 hover:bg-zinc-700 text-white'}`}>{followedUsers.has(u.id) ? 'フォロー中' : '追加'}</button>
                     </div>
-                  )) : <p className="text-xs text-zinc-500 px-3 py-4 bg-[#1c1c1e]/50 rounded-2xl border border-zinc-800/50">友達をフォローして、タイムラインを充実させましょう！</p>}
+                  )) : <p className="text-xs text-zinc-500 px-3 py-4 bg-[#1c1c1e]/50 rounded-2xl border border-zinc-800/50">{hasPeopleMusicFilter ? '選択したタグに合う友達候補がまだいません。' : '友達をフォローして、タイムラインを充実させましょう！'}</p>}
                 </div>
                 <div className="mb-10">
                   <p className="text-xs font-bold text-white mb-4 px-2">好みが近い人</p>
-                  {similarMusicUsers.length > 0 ? similarMusicUsers.map(({ user: u, sharedCount, topShared }) => (
+                  {filteredSimilarMusicUsers.length > 0 ? filteredSimilarMusicUsers.map(({ user: u, sharedCount, topShared }) => (
                     <div key={u.id} className="flex items-center justify-between py-3 px-3 hover:bg-zinc-800/30 rounded-2xl transition-colors">
                       <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => { setViewingUser(u); setActiveTab('other_profile'); }}>
                         <div className="relative">
@@ -4684,11 +5281,11 @@ const renderFeedCard = (s: Song) => (
                       </div>
                       <button onClick={() => toggleFollow(u.id)} className={`px-5 py-2 rounded-full text-[11px] font-bold transition-colors ${followedUsers.has(u.id) ? 'bg-transparent border border-zinc-700 text-zinc-400' : 'bg-zinc-800 hover:bg-zinc-700 text-white'}`}>{followedUsers.has(u.id) ? 'フォロー中' : '追加'}</button>
                     </div>
-                  )) : <p className="text-xs text-zinc-500 px-3 py-4 bg-[#1c1c1e]/50 rounded-2xl border border-zinc-800/50">音楽を記録して、好みの合う人を探しましょう！</p>}
+                  )) : <p className="text-xs text-zinc-500 px-3 py-4 bg-[#1c1c1e]/50 rounded-2xl border border-zinc-800/50">{hasPeopleMusicFilter ? '選択したタグに合う音楽仲間がまだいません。' : '音楽を記録して、好みの合う人を探しましょう！'}</p>}
                 </div>
                 <div className="mb-10">
                   <p className="text-xs font-bold text-white mb-4 px-2">人気のアカウント</p>
-                  {popularUsers.length > 0 ? popularUsers.map(({ user: u, postCount }) => (
+                  {filteredPopularUsers.length > 0 ? filteredPopularUsers.map(({ user: u, postCount }) => (
                     <div key={u.id} className="flex items-center justify-between py-3 px-3 hover:bg-zinc-800/30 rounded-2xl transition-colors">
                       <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => { setViewingUser(u); setActiveTab('other_profile'); }}>
                         <div className="relative">
@@ -4703,7 +5300,7 @@ const renderFeedCard = (s: Song) => (
                       </div>
                       <button onClick={() => toggleFollow(u.id)} className={`px-5 py-2 rounded-full text-[11px] font-bold transition-colors ${followedUsers.has(u.id) ? 'bg-transparent border border-zinc-700 text-zinc-400' : 'bg-zinc-800 hover:bg-zinc-700 text-white'}`}>{followedUsers.has(u.id) ? 'フォロー中' : '追加'}</button>
                     </div>
-                  )) : <p className="text-xs text-zinc-500 px-3 py-4 bg-[#1c1c1e]/50 rounded-2xl border border-zinc-800/50">投稿が活発な公式ユーザーがここに表示されます。</p>}
+                  )) : <p className="text-xs text-zinc-500 px-3 py-4 bg-[#1c1c1e]/50 rounded-2xl border border-zinc-800/50">{hasPeopleMusicFilter ? '選択したタグに合う人気アカウントがまだありません。' : '投稿が活発な公式ユーザーがここに表示されます。'}</p>}
                 </div>
               </div>
             )}
@@ -4768,7 +5365,7 @@ const renderFeedCard = (s: Song) => (
                     </div>
                     <div className="flex-1 overflow-y-auto p-6 pb-28 scrollbar-hide pointer-events-none">
                       <p className="text-sm text-white mb-4 leading-relaxed">{filteredMatchUsers[matchIndex].bio}</p>
-                      <div className="flex flex-wrap gap-2 mb-4">{(filteredMatchUsers[matchIndex].hashtags || []).map((h, i) => (<span key={`h-${i}`} className="px-2 py-1 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded text-[10px]">#{h}</span>))}</div>
+                      <div className="flex flex-wrap gap-2 mb-4">{(filteredMatchUsers[matchIndex].hashtags || []).map((h, i) => (<span key={`h-${i}`} className="px-2 py-1 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded text-[10px]">#{getMusicTagLabel(h)}</span>))}</div>
                       <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3 flex items-center gap-1">Top Artists</p>
                       <div className="flex flex-wrap gap-2 mb-4">{(filteredMatchUsers[matchIndex].topArtists || []).map((a, i) => (<span key={i} className="px-3 py-1.5 bg-[#1DB954]/10 text-[#1DB954] rounded-full text-xs font-bold flex items-center"><IconMusicSmall /> {a}</span>))}</div>
                     </div>
@@ -5282,19 +5879,9 @@ const renderFeedCard = (s: Song) => (
                   </div>
                   {/* リスト表示 */}
                   <div className="flex flex-col px-4 pb-8">
-                    {[
-                      { coins: 100, price: 140 },
-                      { coins: 300, price: 420 },
-                      { coins: 500, price: 700 },
-                      { coins: 700, price: 980 },
-                      { coins: 1030, price: 1400, bonus: "30コインお得！" },
-                      { coins: 2070, price: 2800, bonus: "70コインお得！" },
-                      { coins: 3140, price: 4200, bonus: "140コインお得！" },
-                      { coins: 5260, price: 7000, bonus: "260コインお得！" },
-                      { coins: 10550, price: 14000, bonus: "550コインお得！" }
-                    ].map((plan, idx) => (
+                    {COIN_CHARGE_PLANS.map((plan) => (
                       <div
-                        key={idx}
+                        key={plan.id}
                         className="flex items-center justify-between py-4 border-b border-zinc-800/60 last:border-0"
                       >
                         <div className="flex flex-col">
