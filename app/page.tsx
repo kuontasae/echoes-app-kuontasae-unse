@@ -58,6 +58,7 @@ const makeMusicTag = (category: "genre" | "artist" | "tag", value: string) => `$
 const getMusicTagLabel = (value: string) => MUSIC_TAG_PREFIXES.reduce((label, prefix) => label.startsWith(prefix) ? label.slice(prefix.length) : label, value);
 const isMusicTagCategory = (value: string, category: "genre" | "artist" | "tag") => value.startsWith(`${category}:`);
 const isOnboardingLiveCandidate = (value: string) => /(live|ライブ|フェス|ツアー|公演|ドーム|スタジアム|rock|fuji|summer|sonic|viva|metrock|japan|countdown|rising|sweet)/i.test(value);
+const normalizeMusicLabel = (value: string) => getMusicTagLabel(value).trim().toLowerCase();
 
 const toChatMessage = (msg: any): ChatMessage => {
   const isGroup = String(msg.target_id || "").startsWith('g') || String(msg.target_id || "").startsWith('com');
@@ -1081,6 +1082,7 @@ const handleSaveDraft = () => {
   const [draftCaption, setDraftCaption] = useState("");
   const [showPostOverrideConfirm, setShowPostOverrideConfirm] = useState<Song | null>(null);
   const [isPosting, setIsPosting] = useState(false); // 💡 二重投稿防止（連打ロック）用の箱
+  const [showPostSuccessCard, setShowPostSuccessCard] = useState(false);
   const [aiRecommendations, setAiRecommendations] = useState<any[]>([]); // 💡 AIが選んだ3曲を入れる箱
   const [aiMessage, setAiMessage] = useState("過去の記録から、あなたにおすすめの曲を分析しています..."); // 💡 AIの分析メッセージ
   const [activeArtistProfile, setActiveArtistProfile] = useState<any>(null);
@@ -1610,18 +1612,33 @@ const handleSaveDraft = () => {
   }, [allProfiles, currentUser, followedUsers, blockedUsers, getMutualFriends]);
   const similarMusicUsers = useMemo(() => {
     if (!currentUser) return [];
-    const myArtists = new Set(vibes.filter(v => v.user.id === currentUser.id || v.user.id === myProfile.id).map(v => v.artist));
+    const myArtistLabels = [
+      ...(myProfile.topArtists || []),
+      ...vibes.filter(v => v.user.id === currentUser.id || v.user.id === myProfile.id).map(v => v.artist)
+    ].map(value => value.trim()).filter(Boolean);
+    const myHashtagLabels = (myProfile.hashtags || []).map(getMusicTagLabel).map(value => value.trim()).filter(Boolean);
+    const myLiveLabels = (myProfile.liveHistory || []).map(value => value.trim()).filter(Boolean);
     return allProfiles
       .filter(u => u.id !== currentUser.id && !followedUsers.has(u.id) && !blockedUsers.has(u.id) && !(u as any).isVerified)
       .map(u => {
-        const theirArtists = new Set(vibes.filter(v => v.user.id === u.id).map(v => v.artist));
-        const shared = [...myArtists].filter(a => theirArtists.has(a));
-        return { user: u, sharedCount: shared.length, topShared: shared[0] };
+        const theirArtistKeys = new Set([
+          ...(u.topArtists || []),
+          ...vibes.filter(v => v.user.id === u.id).map(v => v.artist)
+        ].map(normalizeMusicLabel).filter(Boolean));
+        const theirHashtagKeys = new Set((u.hashtags || []).map(normalizeMusicLabel).filter(Boolean));
+        const theirLiveKeys = new Set((u.liveHistory || []).map(value => value.trim().toLowerCase()).filter(Boolean));
+        const sharedArtists = myArtistLabels.filter(a => theirArtistKeys.has(normalizeMusicLabel(a)));
+        const sharedTags = myHashtagLabels.filter(h => theirHashtagKeys.has(h.toLowerCase()));
+        const sharedLives = myLiveLabels.filter(l => theirLiveKeys.has(l.toLowerCase()));
+        const shared = [...sharedArtists, ...sharedTags, ...sharedLives];
+        const topShared = sharedArtists[0] || sharedTags[0] || sharedLives[0];
+        const sharedReason = sharedLives[0] && !sharedArtists[0] && !sharedTags[0] ? `共通ライブ: ${sharedLives[0]}` : `共通: ${topShared}`;
+        return { user: u, sharedCount: shared.length, topShared, sharedReason };
       })
       .filter(item => item.sharedCount > 0)
       .sort((a, b) => b.sharedCount - a.sharedCount)
       .slice(0, 5);
-  }, [allProfiles, currentUser, myProfile.id, followedUsers, blockedUsers, vibes]);
+  }, [allProfiles, currentUser, myProfile.id, myProfile.topArtists, myProfile.hashtags, myProfile.liveHistory, followedUsers, blockedUsers, vibes]);
   // 💡 本番用：人気のアカウント（isVerifiedがtrueの有名人のみを表示）
   const popularUsers = useMemo(() => {
     if (!currentUser) return [];
@@ -2251,6 +2268,7 @@ const handleSaveDraft = () => {
     setSearchResults([]);
     setSearchArtistInfo(null);
     setIsSearchFocused(false);
+    setShowPostSuccessCard(true);
     setActiveTab('home');
     showToast("Success", "success");
   } catch (err) {
@@ -3192,6 +3210,10 @@ const handleDeleteCommunity = async (id: string) => {
       .map(item => item.trim())
       .filter(Boolean)
       .filter((item, index, arr) => arr.findIndex(x => x.toLowerCase() === item.toLowerCase()) === index);
+    const newTopArtists = onboardingArtists
+      .map(item => item.trim())
+      .filter(Boolean)
+      .filter((item, index, arr) => arr.findIndex(x => x.toLowerCase() === item.toLowerCase()) === index);
 
     if (newHashtags.length === 0 && newLiveHistory.length === 0) {
       showToast("好きな音楽を1つ以上追加してください", "error");
@@ -3204,7 +3226,8 @@ const handleDeleteCommunity = async (id: string) => {
         handle: tHandle,
         avatar: editAvatar,
         hashtags: newHashtags,
-        liveHistory: newLiveHistory
+        liveHistory: newLiveHistory,
+        topArtists: newTopArtists
       };
       const { error } = await supabase
         .from('profiles')
@@ -3217,6 +3240,12 @@ const handleDeleteCommunity = async (id: string) => {
       setMyProfile(prev => ({ ...prev, ...dbUpdateData } as any));
       setAllProfiles(prev => prev.map(p => p.id === currentUser.id ? { ...p, ...dbUpdateData } as any : p));
       setShowInitialOnboarding(false);
+      setPeopleMusicFilter({ hashtags: newHashtags.map(getMusicTagLabel), liveHistories: newLiveHistory });
+      setDiscoverTabMode('users');
+      skipHistoryRef.current = true;
+      setHistoryStack([]);
+      setViewingUser(null);
+      setActiveTab('search');
       showToast("音楽プロフィールを保存しました", "success");
     } catch (err) {
       showToast("SystemError", "error");
@@ -5175,9 +5204,28 @@ const renderFeedCard = (s: Song) => (
               onArtistMouseDown={handleArtistClick}
               onSelectSong={setDraftSong}
             />
+            {showPostSuccessCard && (
+              <div className="mb-6 rounded-2xl border border-[#1DB954]/20 bg-[#1DB954]/10 px-4 py-4">
+                <p className="text-sm font-bold text-white">記録できました。似た音楽が好きな人を見つけに行こう</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPostSuccessCard(false);
+                    setDiscoverTabMode('users');
+                    setActiveTab('search');
+                  }}
+                  className="mt-3 px-4 py-2 rounded-full bg-[#1DB954] text-black text-[11px] font-bold"
+                >
+                  近い人を探す
+                </button>
+              </div>
+            )}
             <div className="flex flex-col gap-6">
               {allFeedVibes.length === 0 && !isLoadingVibes ? (
-                <p className="text-center text-zinc-500 py-20 text-sm">今日のVibeを記録しましょう</p>
+                <div className="text-center text-zinc-500 py-20">
+                  <p className="text-sm font-bold text-zinc-300">まずは今聴いている1曲を記録しよう</p>
+                  <p className="text-xs mt-2">曲名・アーティスト名で検索して、今日のVibeを残せます。</p>
+                </div>
               ) : (
                 allFeedVibes.map(renderFeedCard)
               )}
@@ -5220,6 +5268,11 @@ const renderFeedCard = (s: Song) => (
                     </div>
                   )}
                 </div>
+                {hasPeopleMusicFilter && (
+                  <div className="mb-5 mx-1 rounded-2xl border border-[#1DB954]/20 bg-[#1DB954]/10 px-4 py-3">
+                    <p className="text-[11px] font-bold text-[#1DB954]">好きな音楽・ライブ履歴が近い人を表示中</p>
+                  </div>
+                )}
                 {(allAvailableHashtags.length > 0 || allAvailableLiveHistories.length > 0) && (
                   <div className="mb-8 px-1">
                     <div className="flex items-center justify-between mb-3 px-1">
@@ -5266,7 +5319,7 @@ const renderFeedCard = (s: Song) => (
                 </div>
                 <div className="mb-10">
                   <p className="text-xs font-bold text-white mb-4 px-2">好みが近い人</p>
-                  {filteredSimilarMusicUsers.length > 0 ? filteredSimilarMusicUsers.map(({ user: u, sharedCount, topShared }) => (
+                  {filteredSimilarMusicUsers.length > 0 ? filteredSimilarMusicUsers.map(({ user: u, sharedReason }) => (
                     <div key={u.id} className="flex items-center justify-between py-3 px-3 hover:bg-zinc-800/30 rounded-2xl transition-colors">
                       <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => { setViewingUser(u); setActiveTab('other_profile'); }}>
                         <div className="relative">
@@ -5276,10 +5329,11 @@ const renderFeedCard = (s: Song) => (
                         <div className="flex-1">
                           <p className="font-bold text-[15px] text-white flex items-center gap-1">{u.name} {(u as any).isVerified && <IconVerified />}</p>
                           <p className="text-[11px] text-zinc-400 mt-0.5">@{u.handle}</p>
-                          <p className="text-[10px] text-[#1DB954] mt-1.5 font-bold">{sharedCount}組の共通アーティスト (例: {topShared})</p>
+                          <p className="text-[10px] text-[#1DB954] mt-1.5 font-bold">{sharedReason}</p>
+                          <p className="text-[10px] text-zinc-500 mt-1">プロフィールを見てフォローしてみよう</p>
                         </div>
                       </div>
-                      <button onClick={() => toggleFollow(u.id)} className={`px-5 py-2 rounded-full text-[11px] font-bold transition-colors ${followedUsers.has(u.id) ? 'bg-transparent border border-zinc-700 text-zinc-400' : 'bg-zinc-800 hover:bg-zinc-700 text-white'}`}>{followedUsers.has(u.id) ? 'フォロー中' : '追加'}</button>
+                      <button onClick={() => toggleFollow(u.id)} className={`px-5 py-2 rounded-full text-[11px] font-bold transition-colors ${followedUsers.has(u.id) ? 'bg-transparent border border-zinc-700 text-zinc-400' : 'bg-zinc-800 hover:bg-zinc-700 text-white'}`}>{followedUsers.has(u.id) ? 'フォロー中' : 'フォロー'}</button>
                     </div>
                   )) : <p className="text-xs text-zinc-500 px-3 py-4 bg-[#1c1c1e]/50 rounded-2xl border border-zinc-800/50">{hasPeopleMusicFilter ? '選択したタグに合う音楽仲間がまだいません。' : '音楽を記録して、好みの合う人を探しましょう！'}</p>}
                 </div>

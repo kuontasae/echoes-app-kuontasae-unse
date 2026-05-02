@@ -38,7 +38,7 @@ export const SongPostModal: React.FC<SongPostModalProps> = ({
           </div>
           <p className="text-center font-bold text-sm truncate mb-1">{draftSong.trackName}</p>
           <p className="text-center text-[#1DB954] text-[10px] mb-8 font-bold">{draftSong.artistName}</p>
-          <textarea placeholder="今日のVibeは？ (@でメンション)" value={draftCaption} onChange={(e) => onCaptionChange(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl p-4 text-xs text-white focus:outline-none min-h-[100px] resize-none mb-6" />
+          <textarea placeholder="今の気分、思い出、誰に聴いてほしいかを書いてみよう" value={draftCaption} onChange={(e) => onCaptionChange(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl p-4 text-xs text-white focus:outline-none min-h-[100px] resize-none mb-6" />
           <div className="flex gap-4">
             <button onClick={onCancelDraft} className="flex-1 py-3.5 border border-zinc-800 rounded-xl text-xs font-bold uppercase">{cancelLabel}</button>
             <button onClick={onPost} className="flex-1 py-3.5 bg-white text-black rounded-xl text-xs font-bold uppercase">{postLabel}</button>
