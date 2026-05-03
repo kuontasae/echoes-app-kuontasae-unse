@@ -21,6 +21,15 @@ type ArticleListSectionProps = {
   displayArticles: any[];
   draftArticles: any[];
   myProfileId: string;
+  labels: {
+    articles: string;
+    trend: string;
+    global: string;
+    following: string;
+    liked: string;
+    mine: string;
+    drafts: string;
+  };
   onChangeTab: (mode: ArticleTabMode) => void;
   onOpenWriter: () => void;
   onOpenArticle: (article: any) => void;
@@ -38,6 +47,7 @@ export const ArticleListSection: React.FC<ArticleListSectionProps> = ({
   displayArticles,
   draftArticles,
   myProfileId,
+  labels,
   onChangeTab,
   onOpenWriter,
   onOpenArticle,
@@ -49,21 +59,21 @@ export const ArticleListSection: React.FC<ArticleListSectionProps> = ({
   onDeleteArticle,
   onShareArticle,
 }) => (
-  <div className="mt-6 animate-fade-in px-2 pb-10">
-    <div className="flex justify-between items-center mb-6 px-2">
-      <h2 className="text-2xl font-black tracking-tight">Articles</h2>
-      <button onClick={onOpenWriter} className="w-9 h-9 bg-white text-black rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
-        <IconEdit />
-      </button>
-    </div>
-    <div className="flex gap-6 mb-6 px-3 border-b border-zinc-900 overflow-x-auto scrollbar-hide">
-      <button onClick={() => onChangeTab('trend')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'trend' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>Trend</button>
-      <button onClick={() => onChangeTab('global')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'global' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>Global</button>
-      <button onClick={() => onChangeTab('following')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'following' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>Following</button>
-      <button onClick={() => onChangeTab('liked')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'liked' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>Liked</button>
-      <button onClick={() => onChangeTab('my_posts')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'my_posts' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>Mine</button>
-      <button onClick={() => onChangeTab('drafts')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'drafts' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>Drafts</button>
-    </div>
+	  <div className="mt-6 animate-fade-in px-2 pb-10">
+	    <div className="flex justify-between items-center mb-6 px-2">
+	      <h2 className="text-2xl font-black tracking-tight">{labels.articles}</h2>
+	      <button onClick={onOpenWriter} className="w-9 h-9 bg-white text-black rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform">
+	        <IconEdit />
+	      </button>
+	    </div>
+	    <div className="flex gap-6 mb-6 px-3 border-b border-zinc-900 overflow-x-auto scrollbar-hide">
+	      <button onClick={() => onChangeTab('trend')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'trend' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>{labels.trend}</button>
+	      <button onClick={() => onChangeTab('global')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'global' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>{labels.global}</button>
+	      <button onClick={() => onChangeTab('following')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'following' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>{labels.following}</button>
+	      <button onClick={() => onChangeTab('liked')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'liked' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>{labels.liked}</button>
+	      <button onClick={() => onChangeTab('my_posts')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'my_posts' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>{labels.mine}</button>
+	      <button onClick={() => onChangeTab('drafts')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'drafts' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>{labels.drafts}</button>
+	    </div>
     {articleTabMode === 'drafts' ? (
       <div className="flex flex-col gap-5">
         {draftArticles.length > 0 ? draftArticles.map((draft) => (

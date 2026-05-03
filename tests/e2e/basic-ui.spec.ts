@@ -128,7 +128,6 @@ async function mockLoggedInSupabase(page: Page, profile = mockProfile, options?:
         configurable: true,
         value: undefined,
       });
-      window.localStorage.clear();
       window.sessionStorage.clear();
       window.localStorage.setItem(key, JSON.stringify(value));
     },
@@ -258,29 +257,29 @@ test('モックログイン状態で主要タブを表示できる', async ({ pa
   await mockLoggedInSupabase(page);
   await page.goto('/');
 
-  const tabs = ['Feed', 'Discover', 'Read', 'Diary', 'Chat', 'Profile'];
+  const tabs = ['フィード', '見つける', '読む', 'ダイアリー', 'チャット', 'プロフィール'];
   for (const tab of tabs) {
     await expect(page.getByRole('button', { name: new RegExp(tab, 'i') })).toBeVisible();
   }
 
-  await page.getByRole('button', { name: /Discover/i }).click();
-  await expect(page.getByRole('button', { name: 'People' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Community' })).toBeVisible();
+  await page.getByRole('button', { name: '見つける' }).click();
+  await expect(page.getByRole('button', { name: 'ユーザー' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'コミュニティ' })).toBeVisible();
 
-  await page.getByRole('button', { name: /Read/i }).click();
-  await expect(page.getByRole('button', { name: 'Trend' })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Global' })).toBeVisible();
+  await page.getByRole('button', { name: '読む' }).click();
+  await expect(page.getByRole('button', { name: 'トレンド' })).toBeVisible();
+  await expect(page.getByRole('button', { name: '全体' })).toBeVisible();
 
-  await page.getByRole('button', { name: /Diary/i }).click();
+  await page.getByRole('button', { name: 'ダイアリー' }).click();
   await expect(page.getByText('AI Vibe Analysis')).toBeVisible();
 
-  await page.getByRole('button', { name: /Chat/i }).click();
+  await page.getByRole('button', { name: 'チャット' }).click();
   await expect(page.getByRole('heading', { name: 'チャット' })).toBeVisible();
 
-  await page.getByRole('button', { name: /Profile/i }).click();
+  await page.getByRole('button', { name: 'プロフィール' }).click();
   await expect(page.getByText('@e2e_user')).toBeVisible();
 
-  await page.getByRole('button', { name: /Feed/i }).click();
+  await page.getByRole('button', { name: 'フィード' }).click();
   await expect(page.getByRole('heading', { name: 'Echoes' })).toBeVisible();
 });
 
@@ -311,14 +310,14 @@ test('投稿後に近い人を探す次アクションへ進める', async ({ pa
   await expect(page.getByText('怪獣の花唄')).toBeVisible();
 
   await page.getByRole('button', { name: '近い人を探す' }).click();
-  await expect(page.getByRole('button', { name: 'People' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'ユーザー' })).toBeVisible();
 });
 
 test('主要タブをクリックしても画面が真っ白にならない', async ({ page }) => {
   await mockLoggedInSupabase(page);
   await page.goto('/');
 
-  const tabs = ['Feed', 'Discover', 'Read', 'Chat', 'Profile'];
+  const tabs = ['フィード', '見つける', '読む', 'チャット', 'プロフィール'];
   for (const tab of tabs) {
     await page.getByRole('button', { name: new RegExp(tab, 'i') }).click();
     await expectPageNotBlank(page);
@@ -329,7 +328,9 @@ test('Discoverで音楽タグからユーザーを絞り込める', async ({ pag
   await mockLoggedInSupabase(page);
   await page.goto('/');
 
-  await page.getByRole('button', { name: /Discover/i }).click();
+  await page.getByRole('button', { name: '見つける' }).click();
+  await expect(page.getByText('音楽タグ')).toBeVisible();
+  await expect(page.getByText('おすすめの友達')).toBeVisible();
   await expect(page.getByRole('button', { name: '#邦ロック' })).toBeVisible();
   await expect(page.getByText('Band Mate')).toBeVisible();
   await expect(page.getByText('Jazz Friend')).toBeVisible();
@@ -338,7 +339,7 @@ test('Discoverで音楽タグからユーザーを絞り込める', async ({ pag
 
   await expect(page.getByText('Band Mate')).toBeVisible();
   await expect(page.getByText('Jazz Friend')).not.toBeVisible();
-  await page.getByRole('button', { name: 'Clear' }).click();
+  await page.getByRole('button', { name: 'クリア' }).click();
   await expect(page.getByText('Jazz Friend')).toBeVisible();
 });
 
@@ -364,7 +365,7 @@ test('初回オンボーディングでプロフィールと音楽タグを保�
 
   await expect(page.getByRole('heading', { name: 'プロフィールを作りましょう' })).not.toBeVisible();
   expect(profilePatch.current?.topArtists).toEqual(['Vaundy']);
-  await expect(page.getByRole('button', { name: 'People' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'ユーザー' })).toBeVisible();
   await expect(page.getByText('好きな音楽・ライブ履歴が近い人を表示中')).toBeVisible();
   await expect(page.getByText('Band Mate').first()).toBeVisible();
   await expect(page.getByText('共通: Vaundy')).toBeVisible();
@@ -373,9 +374,25 @@ test('初回オンボーディングでプロフィールと音楽タグを保�
   await expect(page.getByText('Jazz Friend')).not.toBeVisible();
   await page.getByText('共通: Vaundy').click();
   await expect(page.getByText('@band_mate')).toBeVisible();
-  await page.getByRole('button', { name: /Profile/i }).click();
+  await page.getByRole('button', { name: 'プロフィール' }).click();
   await expect(page.getByText('@new_echo')).toBeVisible();
   await expect(page.getByText('#テクノ')).toBeVisible();
   await expect(page.getByText('#Vaundy')).toBeVisible();
   await expect(page.getByText('#深夜に聴きたい')).toBeVisible();
+});
+
+test('初回オンボーディングであとでを選ぶとリロード後に再表示されない', async ({ page }) => {
+  const emptyMusicProfile = { ...mockProfile, hashtags: [], liveHistory: [] };
+  await mockLoggedInSupabase(page, emptyMusicProfile);
+  await page.goto('/');
+
+  await expect(page.getByRole('heading', { name: 'プロフィールを作りましょう' })).toBeVisible();
+  await page.getByRole('button', { name: 'あとで' }).click();
+  await expect(page.getByRole('heading', { name: 'プロフィールを作りましょう' })).not.toBeVisible();
+
+  await page.reload();
+
+  await expect(page.getByRole('heading', { name: 'プロフィールを作りましょう' })).not.toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Echoes' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'プロフィール' })).toBeVisible();
 });

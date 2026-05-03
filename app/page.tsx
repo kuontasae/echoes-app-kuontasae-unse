@@ -139,6 +139,21 @@ const localI18n: Record<string, any> = {
 };
 
 Object.assign(localI18n["日本語"], {
+  feed: "フィード",
+  read: "読む",
+  global: "全体",
+  people: "ユーザー",
+  community: "コミュニティ",
+  musicTags: "音楽タグ",
+  suggestedFriends: "おすすめの友達",
+  similarPeople: "好みが近い人",
+  popularAccounts: "人気のアカウント",
+  articles: "記事",
+  trend: "トレンド",
+  liked: "いいね",
+  mine: "自分の記事",
+  drafts: "下書き",
+  clear: "クリア",
   Success: "成功しました",
   UpdateFailed: "保存に失敗しました",
   SystemError: "エラーが発生しました",
@@ -156,6 +171,21 @@ Object.assign(localI18n["日本語"], {
 });
 
 Object.assign(localI18n["English"], {
+  feed: "Feed",
+  read: "Read",
+  global: "Global",
+  people: "People",
+  community: "Community",
+  musicTags: "Music Tags",
+  suggestedFriends: "Suggested Friends",
+  similarPeople: "People With Similar Taste",
+  popularAccounts: "Popular Accounts",
+  articles: "Articles",
+  trend: "Trend",
+  liked: "Liked",
+  mine: "Mine",
+  drafts: "Drafts",
+  clear: "Clear",
   Success: "Success",
   UpdateFailed: "Failed to save",
   SystemError: "An error occurred",
@@ -173,6 +203,21 @@ Object.assign(localI18n["English"], {
 });
 
 Object.assign(localI18n["中文"], {
+  feed: "动态",
+  read: "阅读",
+  global: "全部",
+  people: "用户",
+  community: "社区",
+  musicTags: "音乐标签",
+  suggestedFriends: "推荐好友",
+  similarPeople: "兴趣相近的人",
+  popularAccounts: "热门账号",
+  articles: "文章",
+  trend: "趋势",
+  liked: "已赞",
+  mine: "我的文章",
+  drafts: "草稿",
+  clear: "清除",
   Success: "成功",
   UpdateFailed: "保存失败",
   SystemError: "发生错误",
@@ -286,6 +331,7 @@ function MainApp() {
   const t = (k: string) => localI18n[language]?.[k] || localI18n["日本語"][k];
   const [toastMsg, setToastMsg] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
   const showToast = (text: string, type: 'success' | 'error' = 'success') => { setToastMsg({ text: t(text) || text, type }); setTimeout(() => setToastMsg(null), 3000); };
+  const getOnboardingSkippedKey = (userId: string) => `echoes_onboarding_skipped_${userId}`;
   const [activeTab, setActiveTab] = useState<'home' | 'search' | 'match' | 'article' | 'calendar' | 'chat' | 'profile' | 'other_profile'>('home');
   const [discoverTabMode, setDiscoverTabMode] = useState<'users' | 'communities' | 'match'>('users');
   // 💡 記事機能のデータと画面状態の箱
@@ -1750,7 +1796,9 @@ const handleSaveDraft = () => {
       }
       setMyProfile(prev => ({ ...prev, ...profile }));
       const hasMusicProfile = (profile.hashtags || []).length > 0 || (profile.liveHistory || []).length > 0;
-      if (!hasMusicProfile) {
+      const hasSkippedOnboarding = window.localStorage.getItem(getOnboardingSkippedKey(session.user.id)) === 'true';
+      const shouldShowInitialOnboarding = !hasMusicProfile && !hasSkippedOnboarding;
+      if (shouldShowInitialOnboarding) {
         setEditName(profile.name || "");
         setEditHandle(profile.handle || "");
         setEditAvatar(profile.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&q=80");
@@ -1773,7 +1821,7 @@ const handleSaveDraft = () => {
       const { data: blocksData } = await supabase.from('blocks').select('blocked_id').eq('blocker_id', session.user.id);
       if (blocksData) setBlockedUsers(new Set(blocksData.map(d => d.blocked_id)));
       if (followersData) setMyFollowers(new Set(followersData.map(d => d.follower_id)));
-      if (!hasMusicProfile) showToast("好きな音楽を登録して、つながりやすくしましょう", "success");
+      if (shouldShowInitialOnboarding) showToast("好きな音楽を登録して、つながりやすくしましょう", "success");
     };
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -3290,6 +3338,7 @@ const handleDeleteCommunity = async (id: string) => {
       }
       setMyProfile(prev => ({ ...prev, ...dbUpdateData } as any));
       setAllProfiles(prev => prev.map(p => p.id === currentUser.id ? { ...p, ...dbUpdateData } as any : p));
+      window.localStorage.setItem(getOnboardingSkippedKey(currentUser.id), 'true');
       setShowInitialOnboarding(false);
       setPeopleMusicFilter({ hashtags: newHashtags.map(getMusicTagLabel), liveHistories: newLiveHistory });
       setDiscoverTabMode('users');
@@ -5190,7 +5239,10 @@ const renderFeedCard = (s: Song) => (
             <div className="flex gap-3 sticky bottom-0 bg-[#1c1c1e] pt-2">
               <button
                 type="button"
-                onClick={() => setShowInitialOnboarding(false)}
+                onClick={() => {
+                  if (currentUser?.id) window.localStorage.setItem(getOnboardingSkippedKey(currentUser.id), 'true');
+                  setShowInitialOnboarding(false);
+                }}
                 className="flex-1 py-3.5 border border-zinc-800 rounded-xl text-xs font-bold text-zinc-300 hover:bg-zinc-800 transition-colors"
               >
                 あとで
@@ -5238,8 +5290,8 @@ const renderFeedCard = (s: Song) => (
               </button>
             </header>
             <div className="flex gap-6 mb-6 px-1 border-b border-zinc-900">
-              <button onClick={() => setHomeFeedMode('all')} className={`pb-2 text-sm font-bold transition-colors ${homeFeedMode === 'all' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>Global</button>
-              <button onClick={() => setHomeFeedMode('following')} className={`pb-2 text-sm font-bold transition-colors ${homeFeedMode === 'following' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>Following</button>
+              <button onClick={() => setHomeFeedMode('all')} className={`pb-2 text-sm font-bold transition-colors ${homeFeedMode === 'all' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>{t('global')}</button>
+              <button onClick={() => setHomeFeedMode('following')} className={`pb-2 text-sm font-bold transition-colors ${homeFeedMode === 'following' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>{t('following')}</button>
             </div>
             <MusicSearchBox
               placeholder={t('searchPlaceholder')}
@@ -5297,9 +5349,9 @@ const renderFeedCard = (s: Song) => (
             <header className="flex justify-center mb-6"><h2 className="text-xl font-black tracking-tight">Echoes.</h2></header>
             {/* 💡 3つの切り替えタブ */}
             <div className="flex bg-[#1c1c1e] p-1 rounded-xl mb-6 mx-2 border border-zinc-800">
-              <button onClick={() => setDiscoverTabMode('users')} className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition-colors ${discoverTabMode === 'users' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-white'}`}>People</button>
-              <button onClick={() => setDiscoverTabMode('communities')} className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition-colors ${discoverTabMode === 'communities' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-white'}`}>Community</button>
-              <button onClick={() => setDiscoverTabMode('match')} className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition-colors ${discoverTabMode === 'match' ? 'bg-[#1DB954] text-black shadow-sm' : 'text-zinc-500 hover:text-white'}`}>Match</button>
+              <button onClick={() => setDiscoverTabMode('users')} className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition-colors ${discoverTabMode === 'users' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-white'}`}>{t('people')}</button>
+              <button onClick={() => setDiscoverTabMode('communities')} className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition-colors ${discoverTabMode === 'communities' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-white'}`}>{t('community')}</button>
+              <button onClick={() => setDiscoverTabMode('match')} className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition-colors ${discoverTabMode === 'match' ? 'bg-[#1DB954] text-black shadow-sm' : 'text-zinc-500 hover:text-white'}`}>{t('match')}</button>
             </div>
             {/* 👤 People モード */}
             {discoverTabMode === 'users' && (
@@ -5327,9 +5379,9 @@ const renderFeedCard = (s: Song) => (
                 {(allAvailableHashtags.length > 0 || allAvailableLiveHistories.length > 0) && (
                   <div className="mb-8 px-1">
                     <div className="flex items-center justify-between mb-3 px-1">
-                      <p className="text-xs font-bold text-white">Music Tags</p>
+                      <p className="text-xs font-bold text-white">{t('musicTags')}</p>
                       {hasPeopleMusicFilter && (
-                        <button onClick={() => setPeopleMusicFilter({ hashtags: [], liveHistories: [] })} className="text-[10px] font-bold text-zinc-500 hover:text-white transition-colors">Clear</button>
+                        <button onClick={() => setPeopleMusicFilter({ hashtags: [], liveHistories: [] })} className="text-[10px] font-bold text-zinc-500 hover:text-white transition-colors">{t('clear')}</button>
                       )}
                     </div>
                     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
@@ -5353,7 +5405,7 @@ const renderFeedCard = (s: Song) => (
                   </div>
                 )}
                 <div className="mb-10">
-                  <p className="text-xs font-bold text-white mb-4 px-2">おすすめの友達</p>
+                  <p className="text-xs font-bold text-white mb-4 px-2">{t('suggestedFriends')}</p>
                   {filteredSuggestedFriends.length > 0 ? filteredSuggestedFriends.map(({ user: u, mutualCount }) => (
                     <div key={u.id} className="flex items-center justify-between py-3 px-3 hover:bg-zinc-800/30 rounded-2xl transition-colors">
                       <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => { setViewingUser(u); setActiveTab('other_profile'); }}>
@@ -5369,7 +5421,7 @@ const renderFeedCard = (s: Song) => (
                   )) : <p className="text-xs text-zinc-500 px-3 py-4 bg-[#1c1c1e]/50 rounded-2xl border border-zinc-800/50">{hasPeopleMusicFilter ? '選択したタグに合う友達候補がまだいません。' : '友達をフォローして、タイムラインを充実させましょう！'}</p>}
                 </div>
                 <div className="mb-10">
-                  <p className="text-xs font-bold text-white mb-4 px-2">好みが近い人</p>
+                  <p className="text-xs font-bold text-white mb-4 px-2">{t('similarPeople')}</p>
                   {filteredSimilarMusicUsers.length > 0 ? filteredSimilarMusicUsers.map(({ user: u, sharedReason }) => (
                     <div key={u.id} className="flex items-center justify-between py-3 px-3 hover:bg-zinc-800/30 rounded-2xl transition-colors">
                       <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => { setViewingUser(u); setActiveTab('other_profile'); }}>
@@ -5389,7 +5441,7 @@ const renderFeedCard = (s: Song) => (
                   )) : <p className="text-xs text-zinc-500 px-3 py-4 bg-[#1c1c1e]/50 rounded-2xl border border-zinc-800/50">{hasPeopleMusicFilter ? '選択したタグに合う音楽仲間がまだいません。' : '音楽を記録して、好みの合う人を探しましょう！'}</p>}
                 </div>
                 <div className="mb-10">
-                  <p className="text-xs font-bold text-white mb-4 px-2">人気のアカウント</p>
+                  <p className="text-xs font-bold text-white mb-4 px-2">{t('popularAccounts')}</p>
                   {filteredPopularUsers.length > 0 ? filteredPopularUsers.map(({ user: u, postCount }) => (
                     <div key={u.id} className="flex items-center justify-between py-3 px-3 hover:bg-zinc-800/30 rounded-2xl transition-colors">
                       <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => { setViewingUser(u); setActiveTab('other_profile'); }}>
@@ -5486,12 +5538,21 @@ const renderFeedCard = (s: Song) => (
         )}
         {/* 📝 Article (Read) タブ：本番・AI分析連携版 */}
         {activeTab === 'article' && (
-          <ArticleListSection
-            articleTabMode={articleTabMode}
-            displayArticles={displayArticles}
-            draftArticles={draftArticles}
-            myProfileId={myProfile.id}
-            onChangeTab={setArticleTabMode}
+	          <ArticleListSection
+	            articleTabMode={articleTabMode}
+	            displayArticles={displayArticles}
+	            draftArticles={draftArticles}
+	            myProfileId={myProfile.id}
+	            labels={{
+	              articles: t('articles'),
+	              trend: t('trend'),
+	              global: t('global'),
+	              following: t('following'),
+	              liked: t('liked'),
+	              mine: t('mine'),
+	              drafts: t('drafts'),
+	            }}
+	            onChangeTab={setArticleTabMode}
             onOpenWriter={() => setShowWriteArticleModal(true)}
             onOpenArticle={setViewingArticle}
             onOpenAuthor={(author) => { setViewingUser(author); setActiveTab('other_profile'); }}
@@ -5634,18 +5695,18 @@ const renderFeedCard = (s: Song) => (
         )}
       </div>
       <nav className="fixed bottom-0 left-0 w-full bg-[#0a0a0a]/95 backdrop-blur-2xl border-t border-zinc-900 flex justify-around p-3 z-[100] pb-8">
-        <button onClick={() => switchBottomTab('home')} className={`flex flex-col items-center gap-1 w-12 ${activeTab === 'home' ? 'text-white' : 'text-zinc-600'}`}><IconMusic /><span className="text-[8px] font-bold uppercase">Feed</span></button>
-        <button onClick={() => switchBottomTab('search')} className={`flex flex-col items-center gap-1 w-12 ${activeTab === 'search' ? 'text-white' : 'text-zinc-600'}`}><IconSearch /><span className="text-[8px] font-bold uppercase">Discover</span></button>
-        <button onClick={() => switchBottomTab('article')} className={`flex flex-col items-center gap-1 w-12 ${activeTab === 'article' ? 'text-white' : 'text-zinc-600'}`}><IconArticle /><span className="text-[8px] font-bold uppercase">Read</span></button>
-        <button onClick={() => switchBottomTab('calendar')} className={`flex flex-col items-center gap-1 w-12 ${activeTab === 'calendar' ? 'text-white' : 'text-zinc-600'}`}><IconClock /><span className="text-[8px] font-bold uppercase">Diary</span></button>
+        <button onClick={() => switchBottomTab('home')} className={`flex flex-col items-center gap-1 w-12 ${activeTab === 'home' ? 'text-white' : 'text-zinc-600'}`}><IconMusic /><span className="text-[8px] font-bold uppercase">{t('feed')}</span></button>
+        <button onClick={() => switchBottomTab('search')} className={`flex flex-col items-center gap-1 w-12 ${activeTab === 'search' ? 'text-white' : 'text-zinc-600'}`}><IconSearch /><span className="text-[8px] font-bold uppercase">{t('discover')}</span></button>
+        <button onClick={() => switchBottomTab('article')} className={`flex flex-col items-center gap-1 w-12 ${activeTab === 'article' ? 'text-white' : 'text-zinc-600'}`}><IconArticle /><span className="text-[8px] font-bold uppercase">{t('read')}</span></button>
+        <button onClick={() => switchBottomTab('calendar')} className={`flex flex-col items-center gap-1 w-12 ${activeTab === 'calendar' ? 'text-white' : 'text-zinc-600'}`}><IconClock /><span className="text-[8px] font-bold uppercase">{t('diary')}</span></button>
         <button onClick={() => switchBottomTab('chat')} className={`flex flex-col items-center gap-1 w-12 relative ${activeTab === 'chat' ? 'text-white' : 'text-zinc-600'}`}>
           <IconChatTab />
           {Object.values(chatHistory).some(msgs => msgs.some(m => m.senderId !== currentUser?.id && !m.isRead)) && (
             <span className="absolute top-0 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-black"></span>
           )}
-          <span className="text-[8px] font-bold uppercase">Chat</span>
-        </button>
-        <button onClick={() => switchBottomTab('profile')} className={`flex flex-col items-center gap-1 w-12 ${activeTab === 'profile' || activeTab === 'other_profile' ? 'text-white' : 'text-zinc-600'}`}><IconUser /><span className="text-[8px] font-bold uppercase">Profile</span></button>
+	          <span className="text-[8px] font-bold uppercase">{t('chat')}</span>
+	        </button>
+        <button onClick={() => switchBottomTab('profile')} className={`flex flex-col items-center gap-1 w-12 ${activeTab === 'profile' || activeTab === 'other_profile' ? 'text-white' : 'text-zinc-600'}`}><IconUser /><span className="text-[8px] font-bold uppercase">{t('profile')}</span></button>
       </nav>
       <ArticleEditorModal
         isOpen={showWriteArticleModal}
