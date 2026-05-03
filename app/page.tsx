@@ -59,9 +59,34 @@ const getMusicTagLabel = (value: string) => MUSIC_TAG_PREFIXES.reduce((label, pr
 const isMusicTagCategory = (value: string, category: "genre" | "artist" | "tag") => value.startsWith(`${category}:`);
 const isOnboardingLiveCandidate = (value: string) => /(live|ライブ|フェス|ツアー|公演|ドーム|スタジアム|rock|fuji|summer|sonic|viva|metrock|japan|countdown|rising|sweet)/i.test(value);
 const normalizeMusicLabel = (value: string) => getMusicTagLabel(value).trim().toLowerCase();
+const normalizeArtistCommunityKey = (value: string) => normalizeMusicLabel(value).replace(/[^a-z0-9一-龯ぁ-んァ-ヶー]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase();
+const getArtistScreenKey = (artist: any) => artist ? (normalizeMusicLabel(String(artist.artistName || "")) || String(artist.artistId || "")) : null;
+const getAlbumScreenKey = (album: any) => album ? String(album.collectionId || "") : null;
+const getArtistCommunityId = (artistId: string | number | undefined, artistName: string) => {
+  const key = String(artistId || "").trim() || normalizeArtistCommunityKey(artistName);
+  return `artist:${key || "unknown"}`;
+};
+const isCommunityChatId = (id: string) => id.startsWith('com') || id.startsWith('artist:');
+const buildArtistCommunity = (artist: { artistId?: string | number; artistName: string; artworkUrl?: string }, joinedIds: Set<string>, memberCounts: Record<string, number>): LiveCommunity => {
+  const id = getArtistCommunityId(artist.artistId, artist.artistName);
+  return {
+    id,
+    name: `${artist.artistName} ファンコミュニティ`,
+    date: "常設",
+    memberCount: memberCounts[id] || 0,
+    isJoined: joinedIds.has(id),
+    isVerified: true,
+    communityType: 'artist',
+    artistId: String(artist.artistId || normalizeArtistCommunityKey(artist.artistName)),
+    artistName: artist.artistName,
+    description: `${artist.artistName}が好きな人たちが集まる場所です`,
+    artworkUrl: artist.artworkUrl
+  };
+};
 
 const toChatMessage = (msg: any): ChatMessage => {
-  const isGroup = String(msg.target_id || "").startsWith('g') || String(msg.target_id || "").startsWith('com');
+  const targetId = String(msg.target_id || "");
+  const isGroup = targetId.startsWith('g') || isCommunityChatId(targetId);
   const calculatedReadCount = isGroup ? (msg.read_count || (msg.is_read ? 1 : 0)) : 0;
   return {
     id: msg.id,
@@ -133,9 +158,9 @@ const compressImage = async (file: File, maxWidth = 800, quality = 0.7): Promise
 };
 // 💡 ステップ7適用: 全ての言語設定を追加（AIメッセージ等含む・修正版）
 const localI18n: Record<string, any> = {
-  "日本語": { feed: "Global", discover: "見つける", match: "マッチ", diary: "ダイアリー", chat: "チャット", profile: "プロフィール", searchPlaceholder: "楽曲やアーティストを検索...", settings: "設定", cancel: "キャンセル", postVibe: "記録する", audio: "プレビュー音", notifications: "通知", privateAcc: "非公開アカウント", timezone: "タイムゾーン", language: "言語", logout: "ログアウト", features: "機能", appInfo: "アプリについて", shareApp: "シェアする", rateApp: "評価する", help: "ヘルプ", editProfile: "編集", editProfileFull: "プロフィールを編集", artist: "歌手", topResults: "ヒット", allSongs: "全曲", latestRelease: "最新曲", popularSongs: "人気曲", popularAlbums: "アルバム", followers: "フォロワー", rewind: "振り返り", overwriteVibe: "上書き", alreadyPostedWarning: "投稿済みです。上書きしますか？", favoriteArtists: "お気に入り", postSuccess: "記録完了！", sendMessage: "送信", typeMessage: "入力...", vibeMatchAnalysis: "Vibe分析", topSharedArtists: "共通アーティスト", sharedGenres: "共通ジャンル", noPreview: "プレビューなし", pass: "スキップ", connect: "気になる", friendsChat: "フレンド", matchesChat: "マッチ", groupsChat: "グループ", communityChat: "ライブ", liveHistory: "参戦歴", hashtags: "ハッシュタグ", deleteAcc: "アカウント削除", deleteAccFull: "アカウントを完全に削除（退会）", admin: "通報管理", adminOnly: "Admin (運営専用)", adminDashboard: "通報管理ダッシュボード", musicSearch: "音楽を探す", follow: "フォロー", following: "フォロー中", block: "ブロックする", report: "通報する", myEchoes: "My Echoes", likedPosts: "いいねした投稿", aiStart: "まだ記録がありません。曲を記録すると、AIが好みを分析します。", aiRec: "などの傾向から、今のあなたにぴったりな3曲をピックアップしました。", aiAnalyzing: "分析中..." },
-  "English": { feed: "Global", discover: "Discover", match: "Match", diary: "Diary", chat: "Chat", profile: "Profile", searchPlaceholder: "Search...", settings: "Settings", cancel: "Cancel", postVibe: "Post", audio: "Audio", notifications: "Notif", privateAcc: "Private", timezone: "Timezone", language: "Lang", logout: "Log Out", features: "Features", appInfo: "About", shareApp: "Share", rateApp: "Rate", help: "Help", editProfile: "Edit", editProfileFull: "Edit Profile", artist: "Artist", topResults: "Top", allSongs: "All", latestRelease: "New", popularSongs: "Hot", popularAlbums: "Albums", followers: "Followers", rewind: "Rewind", overwriteVibe: "Overwrite", alreadyPostedWarning: "Already posted. Overwrite?", favoriteArtists: "Favorites", postSuccess: "Success!", sendMessage: "Send", typeMessage: "Aa", vibeMatchAnalysis: "Analysis", topSharedArtists: "Shared Artists", sharedGenres: "Shared Genres", noPreview: "No audio", pass: "Skip", connect: "Like", friendsChat: "Friends", matchesChat: "Matches", groupsChat: "Groups", communityChat: "Lives", liveHistory: "History", hashtags: "Hashtags", deleteAcc: "Delete Account", deleteAccFull: "Delete Account Permanently", admin: "Admin", adminOnly: "Admin Only", adminDashboard: "Report Dashboard", musicSearch: "Search Music", follow: "Follow", following: "Following", block: "Block", report: "Report", myEchoes: "My Echoes", likedPosts: "Liked Posts", aiStart: "Start recording vibes to get AI recommendations.", aiRec: "inspired recommendations just for you.", aiAnalyzing: "Analyzing..." },
-  "中文": { feed: "Global", discover: "发现", match: "匹配", diary: "日记", chat: "聊天", profile: "我的", searchPlaceholder: "搜索...", settings: "设置", cancel: "取消", postVibe: "记录", audio: "音频", notifications: "通知", privateAcc: "私密", timezone: "时区", language: "语言", logout: "登出", features: "功能", appInfo: "关于", shareApp: "分享", rateApp: "评价", help: "帮助", editProfile: "编辑", editProfileFull: "编辑个人资料", artist: "歌手", topResults: "最佳", allSongs: "所有", latestRelease: "最新", popularSongs: "热门", popularAlbums: "专辑", followers: "粉丝", rewind: "回顾", overwriteVibe: "覆盖", alreadyPostedWarning: "已记录。覆盖吗？", favoriteArtists: "喜欢", postSuccess: "成功！", sendMessage: "发送", typeMessage: "输入...", vibeMatchAnalysis: "分析", topSharedArtists: "共同歌手", sharedGenres: "共同类型", noPreview: "无试听", pass: "跳过", connect: "感兴趣", friendsChat: "好友", matchesChat: "匹配", groupsChat: "群组", communityChat: "社区", liveHistory: "参战历史", hashtags: "标签", deleteAcc: "注销", deleteAccFull: "永久注销账号", admin: "管理员", adminOnly: "Admin (管理员专用)", adminDashboard: "举报管理面板", musicSearch: "搜索音乐", follow: "关注", following: "已关注", block: "拉黑", report: "举报", myEchoes: "我的记录", likedPosts: "赞过的帖子", aiStart: "开始记录以获取 AI 推荐。", aiRec: "风格的专属推荐。", aiAnalyzing: "分析中..." }
+  "日本語": { feed: "Global", discover: "見つける", match: "マッチ", diary: "ダイアリー", chat: "チャット", profile: "プロフィール", searchPlaceholder: "楽曲やアーティストを検索...", settings: "設定", cancel: "キャンセル", postVibe: "記録する", audio: "プレビュー音", notifications: "通知", privateAcc: "非公開アカウント", timezone: "タイムゾーン", language: "言語", logout: "ログアウト", features: "機能", appInfo: "アプリについて", shareApp: "シェアする", rateApp: "評価する", help: "ヘルプ", editProfile: "編集", editProfileFull: "プロフィールを編集", artist: "歌手", topResults: "ヒット", allSongs: "全曲", latestRelease: "最新曲", popularSongs: "人気曲", popularAlbums: "アルバム", followers: "フォロワー", rewind: "振り返り", overwriteVibe: "上書き", alreadyPostedWarning: "投稿済みです。上書きしますか？", favoriteArtists: "お気に入り", postSuccess: "記録完了！", sendMessage: "送信", typeMessage: "入力...", vibeMatchAnalysis: "Vibe分析", topSharedArtists: "共通アーティスト", sharedGenres: "共通ジャンル", noPreview: "プレビューなし", pass: "スキップ", connect: "気になる", friendsChat: "フレンド", matchesChat: "マッチ", groupsChat: "グループ", communityChat: "ライブ", Friends: "フレンド", Groups: "グループ", CommunityJoined: "参加しました", CommunityLeft: "退会しました", JoinFailed: "参加処理に失敗しました", LeaveFailed: "退会処理に失敗しました", liveHistory: "参戦歴", hashtags: "ハッシュタグ", deleteAcc: "アカウント削除", deleteAccFull: "アカウントを完全に削除（退会）", admin: "通報管理", adminOnly: "Admin (運営専用)", adminDashboard: "通報管理ダッシュボード", musicSearch: "音楽を探す", follow: "フォロー", following: "フォロー中", block: "ブロックする", report: "通報する", myEchoes: "My Echoes", likedPosts: "いいねした投稿", aiStart: "まだ記録がありません。曲を記録すると、AIが好みを分析します。", aiRec: "などの傾向から、今のあなたにぴったりな3曲をピックアップしました。", aiAnalyzing: "分析中..." },
+  "English": { feed: "Global", discover: "Discover", match: "Match", diary: "Diary", chat: "Chat", profile: "Profile", searchPlaceholder: "Search...", settings: "Settings", cancel: "Cancel", postVibe: "Post", audio: "Audio", notifications: "Notif", privateAcc: "Private", timezone: "Timezone", language: "Lang", logout: "Log Out", features: "Features", appInfo: "About", shareApp: "Share", rateApp: "Rate", help: "Help", editProfile: "Edit", editProfileFull: "Edit Profile", artist: "Artist", topResults: "Top", allSongs: "All", latestRelease: "New", popularSongs: "Hot", popularAlbums: "Albums", followers: "Followers", rewind: "Rewind", overwriteVibe: "Overwrite", alreadyPostedWarning: "Already posted. Overwrite?", favoriteArtists: "Favorites", postSuccess: "Success!", sendMessage: "Send", typeMessage: "Aa", vibeMatchAnalysis: "Analysis", topSharedArtists: "Shared Artists", sharedGenres: "Shared Genres", noPreview: "No audio", pass: "Skip", connect: "Like", friendsChat: "Friends", matchesChat: "Matches", groupsChat: "Groups", communityChat: "Lives", Friends: "Friends", Groups: "Groups", CommunityJoined: "Joined", CommunityLeft: "Left community", JoinFailed: "Could not join", LeaveFailed: "Could not leave", liveHistory: "History", hashtags: "Hashtags", deleteAcc: "Delete Account", deleteAccFull: "Delete Account Permanently", admin: "Admin", adminOnly: "Admin Only", adminDashboard: "Report Dashboard", musicSearch: "Search Music", follow: "Follow", following: "Following", block: "Block", report: "Report", myEchoes: "My Echoes", likedPosts: "Liked Posts", aiStart: "Start recording vibes to get AI recommendations.", aiRec: "inspired recommendations just for you.", aiAnalyzing: "Analyzing..." },
+  "中文": { feed: "Global", discover: "发现", match: "匹配", diary: "日记", chat: "聊天", profile: "我的", searchPlaceholder: "搜索...", settings: "设置", cancel: "取消", postVibe: "记录", audio: "音频", notifications: "通知", privateAcc: "私密", timezone: "时区", language: "语言", logout: "登出", features: "功能", appInfo: "关于", shareApp: "分享", rateApp: "评价", help: "帮助", editProfile: "编辑", editProfileFull: "编辑个人资料", artist: "歌手", topResults: "最佳", allSongs: "所有", latestRelease: "最新", popularSongs: "热门", popularAlbums: "专辑", followers: "粉丝", rewind: "回顾", overwriteVibe: "覆盖", alreadyPostedWarning: "已记录。覆盖吗？", favoriteArtists: "喜欢", postSuccess: "成功！", sendMessage: "发送", typeMessage: "输入...", vibeMatchAnalysis: "分析", topSharedArtists: "共同歌手", sharedGenres: "共同类型", noPreview: "无试听", pass: "跳过", connect: "感兴趣", friendsChat: "好友", matchesChat: "匹配", groupsChat: "群组", communityChat: "社区", Friends: "好友", Groups: "群组", CommunityJoined: "已加入", CommunityLeft: "已退出", JoinFailed: "加入失败", LeaveFailed: "退出失败", liveHistory: "参战历史", hashtags: "标签", deleteAcc: "注销", deleteAccFull: "永久注销账号", admin: "管理员", adminOnly: "Admin (管理员专用)", adminDashboard: "举报管理面板", musicSearch: "搜索音乐", follow: "关注", following: "已关注", block: "拉黑", report: "举报", myEchoes: "我的记录", likedPosts: "赞过的帖子", aiStart: "开始记录以获取 AI 推荐。", aiRec: "风格的专属推荐。", aiAnalyzing: "分析中..." }
 };
 
 Object.assign(localI18n["日本語"], {
@@ -1224,6 +1249,7 @@ const handleSaveDraft = () => {
   const [selectedModalDate, setSelectedModalDate] = useState<string | null>(null); // カレンダー内でタップした日付を記憶
   const [showCommDrumroll, setShowCommDrumroll] = useState(false);
   const [realCommunities, setRealCommunities] = useState<LiveCommunity[]>([]);
+  const [communityMemberCounts, setCommunityMemberCounts] = useState<Record<string, number>>({});
   useEffect(() => {
     const fetchLiveSchedules = async () => {
       let apiLives: LiveCommunity[] = [];
@@ -1272,11 +1298,16 @@ const handleSaveDraft = () => {
           customLives = dbData.map((c: any) => ({
             id: c.id,
             name: c.name,
-            date: c.date,
+            date: c.community_type === 'artist' ? "常設" : c.date,
             memberCount: 0,
             isJoined: false,
-            isVerified: false,
-            reportedBy: []
+            isVerified: c.community_type === 'artist',
+            reportedBy: [],
+            communityType: c.community_type || 'live',
+            artistId: c.artist_id || undefined,
+            artistName: c.artist_name || undefined,
+            description: c.description || undefined,
+            artworkUrl: c.artwork_url || undefined
           }));
         }
       } catch (dbErr) {
@@ -1287,19 +1318,60 @@ const handleSaveDraft = () => {
     fetchLiveSchedules();
   }, []);
   useEffect(() => {
-    if (!currentUser || realCommunities.length === 0) return;
+    if (!currentUser) return;
     const fetchJoinedCommunities = async () => {
       try {
         const { data, error } = await supabase
           .from('community_members')
-          .select('community_id')
-          .eq('user_id', currentUser.id);
+          .select('community_id, user_id');
         if (data && !error) {
-          const joinedIds = new Set(data.map((d: any) => d.community_id));
-          const joined = realCommunities
+          const joinedIds = new Set(data.filter((d: any) => d.user_id === currentUser.id).map((d: any) => d.community_id));
+          const counts = data.reduce((acc: Record<string, number>, d: any) => {
+            acc[d.community_id] = (acc[d.community_id] || 0) + 1;
+            return acc;
+          }, {});
+          setCommunityMemberCounts(counts);
+          const missingJoinedIds = [...joinedIds].filter(id => !realCommunities.some(c => c.id === id));
+          let recoveredCommunities: LiveCommunity[] = [];
+          if (missingJoinedIds.length > 0) {
+            const { data: missingRows, error: missingError } = await supabase
+              .from('custom_communities')
+              .select('*')
+              .in('id', missingJoinedIds);
+            if (missingError) {
+              console.warn("Joined community recovery failed", {
+                code: missingError.code,
+                message: missingError.message,
+                details: missingError.details,
+                hint: missingError.hint,
+                communityIds: missingJoinedIds
+              });
+            } else {
+              recoveredCommunities = (missingRows || []).map((row: any) => toLiveCommunityFromDb(row, {
+                id: row.id,
+                name: row.name || "コミュニティ",
+                date: row.date || "常設",
+                memberCount: counts[row.id] || 1,
+                isJoined: true,
+                isVerified: row.community_type === 'artist',
+                reportedBy: [],
+                communityType: row.community_type || (String(row.id).startsWith('artist:') ? 'artist' : 'live')
+              }));
+            }
+          }
+          const joined = [...realCommunities, ...recoveredCommunities]
             .filter(c => joinedIds.has(c.id))
-            .map(c => ({ ...c, isJoined: true }));
+            .map(c => ({ ...c, isJoined: true, memberCount: counts[c.id] || c.memberCount }));
           setChatCommunities(joined);
+          if (recoveredCommunities.length > 0) {
+            setRealCommunities(prev => {
+              const next = [...prev];
+              recoveredCommunities.forEach(c => {
+                if (!next.some(existing => existing.id === c.id)) next.push(c);
+              });
+              return next;
+            });
+          }
         }
       } catch (err) {
         console.warn(err);
@@ -1396,8 +1468,8 @@ const handleSaveDraft = () => {
   const [activeChatUserId, setActiveChatUserId] = useState<string | null>(null);
   const [chatMessageInput, setChatMessageInput] = useState("");
   const [showChatPlusMenu, setShowChatPlusMenu] = useState(false);
-  const { data: activeCommunityMemberIds } = useSWR(
-    activeChatUserId?.startsWith('com') ? ['community_members', activeChatUserId] : null,
+  const { data: activeCommunityMemberIds, mutate: mutateActiveCommunityMemberIds } = useSWR(
+    activeChatUserId && isCommunityChatId(activeChatUserId) ? ['community_members', activeChatUserId] : null,
     async ([_, commId]) => {
       const { data, error } = await supabase.from('community_members').select('user_id').eq('community_id', commId);
       if (error) throw error;
@@ -1416,18 +1488,55 @@ const handleSaveDraft = () => {
   const [chatHistory, setChatHistory] = useState<Record<string, ChatMessage[]>>({});
   const [chatGroups, setChatGroups] = useState<ChatGroup[]>([]);
   const [chatCommunities, setChatCommunities] = useState<LiveCommunity[]>([]);
+  const joinedCommunityIds = useMemo(() => new Set(chatCommunities.map(c => c.id)), [chatCommunities]);
+  const artistCommunities = useMemo(() => {
+    const existing = realCommunities.filter(c => c.communityType === 'artist');
+    const byId = new Map(existing.map(c => [
+      c.id,
+      {
+        ...c,
+        memberCount: communityMemberCounts[c.id] || c.memberCount,
+        isJoined: joinedCommunityIds.has(c.id) || c.isJoined
+      }
+    ]));
+    const addArtist = (artistName?: string, artistId?: string | number, artworkUrl?: string) => {
+      const cleanName = (artistName || "").trim();
+      if (!cleanName) return;
+      const community = buildArtistCommunity({ artistId, artistName: cleanName, artworkUrl }, joinedCommunityIds, communityMemberCounts);
+      if (!byId.has(community.id)) byId.set(community.id, community);
+    };
+    favoriteArtists.forEach(a => addArtist(a.artistName, a.artistId, a.artworkUrl));
+    (myProfile.topArtists || []).forEach(a => addArtist(a));
+    allProfiles.forEach(u => (u.topArtists || []).forEach(a => addArtist(a)));
+    vibes.slice(0, 20).forEach(v => addArtist(v.artist, v.artistId, v.imgUrl));
+    if (activeArtistProfile) addArtist(activeArtistProfile.artistName, activeArtistProfile.artistId, activeArtistProfile.artworkUrl);
+    return Array.from(byId.values()).slice(0, 8);
+  }, [realCommunities, communityMemberCounts, joinedCommunityIds, favoriteArtists, myProfile.topArtists, allProfiles, vibes, activeArtistProfile]);
+  const activeArtistCommunity = useMemo(() => {
+    if (!activeArtistProfile?.artistName) return null;
+    const id = getArtistCommunityId(activeArtistProfile.artistId, activeArtistProfile.artistName);
+    return artistCommunities.find(c => c.id === id) || buildArtistCommunity({
+      artistId: activeArtistProfile.artistId,
+      artistName: activeArtistProfile.artistName,
+      artworkUrl: activeArtistProfile.artworkUrl
+    }, joinedCommunityIds, communityMemberCounts);
+  }, [activeArtistProfile, artistCommunities, joinedCommunityIds, communityMemberCounts]);
   const suggestedCommunities = useMemo(() => {
     // // 💡 3人以上の異なるユーザーから通報されたものは、一般リストから「検疫（非表示）」にする
-    let f = [...realCommunities].filter(c => (c.reportedBy?.length || 0) < 3);
+    let f = [...realCommunities].filter(c => c.communityType !== 'artist' && (c.reportedBy?.length || 0) < 3);
     // 💡 自分がコミュニティに参加しているかどうかを判定し、リアルタイムで人数に+1する
     f = f.map(c => ({
       ...c,
-      memberCount: c.memberCount + (chatCommunities.some(chat => chat.id === c.id) ? 1 : 0)
+      memberCount: communityMemberCounts[c.id] || c.memberCount + (chatCommunities.some(chat => chat.id === c.id) ? 1 : 0)
     }));
     if (communitySearchQuery.trim()) f = f.filter(c => c.name.toLowerCase().includes(communitySearchQuery.toLowerCase()));
     if (communityDateFilter) f = f.filter(c => c.date.startsWith(communityDateFilter));
     return f;
-  }, [communitySearchQuery, communityDateFilter, realCommunities, chatCommunities]);
+  }, [communitySearchQuery, communityDateFilter, realCommunities, chatCommunities, communityMemberCounts]);
+  const visibleArtistCommunities = useMemo(() => {
+    const q = communitySearchQuery.trim().toLowerCase();
+    return artistCommunities.filter(c => !q || c.name.toLowerCase().includes(q) || (c.artistName || "").toLowerCase().includes(q));
+  }, [artistCommunities, communitySearchQuery]);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupMembers, setNewGroupMembers] = useState<Set<string>>(new Set());
@@ -1612,10 +1721,25 @@ const handleSaveDraft = () => {
     album: activeAlbumProfile
   }), [activeTab, viewingUser, activeChatUserId, activeArtistProfile, activeAlbumProfile]);
   const prevStateRef = useRef(currentScreenState);
+  const restoreScreenState = (state: any | null) => {
+    const target = state || { tab: 'home', user: null, chatId: null, artist: null, album: null };
+    const currentArtistKey = getArtistScreenKey(activeArtistProfile);
+    const currentAlbumKey = getAlbumScreenKey(activeAlbumProfile);
+    const targetArtistKey = getArtistScreenKey(target.artist);
+    const targetAlbumKey = getAlbumScreenKey(target.album);
+
+    setActiveTab(target.tab || 'home');
+    setViewingUser(target.user || null);
+    setActiveChatUserId(target.chatId || null);
+    setActiveArtistProfile(target.artist || null);
+    setActiveAlbumProfile(target.album || null);
+    if (!targetArtistKey || targetArtistKey !== currentArtistKey) setArtistSongs([]);
+    if (!targetAlbumKey || targetAlbumKey !== currentAlbumKey) setAlbumSongs([]);
+  };
   useEffect(() => {
     if (!skipHistoryRef.current) {
       const prev = prevStateRef.current;
-      if (prev.tab !== currentScreenState.tab || prev.user?.id !== currentScreenState.user?.id || prev.chatId !== currentScreenState.chatId || prev.artist?.artistId !== currentScreenState.artist?.artistId || prev.album?.collectionId !== currentScreenState.album?.collectionId) {
+      if (prev.tab !== currentScreenState.tab || prev.user?.id !== currentScreenState.user?.id || prev.chatId !== currentScreenState.chatId || getArtistScreenKey(prev.artist) !== getArtistScreenKey(currentScreenState.artist) || getAlbumScreenKey(prev.album) !== getAlbumScreenKey(currentScreenState.album)) {
         setHistoryStack(stack => [...stack, prev]);
       }
     } else {
@@ -1626,23 +1750,22 @@ const handleSaveDraft = () => {
   const handleGoBack = () => {
     setHistoryStack(stack => {
       if (stack.length === 0) {
-        setActiveTab('home');
-        setViewingUser(null);
-        setActiveChatUserId(null);
-        setActiveArtistProfile(null);
-        setActiveAlbumProfile(null);
+        restoreScreenState(null);
         return stack;
       }
       const newStack = [...stack];
-      const lastState = newStack.pop();
-      skipHistoryRef.current = true;
-      if (lastState) {
-        setActiveTab(lastState.tab);
-        setViewingUser(lastState.user);
-        setActiveChatUserId(lastState.chatId);
-        setActiveArtistProfile(lastState.artist);
-        setActiveAlbumProfile(lastState.album);
+      let lastState = newStack.pop();
+      const currentArtistKey = getArtistScreenKey(currentScreenState.artist);
+      while (
+        lastState &&
+        currentArtistKey &&
+        !currentScreenState.album &&
+        getArtistScreenKey(lastState.artist) === currentArtistKey
+      ) {
+        lastState = newStack.pop();
       }
+      skipHistoryRef.current = true;
+      restoreScreenState(lastState || null);
       return newStack;
     });
   };
@@ -1654,6 +1777,8 @@ const handleSaveDraft = () => {
     setActiveChatUserId(null);
     setActiveArtistProfile(null);
     setActiveAlbumProfile(null);
+    setArtistSongs([]);
+    setAlbumSongs([]);
   };
   // 💡 AI Vibe Analysis (本番用): 過去の記録からアーティストを抽出し、新しい曲を提案する
   useEffect(() => {
@@ -1987,7 +2112,7 @@ const handleSaveDraft = () => {
 		const chatGroupIds = useMemo(() => chatGroups.map(g => g.id), [chatGroups]);
 		const chatCommunityIds = useMemo(() => chatCommunities.map(c => c.id), [chatCommunities]);
 		const canAccessChatTarget = React.useCallback((targetId: string) => {
-		  if (!targetId.startsWith('g') && !targetId.startsWith('com')) return true;
+		  if (!targetId.startsWith('g') && !isCommunityChatId(targetId)) return true;
 		  return chatGroupIds.includes(targetId) || chatCommunityIds.includes(targetId);
 		}, [chatGroupIds, chatCommunityIds]);
 	useEffect(() => {
@@ -2011,7 +2136,7 @@ const handleSaveDraft = () => {
 	      if (data && isMounted) {
 	        const history: Record<string, ChatMessage[]> = {};
 	        data.forEach(msg => {
-	          const isGroup = msg.target_id.startsWith('g') || msg.target_id.startsWith('com');
+	          const isGroup = msg.target_id.startsWith('g') || isCommunityChatId(msg.target_id);
 	          const partnerId = isGroup ? msg.target_id : (msg.sender_id === currentUser.id ? msg.target_id : msg.sender_id);
 	          if (!history[partnerId]) history[partnerId] = [];
 	          history[partnerId].push(toChatMessage(msg));
@@ -2038,7 +2163,7 @@ const handleSaveDraft = () => {
 	  const handleChatInsert = async (payload: any) => {
 	    const msg = payload.new;
 	    if (msg.sender_id === currentUser.id) return;
-	    const isGroup = msg.target_id.startsWith('g') || msg.target_id.startsWith('com');
+	    const isGroup = msg.target_id.startsWith('g') || isCommunityChatId(msg.target_id);
 	    const partnerId = isGroup ? msg.target_id : msg.sender_id;
 	    let isRead = msg.is_read;
 	    const currentActiveId = activeChatUserIdRef.current;
@@ -2361,12 +2486,38 @@ const handleSaveDraft = () => {
       showToast("InsertFailed", "error");
       return;
     }
-    await fetchVibes(0, true);
+    const postedAt = new Date(newVibeData.created_at);
+    const newVibe: Song = {
+      id: newVibeData.id,
+      trackId: parseInt(newVibeData.track_id, 10) || 0,
+      title: newVibeData.title,
+      artist: newVibeData.artist,
+      artistId: draftSong.artistId || 0,
+      imgUrl: newVibeData.img_url,
+      previewUrl: newVibeData.preview_url,
+      date: postedAt.toLocaleDateString('ja-JP'),
+      year: postedAt.getFullYear(),
+      month: postedAt.getMonth() + 1,
+      dayIndex: postedAt.getDate(),
+      timestamp: postedAt.getTime(),
+      time: postedAt.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' }),
+      caption: newVibeData.caption || "",
+      user: myProfile,
+      likes: 0,
+      isLiked: false,
+      comments: []
+    };
+    setVibes(prev => [newVibe, ...prev.filter(v => v.id !== existingPost?.id && v.id !== newVibe.id)]);
+    void fetchVibes(0, true);
     cancelDraft();
     setSearchQuery("");
     setSearchResults([]);
     setSearchArtistInfo(null);
     setIsSearchFocused(false);
+    setActiveArtistProfile(null);
+    setActiveAlbumProfile(null);
+    setArtistSongs([]);
+    setAlbumSongs([]);
     setShowPostSuccessCard(true);
     setActiveTab('home');
     showToast("Success", "success");
@@ -2659,30 +2810,254 @@ const handleSaveDraft = () => {
     showToast("SystemError", "error");
   }
 };
+  const logCommunityJoinError = (stage: string, err: any, communityId: string, context?: Record<string, unknown>) => {
+    console.warn("Community join failed", {
+      stage,
+      communityId,
+      code: err?.code,
+      message: err?.message || String(err),
+      details: err?.details,
+      hint: err?.hint,
+      ...context
+    });
+  };
+  const isMissingCustomCommunityMetadataError = (err: any) => {
+    const message = `${err?.message || ""} ${err?.details || ""} ${err?.hint || ""}`;
+    return err?.code === '42703' || err?.code === 'PGRST204' || /community_type|artist_id|artist_name|description|artwork_url/i.test(message);
+  };
+  const ensureCurrentUserProfile = async () => {
+    if (!currentUser) throw new Error("Missing currentUser");
+    const profilePayload = {
+      id: currentUser.id,
+      name: myProfile.name || currentUser.email?.split('@')[0] || 'User',
+      handle: myProfile.handle || `user_${currentUser.id.slice(0, 8)}`,
+      avatar: myProfile.avatar || '/default-avatar.png',
+      bio: myProfile.bio || '',
+      hashtags: myProfile.hashtags || [],
+      liveHistory: myProfile.liveHistory || [],
+      topArtists: myProfile.topArtists || [],
+      isPrivate: myProfile.isPrivate || false,
+      age: myProfile.age || null,
+      gender: myProfile.gender || null
+    };
+    const { error } = await supabase
+      .from('profiles')
+      .upsert([profilePayload], { onConflict: 'id', ignoreDuplicates: true });
+    if (error) {
+      logCommunityJoinError("profiles.upsert_self", error, "profile", { payload: { id: profilePayload.id } });
+      throw error;
+    }
+  };
+  const ensureCommunityMembership = async (communityId: string) => {
+    if (!currentUser) throw new Error("Missing currentUser");
+    const membershipPayload = {
+      community_id: communityId,
+      user_id: currentUser.id
+    };
+    const { error: upsertError } = await supabase
+      .from('community_members')
+      .upsert([membershipPayload], { onConflict: 'community_id,user_id', ignoreDuplicates: true });
+    if (!upsertError) return;
+    logCommunityJoinError("community_members.upsert_self_retrying", upsertError, communityId, { payload: membershipPayload });
+    const { data: existingMembership, error: selectError } = await supabase
+      .from('community_members')
+      .select('community_id, user_id')
+      .eq('community_id', membershipPayload.community_id)
+      .eq('user_id', membershipPayload.user_id)
+      .maybeSingle();
+    if (selectError) {
+      logCommunityJoinError("community_members.select_self", selectError, communityId, { payload: membershipPayload });
+      throw selectError;
+    }
+    if (existingMembership) return;
+    const { error: insertError } = await supabase
+      .from('community_members')
+      .insert([membershipPayload]);
+    if (insertError && insertError.code !== '23505') {
+      logCommunityJoinError("community_members.insert_self", insertError, communityId, { payload: membershipPayload });
+      throw insertError;
+    }
+  };
+  const toLiveCommunityFromDb = (row: any, fallback: LiveCommunity): LiveCommunity => ({
+    ...fallback,
+    id: row.id || fallback.id,
+    name: row.name || fallback.name,
+    date: row.community_type === 'artist' ? "常設" : (row.date || fallback.date),
+    isVerified: row.community_type === 'artist' ? true : fallback.isVerified,
+    communityType: row.community_type || fallback.communityType || 'live',
+    artistId: row.artist_id || fallback.artistId,
+    artistName: row.artist_name || fallback.artistName,
+    description: row.description || fallback.description,
+    artworkUrl: row.artwork_url || fallback.artworkUrl
+  });
+  const ensureArtistCommunity = async (c: LiveCommunity): Promise<LiveCommunity> => {
+    if (c.communityType !== 'artist' || !currentUser) return c;
+    const artistId = c.artistId || c.id.replace(/^artist:/, '').replace(/^com_artist_/, '');
+    const safeName = c.name.replace(/[<&>]/g, (char) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[char] || char));
+    const safeDescription = (c.description || "").replace(/[<&>]/g, (char) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[char] || char));
+    const communityPayload = {
+      id: c.id,
+      name: safeName,
+      date: new Date().toISOString().slice(0, 10),
+      creator_id: null,
+      community_type: 'artist',
+      artist_id: artistId,
+      artist_name: c.artistName || c.name.replace(' ファンコミュニティ', ''),
+      description: safeDescription,
+      artwork_url: c.artworkUrl || null
+    };
+    const minimalCommunityPayload = {
+      id: c.id,
+      name: safeName,
+      date: new Date().toISOString().slice(0, 10),
+      creator_id: null
+    };
+    const { data: existingById, error: existingByIdError } = await supabase
+      .from('custom_communities')
+      .select('*')
+      .eq('id', c.id)
+      .maybeSingle();
+    if (existingByIdError) {
+      logCommunityJoinError("custom_communities.select_by_id", existingByIdError, c.id);
+      throw existingByIdError;
+    }
+    let existingCommunity = existingById;
+    if (!existingCommunity && artistId) {
+      const { data: existingByArtist, error: existingByArtistError } = await supabase
+        .from('custom_communities')
+        .select('*')
+        .eq('community_type', 'artist')
+        .eq('artist_id', artistId)
+        .maybeSingle();
+      if (existingByArtistError) {
+        if (isMissingCustomCommunityMetadataError(existingByArtistError)) {
+          logCommunityJoinError("custom_communities.select_by_artist_metadata_missing", existingByArtistError, c.id);
+        } else {
+          logCommunityJoinError("custom_communities.select_by_artist", existingByArtistError, c.id);
+          throw existingByArtistError;
+        }
+      } else {
+        existingCommunity = existingByArtist;
+      }
+    }
+    const ensuredCommunity = existingCommunity
+      ? toLiveCommunityFromDb(existingCommunity, c)
+      : await (async () => {
+        let { error: insertError } = await supabase
+          .from('custom_communities')
+          .upsert([communityPayload], { onConflict: 'id', ignoreDuplicates: true });
+        if (insertError && isMissingCustomCommunityMetadataError(insertError)) {
+          logCommunityJoinError("custom_communities.insert_artist_metadata_missing_retry_minimal", insertError, c.id, { payload: communityPayload });
+          const minimalInsert = await supabase
+            .from('custom_communities')
+            .upsert([minimalCommunityPayload], { onConflict: 'id', ignoreDuplicates: true });
+          insertError = minimalInsert.error;
+        }
+        if (insertError?.code === '23505') {
+          const duplicateQuery = supabase
+            .from('custom_communities')
+            .select('*')
+            .eq('id', c.id)
+            .maybeSingle();
+          const { data: duplicatedCommunity, error: duplicateSelectError } = await duplicateQuery;
+          if (duplicateSelectError) {
+            logCommunityJoinError("custom_communities.select_after_duplicate", duplicateSelectError, c.id, { payload: minimalCommunityPayload });
+            throw duplicateSelectError;
+          }
+          return duplicatedCommunity ? toLiveCommunityFromDb(duplicatedCommunity, c) : c;
+        }
+        if (insertError) {
+          logCommunityJoinError("custom_communities.insert_artist", insertError, c.id, { payload: minimalCommunityPayload });
+          throw insertError;
+        }
+        return c;
+      })();
+    setRealCommunities(prev => prev.some(x => x.id === ensuredCommunity.id)
+      ? prev.map(x => x.id === ensuredCommunity.id ? { ...x, ...ensuredCommunity } : x).filter(x => x.id === ensuredCommunity.id || x.id !== c.id)
+      : [...prev.filter(x => x.id !== c.id), ensuredCommunity]
+    );
+    return ensuredCommunity;
+  };
+  const openCommunityChat = (c: LiveCommunity) => {
+    const knownCount = communityMemberCounts[c.id] || c.memberCount || 0;
+    const openCommunity = {
+      ...c,
+      isJoined: c.isJoined || chatCommunities.some(x => x.id === c.id),
+      memberCount: Math.max(1, knownCount)
+    };
+    setChatCommunities(prev => prev.some(x => x.id === c.id)
+      ? prev.map(x => x.id === c.id ? { ...x, ...openCommunity } : x)
+      : [...prev, openCommunity]
+    );
+    setCommunityMemberCounts(prev => ({ ...prev, [c.id]: Math.max(1, prev[c.id] || knownCount) }));
+    setActiveCommunityDetail(null);
+    setActiveArtistProfile(null);
+    setActiveAlbumProfile(null);
+    setArtistSongs([]);
+    setAlbumSongs([]);
+    setChatTabMode('groups');
+    setActiveTab('chat');
+    setActiveChatUserId(c.id);
+  };
   const joinCommunity = async (c: LiveCommunity) => {
     if (!currentUser) {
       showToast("ログインが必要です", "error");
       return;
     }
-    setChatCommunities(p => p.some(x => x.id === c.id) ? p : [...p, { ...c, isJoined: true }]);
-    setActiveCommunityDetail(null);
-    setChatTabMode('community');
-    setActiveTab('chat');
-    setActiveChatUserId(c.id);
+    const wasJoined = chatCommunities.some(x => x.id === c.id) || c.isJoined;
+    const nextCount = Math.max(1, (communityMemberCounts[c.id] || c.memberCount || 0) + (wasJoined ? 0 : 1));
     try {
-      const { error } = await supabase.from('community_members').insert([{
-        community_id: c.id,
-        user_id: currentUser.id
-      }]);
-      if (error) {
-        throw error;
-      }
-      showToast(`${c.name} に参加しました！`, "success");
+      await ensureCurrentUserProfile();
+      const ensuredCommunity = await ensureArtistCommunity(c);
+      await ensureCommunityMembership(ensuredCommunity.id);
+      const persistedCommunity = { ...ensuredCommunity, isJoined: true, memberCount: nextCount };
+      setChatCommunities(p => p.some(x => x.id === persistedCommunity.id) ? p.map(x => x.id === persistedCommunity.id ? { ...x, ...persistedCommunity } : x) : [...p, persistedCommunity]);
+      setCommunityMemberCounts(prev => ({ ...prev, [persistedCommunity.id]: nextCount }));
+      openCommunityChat(persistedCommunity);
+      void mutateActiveCommunityMemberIds?.((ids = []) => Array.from(new Set([...(ids as string[]), currentUser.id])), { revalidate: true });
+      showToast("CommunityJoined", "success");
     } catch (err) {
-      console.error(err);
-      setChatCommunities(p => p.filter(x => x.id !== c.id));
-      setActiveTab('search');
-      showToast("参加処理に失敗しました", "error");
+      logCommunityJoinError("joinCommunity", err, c.id);
+      showToast("JoinFailed", "error");
+    }
+  };
+  const leaveActiveChat = async () => {
+    if (!currentUser || !activeChatUserId) return;
+    const leavingChatId = activeChatUserId;
+    const isCommunity = isCommunityChatId(leavingChatId);
+    const isChatGroup = leavingChatId.startsWith('g');
+    try {
+      if (isCommunity) {
+        const previousCount = communityMemberCounts[leavingChatId] || chatCommunities.find(c => c.id === leavingChatId)?.memberCount || 1;
+        const { error } = await supabase
+          .from('community_members')
+          .delete()
+          .eq('community_id', leavingChatId)
+          .eq('user_id', currentUser.id);
+        if (error) {
+          logCommunityJoinError("community_members.delete_self", error, leavingChatId);
+          throw error;
+        }
+        setChatCommunities(prev => prev.filter(c => c.id !== leavingChatId));
+        setCommunityMemberCounts(prev => ({ ...prev, [leavingChatId]: Math.max(0, previousCount - 1) }));
+        void mutateActiveCommunityMemberIds?.((ids = []) => (ids as string[]).filter(id => id !== currentUser.id), { revalidate: true });
+      } else if (isChatGroup) {
+        const { error } = await supabase
+          .from('group_members')
+          .delete()
+          .eq('group_id', leavingChatId)
+          .eq('user_id', currentUser.id);
+        if (error) throw error;
+        setChatGroups(prev => prev.filter(g => g.id !== leavingChatId));
+      }
+      setShowChatDetails(false);
+      setActiveChatUserId(null);
+      setChatTabMode('groups');
+      setActiveTab('chat');
+      showToast("CommunityLeft", "success");
+    } catch (err) {
+      console.warn("Chat leave failed", { chatId: leavingChatId, error: err });
+      showToast("LeaveFailed", "error");
     }
   };
   const handleCreateCommunity = async () => {
@@ -2746,7 +3121,7 @@ const handleSaveDraft = () => {
     setNewCommYear("");
     setNewCommMonth("");
     setNewCommDay("");
-    setChatTabMode('community');
+    setChatTabMode('groups');
     setActiveTab('chat');
     setActiveChatUserId(commId);
     showToast("Success", "success");
@@ -3855,7 +4230,7 @@ const renderFeedCard = (s: Song) => (
     <main className="min-h-screen bg-black text-white pb-24 font-sans relative selection:bg-zinc-800 overflow-x-hidden">
       <audio ref={audioRef} onEnded={() => setPlayingSong(null)} />
       {toastMsg && (
-        <div className={`fixed top-12 left-1/2 transform -translate-x-1/2 z-[1000] px-6 py-3 rounded-full font-bold shadow-2xl flex items-center gap-2 animate-fade-in ${toastMsg.type === 'error' ? 'bg-red-500 text-white' : 'bg-[#1DB954] text-black'}`}>
+        <div className={`fixed top-12 left-1/2 transform -translate-x-1/2 z-[1300] px-6 py-3 rounded-full font-bold shadow-2xl flex items-center gap-2 animate-fade-in ${toastMsg.type === 'error' ? 'bg-red-500 text-white' : 'bg-[#1DB954] text-black'}`}>
           <IconCheck /> {toastMsg.text}
         </div>
       )}
@@ -3890,7 +4265,7 @@ const renderFeedCard = (s: Song) => (
             <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/60 to-black"></div>
           </div>
           <div className="flex items-center p-4 sticky top-0 z-20">
-            <button onClick={() => { setArtistSongs([]); setPlayingSong(null); handleGoBack(); }} className="text-white bg-black/40 backdrop-blur p-2 rounded-full"><IconChevronLeft /></button>
+            <button aria-label="アーティストページを戻る" onClick={() => { setPlayingSong(null); handleGoBack(); }} className="text-white bg-black/40 backdrop-blur p-2 rounded-full"><IconChevronLeft /></button>
           </div>
           <div className="px-6 relative z-10 mt-[15vh] mb-8">
             <h1 className="text-5xl font-black tracking-tighter mb-2 break-all leading-tight drop-shadow-lg flex items-center flex-wrap gap-4">
@@ -3911,6 +4286,25 @@ const renderFeedCard = (s: Song) => (
                 <IconHeart filled={favoriteArtists.some(a => a.artistId === activeArtistProfile.artistId)} />
               </button>
             </div>
+            {activeArtistCommunity && (
+              <div className="bg-[#1c1c1e]/90 border border-[#1DB954]/20 rounded-2xl p-4 shadow-2xl backdrop-blur-md">
+                <div className="flex gap-4">
+                  <div className="w-14 h-14 rounded-xl bg-zinc-800 overflow-hidden flex-shrink-0">
+                    {activeArtistCommunity.artworkUrl ? <img src={activeArtistCommunity.artworkUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-zinc-500"><IconUsers /></div>}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-base font-black text-white truncate">{activeArtistCommunity.name}</p>
+                    <p className="text-xs text-zinc-300 leading-relaxed mt-1">{activeArtistCommunity.description}</p>
+                    <p className="text-[11px] text-zinc-500 font-bold mt-2">{activeArtistCommunity.memberCount}人が参加中</p>
+                  </div>
+                </div>
+                {activeArtistCommunity.isJoined || chatCommunities.some(c => c.id === activeArtistCommunity.id) ? (
+                  <button onClick={() => openCommunityChat(activeArtistCommunity)} className="w-full mt-4 py-3 bg-[#1DB954] text-black rounded-xl text-xs font-bold">コミュニティを見る</button>
+                ) : (
+                  <button onClick={() => joinCommunity(activeArtistCommunity)} className="w-full mt-4 py-3 bg-white text-black rounded-xl text-xs font-bold">参加する</button>
+                )}
+              </div>
+            )}
           </div>
           <div className="px-4 pb-24 relative z-10 bg-black min-h-[50vh]">
             {isArtistLoading ? <p className="text-center text-zinc-500 py-12">Loading tracks...</p> : (
@@ -4128,13 +4522,16 @@ const renderFeedCard = (s: Song) => (
               <button onClick={() => setActiveCommunityDetail(null)} className="text-zinc-500 hover:text-white"><IconCross /></button>
             </div>
             <div className="flex flex-col items-center mb-8">
-              <div className="w-20 h-20 bg-zinc-800 rounded-2xl flex items-center justify-center text-zinc-500 mb-4 shadow-lg"><IconTicket /></div>
+              <div className="w-20 h-20 bg-zinc-800 rounded-2xl flex items-center justify-center text-zinc-500 mb-4 shadow-lg overflow-hidden">
+                {activeCommunityDetail.artworkUrl ? <img src={activeCommunityDetail.artworkUrl} className="w-full h-full object-cover" /> : <IconTicket />}
+              </div>
               {/* 💡 公式マークを表示 */}
               <h2 className="text-2xl font-black text-center mb-2 flex items-center justify-center gap-2">
                 {activeCommunityDetail.name}
                 {activeCommunityDetail.isVerified && <span className="text-[#1DB954] w-5 h-5 flex items-center"><IconVerified /></span>}
               </h2>
-              <p className="text-sm text-[#1DB954] font-bold mb-4">{activeCommunityDetail.date}</p>
+              {activeCommunityDetail.description && <p className="text-sm text-zinc-300 text-center leading-relaxed mb-3">{activeCommunityDetail.description}</p>}
+              <p className="text-sm text-[#1DB954] font-bold mb-4">{activeCommunityDetail.communityType === 'artist' ? '常設ファンコミュニティ' : activeCommunityDetail.date}</p>
               <div className="flex -space-x-3 justify-center mb-2">
                 {(() => {
                   const me = allProfiles.find(u => u.id === currentUser?.id) || myProfile;
@@ -4156,12 +4553,12 @@ const renderFeedCard = (s: Song) => (
               <p className="text-xs text-zinc-400">{activeCommunityDetail.memberCount}人が参加中</p>
             </div>
             {chatCommunities.some(c => c.id === activeCommunityDetail.id) || activeCommunityDetail.isJoined ? (
-              <button onClick={() => { setActiveCommunityDetail(null); setActiveChatUserId(activeCommunityDetail.id); setActiveTab('chat'); setChatTabMode('community'); }} className="w-full py-4 bg-[#1DB954] text-black rounded-xl text-sm font-bold shadow-lg hover:scale-105 transition-transform mb-2">チャットを開く</button>
+              <button onClick={() => openCommunityChat(activeCommunityDetail)} className="w-full py-4 bg-[#1DB954] text-black rounded-xl text-sm font-bold shadow-lg hover:scale-105 transition-transform mb-2">コミュニティを見る</button>
             ) : (
-              <button onClick={() => joinCommunity(activeCommunityDetail)} className="w-full py-4 bg-white text-black rounded-xl text-sm font-bold shadow-lg hover:scale-105 transition-transform mb-2">コミュニティに参加する</button>
+              <button onClick={() => joinCommunity(activeCommunityDetail)} className="w-full py-4 bg-white text-black rounded-xl text-sm font-bold shadow-lg hover:scale-105 transition-transform mb-2">参加する</button>
             )}
             {/* 💡 ユーザー作成の非公式ライブの場合のみ、通報ボタンを表示 */}
-            {!activeCommunityDetail.isVerified && (
+            {!activeCommunityDetail.isVerified && activeCommunityDetail.communityType !== 'artist' && (
               <button onClick={() => handleReportCommunity(activeCommunityDetail.id)} className="w-full py-3 bg-transparent text-zinc-600 hover:text-red-500 rounded-xl text-[10px] font-bold transition-colors flex items-center justify-center gap-1.5 mt-2">
                 <IconWarning /> このライブ情報を嘘として{t('report')}
               </button>
@@ -4416,7 +4813,7 @@ const renderFeedCard = (s: Song) => (
                         <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors"><IconUserPlus /></div>
                         <span className="text-[11px] font-bold text-zinc-400">招待</span>
                       </div>
-                      <div className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => { setShowChatDetails(false); showToast("グループを退会しました"); }}>
+                      <div className="flex flex-col items-center gap-2 cursor-pointer group" onClick={leaveActiveChat}>
                         <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-red-500 group-hover:bg-zinc-800 transition-colors">
                           <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" strokeWidth="2" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                         </div>
@@ -4444,7 +4841,7 @@ const renderFeedCard = (s: Song) => (
                   </div>
                 )}
                 {chatDetailsTab === 'members' && (() => {
-                  const isCommunity = activeChatUserId.startsWith('com');
+                  const isCommunity = isCommunityChatId(activeChatUserId);
                   const isChatGroup = activeChatUserId.startsWith('g');
                   let memberList = allProfiles;
                   let displayCount = 0;
@@ -4457,8 +4854,13 @@ const renderFeedCard = (s: Song) => (
                   } else if (isCommunity) {
                     // 💡 SWRで取得した本物の参加者IDリストを使ってメンバーをフィルタリングする
                     if (activeCommunityMemberIds) {
-                      memberList = allProfiles.filter(u => activeCommunityMemberIds.includes(u.id));
-                      displayCount = activeCommunityMemberIds.length;
+                      const memberIds = new Set(activeCommunityMemberIds);
+                      if (chatCommunities.some(c => c.id === activeChatUserId) && currentUser?.id) memberIds.add(currentUser.id);
+                      memberList = allProfiles.filter(u => memberIds.has(u.id));
+                      if (currentUser?.id && memberIds.has(currentUser.id) && !memberList.some(u => u.id === currentUser.id)) {
+                        memberList = [myProfile, ...memberList];
+                      }
+                      displayCount = memberIds.size;
                     } else {
                       // まだデータが取得できていない時のフォールバック（自分だけ表示）
                       const me = allProfiles.find(u => u.id === currentUser?.id) || myProfile;
@@ -5479,6 +5881,27 @@ const renderFeedCard = (s: Song) => (
                   <div className="flex items-center gap-3"><IconCalendar /><span className="text-sm font-bold text-white">{communityDateFilter ? `${communityDateFilter.replace(/-/g, '/')} の公演` : t('searchFromCalendar')}</span></div>
                   {communityDateFilter ? <button onClick={(e) => { e.stopPropagation(); setCommunityDateFilter(""); }} className="w-6 h-6 bg-zinc-800 rounded-full flex items-center justify-center text-zinc-400 hover:text-white"><IconCross /></button> : <IconChevronRight />}
                 </div>
+                {visibleArtistCommunities.length > 0 && (
+                  <div className="bg-[#1c1c1e] rounded-3xl p-5 mb-8 shadow-sm">
+                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><IconUsers /> アーティストコミュニティ</h3>
+                    <div className="flex flex-col">
+                      {visibleArtistCommunities.map(c => (
+                        <div key={c.id} className="flex items-center justify-between py-3 border-b border-zinc-800/50 last:border-0 cursor-pointer group" onClick={() => setActiveCommunityDetail(c)}>
+                          <div className="flex items-center gap-4 flex-1 overflow-hidden">
+                            <div className="w-11 h-11 rounded-xl bg-zinc-800 overflow-hidden flex-shrink-0">
+                              {c.artworkUrl ? <img src={c.artworkUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-zinc-500"><IconUsers /></div>}
+                            </div>
+                            <div className="flex-1 overflow-hidden">
+                              <p className="font-bold text-sm text-white truncate group-hover:text-[#1DB954] transition-colors">{c.name}</p>
+                              <p className="text-[10px] text-zinc-500 truncate">{c.description} • {c.memberCount}人が参加中</p>
+                            </div>
+                          </div>
+                          <IconChevronRight />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="bg-[#1c1c1e] rounded-3xl p-5 mb-8 shadow-sm">
                   <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><IconCrown /> {t('popularLiveCommunity')}</h3>
                   <div className="flex flex-col">{suggestedCommunities.map((c, i) => (
@@ -5591,9 +6014,8 @@ const renderFeedCard = (s: Song) => (
             chatTabMode={chatTabMode}
             labels={{
               chat: t('chat'),
-              friendsChat: t('friendsChat'),
-              groupsChat: t('groupsChat'),
-              communityChat: t('communityChat'),
+              friendsChat: t('Friends'),
+              groupsChat: t('Groups'),
             }}
             chatHistory={chatHistory}
             allProfiles={allProfiles}

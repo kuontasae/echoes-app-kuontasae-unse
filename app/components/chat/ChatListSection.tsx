@@ -10,7 +10,6 @@ type ChatListLabels = {
   chat: string;
   friendsChat: string;
   groupsChat: string;
-  communityChat: string;
 };
 
 type ChatListSectionProps = {
@@ -44,18 +43,21 @@ export function ChatListSection({
   onOpenChat,
   onOpenProfile,
 }: ChatListSectionProps) {
-  const friendChatIds = Object.keys(chatHistory).filter(id => !id.startsWith('com') && !id.startsWith('g'));
+  const currentTab = chatTabMode === 'community' ? 'groups' : chatTabMode;
+  const communityIds = new Set(chatCommunities.map(c => c.id));
+  const friendChatIds = Object.keys(chatHistory).filter(id => !id.startsWith('com') && !id.startsWith('artist:') && !id.startsWith('g') && !communityIds.has(id));
   const visibleFriendChatIds = friendChatIds.filter(id => allProfiles.some(p => p.id === id));
+  const artistCommunities = chatCommunities.filter(c => c.communityType === 'artist');
+  const liveCommunities = chatCommunities.filter(c => c.communityType !== 'artist');
 
   return (
     <div className="mt-8 animate-fade-in px-2">
       <h2 className="text-2xl font-bold tracking-tight mb-6 px-2">{labels.chat}</h2>
       <div className="flex bg-[#1c1c1e] p-1 rounded-xl mb-6 mx-2 border border-zinc-800">
-        <button onClick={() => onTabChange('friends')} className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition-colors ${chatTabMode === 'friends' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-white'}`}>{labels.friendsChat}</button>
-        <button onClick={() => onTabChange('groups')} className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition-colors ${chatTabMode === 'groups' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-white'}`}>{labels.groupsChat}</button>
-        <button onClick={() => onTabChange('community')} className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition-colors ${chatTabMode === 'community' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-white'}`}>{labels.communityChat}</button>
+        <button onClick={() => onTabChange('friends')} className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition-colors ${currentTab === 'friends' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-white'}`}>{labels.friendsChat}</button>
+        <button onClick={() => onTabChange('groups')} className={`flex-1 py-2 rounded-lg text-[11px] font-bold transition-colors ${currentTab === 'groups' ? 'bg-zinc-800 text-white shadow-sm' : 'text-zinc-500 hover:text-white'}`}>{labels.groupsChat}</button>
       </div>
-      {chatTabMode === 'groups' && (
+      {currentTab === 'groups' && (
         <div className="px-2 mb-4">
           <button onClick={onCreateGroup} className="w-full py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-sm font-bold text-[#1DB954] hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2">
             グループを作成
@@ -63,7 +65,7 @@ export function ChatListSection({
         </div>
       )}
       <div className="flex flex-col px-2">
-        {chatTabMode === 'friends' && visibleFriendChatIds.map(partnerId => {
+        {currentTab === 'friends' && visibleFriendChatIds.map(partnerId => {
           const user = allProfiles.find(x => x.id === partnerId);
           const lastMsg = chatHistory[partnerId][chatHistory[partnerId].length - 1];
           return (
@@ -96,23 +98,43 @@ export function ChatListSection({
             </div>
           );
         })}
-        {chatTabMode === 'friends' && friendChatIds.length === 0 && (
+        {currentTab === 'friends' && friendChatIds.length === 0 && (
           <div className="py-20 text-center">
             <p className="text-zinc-500 text-sm">メッセージはまだありません</p>
           </div>
         )}
-        {chatTabMode === 'groups' && chatGroups.map(g => (
-          <div key={g.id} onClick={() => onOpenChat(g.id)} className="flex items-center gap-4 p-3 hover:bg-[#1c1c1e] rounded-2xl cursor-pointer">
-            <div className="w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden relative"><IconUsers /></div>
-            <div className="flex-1 overflow-hidden z-10"><p className="font-bold text-sm truncate">{g.name}</p><p className="text-xs text-zinc-400 truncate">参加しました</p></div>
-          </div>
-        ))}
-        {chatTabMode === 'community' && chatCommunities.map(c => (
-          <div key={c.id} onClick={() => onOpenChat(c.id)} className="flex items-center gap-4 p-3 hover:bg-[#1c1c1e] rounded-2xl cursor-pointer">
-            <div className="w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden relative"><IconTicket /></div>
-            <div className="flex-1 overflow-hidden z-10"><p className="font-bold text-sm truncate">{c.name}</p><p className="text-xs text-zinc-400 truncate">参加しました</p></div>
-          </div>
-        ))}
+        {currentTab === 'groups' && (
+          <>
+            {chatGroups.length > 0 && <p className="text-[10px] font-bold text-zinc-500 px-3 pt-2 pb-1">グループ</p>}
+            {chatGroups.map(g => (
+              <div key={g.id} onClick={() => onOpenChat(g.id)} className="flex items-center gap-4 p-3 hover:bg-[#1c1c1e] rounded-2xl cursor-pointer">
+                <div className="w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden relative"><IconUsers /></div>
+                <div className="flex-1 overflow-hidden z-10"><p className="font-bold text-sm truncate">{g.name}</p><p className="text-xs text-zinc-400 truncate">参加しました</p></div>
+              </div>
+            ))}
+            {artistCommunities.length > 0 && <p className="text-[10px] font-bold text-zinc-500 px-3 pt-4 pb-1">アーティストコミュニティ</p>}
+            {artistCommunities.map(c => (
+              <div key={c.id} onClick={() => onOpenChat(c.id)} className="flex items-center gap-4 p-3 hover:bg-[#1c1c1e] rounded-2xl cursor-pointer">
+                <div className="w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden relative">
+                  {c.artworkUrl ? <img src={c.artworkUrl} className="w-full h-full object-cover" /> : <IconUsers />}
+                </div>
+                <div className="flex-1 overflow-hidden z-10"><p className="font-bold text-sm truncate">{c.name}</p><p className="text-xs text-zinc-400 truncate">参加者 {Math.max(1, c.memberCount)}人</p></div>
+              </div>
+            ))}
+            {liveCommunities.length > 0 && <p className="text-[10px] font-bold text-zinc-500 px-3 pt-4 pb-1">ライブコミュニティ</p>}
+            {liveCommunities.map(c => (
+              <div key={c.id} onClick={() => onOpenChat(c.id)} className="flex items-center gap-4 p-3 hover:bg-[#1c1c1e] rounded-2xl cursor-pointer">
+                <div className="w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden relative"><IconTicket /></div>
+                <div className="flex-1 overflow-hidden z-10"><p className="font-bold text-sm truncate">{c.name}</p><p className="text-xs text-zinc-400 truncate">参加者 {Math.max(1, c.memberCount)}人</p></div>
+              </div>
+            ))}
+            {chatGroups.length === 0 && chatCommunities.length === 0 && (
+              <div className="py-20 text-center">
+                <p className="text-zinc-500 text-sm">参加中のグループはまだありません</p>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

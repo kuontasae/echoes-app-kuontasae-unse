@@ -82,4 +82,9 @@ export interface LiveCommunity {
   isJoined: boolean;
   isVerified?: boolean; // 💡 公式マーク用
   reportedBy?: string[]; // 💡 通報したユーザーIDのリストを持たせる
+  communityType?: 'live' | 'artist';
+  artistId?: string;
+  artistName?: string;
+  description?: string;
+  artworkUrl?: string;
 }

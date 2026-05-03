@@ -121,6 +121,8 @@ async function mockLoggedInSupabase(page: Page, profile = mockProfile, options?:
 
   const session = createMockSession();
   const postedVibes: MockVibeRow[] = [];
+  const customCommunities: any[] = [];
+  const communityMembers: Array<{ community_id: string; user_id: string }> = [];
 
   await page.addInitScript(
     ({ key, value }) => {
@@ -163,6 +165,8 @@ async function mockLoggedInSupabase(page: Page, profile = mockProfile, options?:
               artistName: 'Vaundy',
               trackId: 456,
               trackName: '怪獣の花唄',
+              wrapperType: 'track',
+              releaseDate: '2023-01-01T00:00:00Z',
               artworkUrl60: 'https://example.com/vaundy-60.jpg',
               artworkUrl100: 'https://example.com/vaundy-100.jpg',
               previewUrl: 'https://example.com/vaundy-preview.m4a',
@@ -205,7 +209,58 @@ async function mockLoggedInSupabase(page: Page, profile = mockProfile, options?:
       return;
     }
 
-    if (table === 'follows' || table === 'blocks' || table === 'likes' || table === 'comments' || table === 'articles' || table === 'transactions' || table === 'community_members' || table === 'notifications' || table === 'chat_messages') {
+    if (table === 'custom_communities') {
+      if (route.request().method() === 'POST') {
+        const rows = route.request().postDataJSON() as any[];
+        rows.forEach((row) => {
+          const index = customCommunities.findIndex(c => c.id === row.id);
+          if (index >= 0) customCommunities[index] = { ...customCommunities[index], ...row };
+          else customCommunities.push(row);
+        });
+        await route.fulfill({ json: customCommunities.filter(c => rows.some(row => row.id === c.id)) });
+        return;
+      }
+      let result = customCommunities;
+      const idMatch = url.searchParams.get('id')?.match(/^eq\.(.+)$/);
+      const typeMatch = url.searchParams.get('community_type')?.match(/^eq\.(.+)$/);
+      const artistMatch = url.searchParams.get('artist_id')?.match(/^eq\.(.+)$/);
+      if (idMatch) result = result.filter(c => c.id === decodeURIComponent(idMatch[1]));
+      if (typeMatch) result = result.filter(c => c.community_type === decodeURIComponent(typeMatch[1]));
+      if (artistMatch) result = result.filter(c => c.artist_id === decodeURIComponent(artistMatch[1]));
+      await route.fulfill({ json: accept.includes('application/vnd.pgrst.object+json') ? (result[0] || null) : result });
+      return;
+    }
+
+    if (table === 'community_members') {
+      if (route.request().method() === 'POST') {
+        const rows = route.request().postDataJSON() as Array<{ community_id: string; user_id: string }>;
+        rows.forEach((row) => {
+          if (!communityMembers.some(m => m.community_id === row.community_id && m.user_id === row.user_id)) communityMembers.push(row);
+        });
+        await route.fulfill({ json: [] });
+        return;
+      }
+      if (route.request().method() === 'DELETE') {
+        const communityMatch = url.searchParams.get('community_id')?.match(/^eq\.(.+)$/);
+        const userMatch = url.searchParams.get('user_id')?.match(/^eq\.(.+)$/);
+        for (let i = communityMembers.length - 1; i >= 0; i -= 1) {
+          if ((!communityMatch || communityMembers[i].community_id === decodeURIComponent(communityMatch[1])) && (!userMatch || communityMembers[i].user_id === decodeURIComponent(userMatch[1]))) {
+            communityMembers.splice(i, 1);
+          }
+        }
+        await route.fulfill({ json: [] });
+        return;
+      }
+      let result = communityMembers;
+      const communityMatch = url.searchParams.get('community_id')?.match(/^eq\.(.+)$/);
+      const userMatch = url.searchParams.get('user_id')?.match(/^eq\.(.+)$/);
+      if (communityMatch) result = result.filter(m => m.community_id === decodeURIComponent(communityMatch[1]));
+      if (userMatch) result = result.filter(m => m.user_id === decodeURIComponent(userMatch[1]));
+      await route.fulfill({ json: result });
+      return;
+    }
+
+    if (table === 'follows' || table === 'blocks' || table === 'likes' || table === 'comments' || table === 'articles' || table === 'transactions' || table === 'notifications' || table === 'chat_messages') {
       await route.fulfill({ json: [] });
       return;
     }
@@ -275,6 +330,9 @@ test('モックログイン状態で主要タブを表示できる', async ({ pa
 
   await page.getByRole('button', { name: 'チャット' }).click();
   await expect(page.getByRole('heading', { name: 'チャット' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'フレンド' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'グループ' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'ライブ' })).not.toBeVisible();
 
   await page.getByRole('button', { name: 'プロフィール' }).click();
   await expect(page.getByText('@e2e_user')).toBeVisible();
@@ -308,9 +366,84 @@ test('投稿後に近い人を探す次アクションへ進める', async ({ pa
   await expect(page.getByPlaceholder('今の気分、思い出、誰に聴いてほしいかを書いてみよう')).not.toBeVisible();
   await expect(page.getByText('記録できました。似た音楽が好きな人を見つけに行こう')).toBeVisible();
   await expect(page.getByText('怪獣の花唄')).toBeVisible();
+  await expect(page.getByText('朝に聴きたい')).toBeVisible();
 
   await page.getByRole('button', { name: '近い人を探す' }).click();
   await expect(page.getByRole('button', { name: 'ユーザー' })).toBeVisible();
+});
+
+test('アーティストページ経由の投稿後にHomeへ戻り完了表示が見える', async ({ page }) => {
+  await mockLoggedInSupabase(page);
+  await page.goto('/');
+
+  await page.getByPlaceholder('楽曲やアーティストを検索...').fill('Vaundy');
+  const artistResult = page.locator('div.cursor-pointer', { hasText: 'アーティスト' }).first();
+  await expect(artistResult).toBeVisible();
+  await artistResult.dispatchEvent('mousedown');
+
+  await expect(page.getByRole('heading', { name: 'Vaundy' })).toBeVisible();
+  await page.getByText('怪獣の花唄').nth(1).click();
+  await page.getByPlaceholder('今の気分、思い出、誰に聴いてほしいかを書いてみよう').fill('アーティストページから記録');
+  await page.getByRole('button', { name: '記録する' }).click();
+
+  await expect(page.getByRole('heading', { name: 'Echoes' })).toBeVisible();
+  await expect(page.getByText('記録できました。似た音楽が好きな人を見つけに行こう')).toBeVisible();
+  await expect(page.getByText('成功しました')).toBeVisible();
+  await expect(page.getByText('アーティストページから記録')).toBeVisible();
+});
+
+test('アーティストページの戻るボタンで中途半端な詳細画面が残らない', async ({ page }) => {
+  await mockLoggedInSupabase(page);
+  await page.goto('/');
+
+  await page.getByPlaceholder('楽曲やアーティストを検索...').fill('Vaundy');
+  const artistResult = page.locator('div.cursor-pointer', { hasText: 'アーティスト' }).first();
+  await expect(artistResult).toBeVisible();
+  await artistResult.dispatchEvent('mousedown');
+
+  await expect(page.getByRole('heading', { name: 'Vaundy' })).toBeVisible();
+  await expect(page.getByText('Vaundy ファンコミュニティ')).toBeVisible();
+  await expect(page.getByText('怪獣の花唄').first()).toBeVisible();
+
+  await page.getByRole('button', { name: 'アーティストページを戻る' }).click();
+  await expect(page.getByRole('heading', { name: 'Vaundy' })).not.toBeVisible();
+  await expect(page.getByText('Vaundy ファンコミュニティ')).not.toBeVisible();
+  await expect(page.getByPlaceholder('楽曲やアーティストを検索...')).toBeVisible();
+
+  await artistResult.dispatchEvent('mousedown');
+  await expect(page.getByRole('heading', { name: 'Vaundy' })).toBeVisible();
+  await expect(page.getByText('Vaundy ファンコミュニティ')).toBeVisible();
+  await expect(page.getByText('怪獣の花唄').first()).toBeVisible();
+});
+
+test('アーティストページからファンコミュニティに参加してチャットへ入れる', async ({ page }) => {
+  await mockLoggedInSupabase(page);
+  await page.goto('/');
+
+  await page.getByPlaceholder('楽曲やアーティストを検索...').fill('Vaundy');
+  const artistResult = page.locator('div.cursor-pointer', { hasText: 'アーティスト' }).first();
+  await expect(artistResult).toBeVisible();
+  await artistResult.dispatchEvent('mousedown');
+
+  await expect(page.getByText('Vaundy ファンコミュニティ')).toBeVisible();
+  await expect(page.getByText('Vaundyが好きな人たちが集まる場所です')).toBeVisible();
+  await page.getByRole('button', { name: '参加する' }).click();
+
+  await expect(page.getByText('Vaundy ファンコミュニティ').first()).toBeVisible();
+  await expect(page.getByText('参加者 1人').first()).toBeVisible();
+  await expect(page.getByText('参加しました')).toBeVisible();
+  await expect(page.getByPlaceholder('Aa')).toBeVisible();
+
+  await page.getByRole('button', { name: '詳細' }).click();
+  await page.getByText('メンバー').click();
+  await expect(page.getByText('E2E User')).toBeVisible();
+  await expect(page.getByText('あなた')).toBeVisible();
+
+  await page.reload();
+  await page.getByRole('button', { name: 'チャット' }).click();
+  await page.getByRole('button', { name: 'グループ', exact: true }).click();
+  await expect(page.getByText('アーティストコミュニティ')).toBeVisible();
+  await expect(page.getByText('Vaundy ファンコミュニティ')).toBeVisible();
 });
 
 test('主要タブをクリックしても画面が真っ白にならない', async ({ page }) => {
@@ -331,6 +464,10 @@ test('Discoverで音楽タグからユーザーを絞り込める', async ({ pag
   await page.getByRole('button', { name: '見つける' }).click();
   await expect(page.getByText('音楽タグ')).toBeVisible();
   await expect(page.getByText('おすすめの友達')).toBeVisible();
+  await page.getByRole('button', { name: 'コミュニティ' }).click();
+  await expect(page.getByText('アーティストコミュニティ')).toBeVisible();
+  await expect(page.getByText('Vaundy ファンコミュニティ')).toBeVisible();
+  await page.getByRole('button', { name: 'ユーザー' }).click();
   await expect(page.getByRole('button', { name: '#邦ロック' })).toBeVisible();
   await expect(page.getByText('Band Mate')).toBeVisible();
   await expect(page.getByText('Jazz Friend')).toBeVisible();

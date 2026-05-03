@@ -149,7 +149,7 @@ export function ChatMessages({
                 <span className="text-[9px] text-zinc-500">{displayLocalTime(msg.timestamp, timeZone)}</span>
                 {isMe && msg.isRead && (
                   <span className="text-[9px] text-[#1DB954] font-bold">
-                    {activeChatUserId.startsWith('g') || activeChatUserId.startsWith('com') ? `既読 ${(msg as any).readCount || 0}` : '既読'}
+                    {activeChatUserId.startsWith('g') || activeChatUserId.startsWith('com') || activeChatUserId.startsWith('artist:') ? `既読 ${(msg as any).readCount || 0}` : '既読'}
                   </span>
                 )}
               </div>
