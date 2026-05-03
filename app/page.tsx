@@ -137,6 +137,57 @@ const localI18n: Record<string, any> = {
   "English": { feed: "Global", discover: "Discover", match: "Match", diary: "Diary", chat: "Chat", profile: "Profile", searchPlaceholder: "Search...", settings: "Settings", cancel: "Cancel", postVibe: "Post", audio: "Audio", notifications: "Notif", privateAcc: "Private", timezone: "Timezone", language: "Lang", logout: "Log Out", features: "Features", appInfo: "About", shareApp: "Share", rateApp: "Rate", help: "Help", editProfile: "Edit", editProfileFull: "Edit Profile", artist: "Artist", topResults: "Top", allSongs: "All", latestRelease: "New", popularSongs: "Hot", popularAlbums: "Albums", followers: "Followers", rewind: "Rewind", overwriteVibe: "Overwrite", alreadyPostedWarning: "Already posted. Overwrite?", favoriteArtists: "Favorites", postSuccess: "Success!", sendMessage: "Send", typeMessage: "Aa", vibeMatchAnalysis: "Analysis", topSharedArtists: "Shared Artists", sharedGenres: "Shared Genres", noPreview: "No audio", pass: "Skip", connect: "Like", friendsChat: "Friends", matchesChat: "Matches", groupsChat: "Groups", communityChat: "Lives", liveHistory: "History", hashtags: "Hashtags", deleteAcc: "Delete Account", deleteAccFull: "Delete Account Permanently", admin: "Admin", adminOnly: "Admin Only", adminDashboard: "Report Dashboard", musicSearch: "Search Music", follow: "Follow", following: "Following", block: "Block", report: "Report", myEchoes: "My Echoes", likedPosts: "Liked Posts", aiStart: "Start recording vibes to get AI recommendations.", aiRec: "inspired recommendations just for you.", aiAnalyzing: "Analyzing..." },
   "中文": { feed: "Global", discover: "发现", match: "匹配", diary: "日记", chat: "聊天", profile: "我的", searchPlaceholder: "搜索...", settings: "设置", cancel: "取消", postVibe: "记录", audio: "音频", notifications: "通知", privateAcc: "私密", timezone: "时区", language: "语言", logout: "登出", features: "功能", appInfo: "关于", shareApp: "分享", rateApp: "评价", help: "帮助", editProfile: "编辑", editProfileFull: "编辑个人资料", artist: "歌手", topResults: "最佳", allSongs: "所有", latestRelease: "最新", popularSongs: "热门", popularAlbums: "专辑", followers: "粉丝", rewind: "回顾", overwriteVibe: "覆盖", alreadyPostedWarning: "已记录。覆盖吗？", favoriteArtists: "喜欢", postSuccess: "成功！", sendMessage: "发送", typeMessage: "输入...", vibeMatchAnalysis: "分析", topSharedArtists: "共同歌手", sharedGenres: "共同类型", noPreview: "无试听", pass: "跳过", connect: "感兴趣", friendsChat: "好友", matchesChat: "匹配", groupsChat: "群组", communityChat: "社区", liveHistory: "参战历史", hashtags: "标签", deleteAcc: "注销", deleteAccFull: "永久注销账号", admin: "管理员", adminOnly: "Admin (管理员专用)", adminDashboard: "举报管理面板", musicSearch: "搜索音乐", follow: "关注", following: "已关注", block: "拉黑", report: "举报", myEchoes: "我的记录", likedPosts: "赞过的帖子", aiStart: "开始记录以获取 AI 推荐。", aiRec: "风格的专属推荐。", aiAnalyzing: "分析中..." }
 };
+
+Object.assign(localI18n["日本語"], {
+  Success: "成功しました",
+  UpdateFailed: "保存に失敗しました",
+  SystemError: "エラーが発生しました",
+  Unauthorized: "ログインが必要です",
+  ValidationError: "入力内容を確認してください",
+  InvalidNameLength: "名前は1〜50文字で入力してください",
+  InvalidHandleFormat: "ユーザーIDは3〜20文字の英数字とアンダーバーで入力してください",
+  InsertFailed: "保存に失敗しました",
+  DeleteFailed: "削除に失敗しました",
+  UploadFailed: "アップロードに失敗しました",
+  ProfileUpdated: "プロフィールを更新しました",
+  PostSuccess: "投稿しました",
+  SaveFailed: "保存に失敗しました",
+  DeleteSuccess: "削除しました"
+});
+
+Object.assign(localI18n["English"], {
+  Success: "Success",
+  UpdateFailed: "Failed to save",
+  SystemError: "An error occurred",
+  Unauthorized: "Login required",
+  ValidationError: "Please check your input",
+  InvalidNameLength: "Enter a name between 1 and 50 characters",
+  InvalidHandleFormat: "Use 3-20 letters, numbers, or underscores for your handle",
+  InsertFailed: "Failed to save",
+  DeleteFailed: "Failed to delete",
+  UploadFailed: "Upload failed",
+  ProfileUpdated: "Profile updated",
+  PostSuccess: "Posted",
+  SaveFailed: "Failed to save",
+  DeleteSuccess: "Deleted"
+});
+
+Object.assign(localI18n["中文"], {
+  Success: "成功",
+  UpdateFailed: "保存失败",
+  SystemError: "发生错误",
+  Unauthorized: "需要登录",
+  ValidationError: "请检查输入内容",
+  InvalidNameLength: "请输入1到50个字符的名称",
+  InvalidHandleFormat: "用户ID需为3到20位字母、数字或下划线",
+  InsertFailed: "保存失败",
+  DeleteFailed: "删除失败",
+  UploadFailed: "上传失败",
+  ProfileUpdated: "个人资料已更新",
+  PostSuccess: "已发布",
+  SaveFailed: "保存失败",
+  DeleteSuccess: "已删除"
+});
 function MainApp() {
   const searchParams = useSearchParams();
   const [showHeadingMenu, setShowHeadingMenu] = useState(false);
@@ -234,7 +285,7 @@ function MainApp() {
   const [language, setLanguage] = useState("日本語");
   const t = (k: string) => localI18n[language]?.[k] || localI18n["日本語"][k];
   const [toastMsg, setToastMsg] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
-  const showToast = (text: string, type: 'success' | 'error' = 'success') => { setToastMsg({ text, type }); setTimeout(() => setToastMsg(null), 3000); };
+  const showToast = (text: string, type: 'success' | 'error' = 'success') => { setToastMsg({ text: t(text) || text, type }); setTimeout(() => setToastMsg(null), 3000); };
   const [activeTab, setActiveTab] = useState<'home' | 'search' | 'match' | 'article' | 'calendar' | 'chat' | 'profile' | 'other_profile'>('home');
   const [discoverTabMode, setDiscoverTabMode] = useState<'users' | 'communities' | 'match'>('users');
   // 💡 記事機能のデータと画面状態の箱
