@@ -4,7 +4,7 @@ import Stripe from 'stripe';
 
 export const runtime = 'nodejs';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+const createStripe = (apiKey: string) => new Stripe(apiKey, {
   apiVersion: '2026-03-25.dahlia',
 });
 
@@ -20,7 +20,8 @@ export async function GET(req: Request) {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const accessToken = getAccessToken(req);
 
-    if (!supabaseUrl || !supabaseAnonKey || !serviceRoleKey || !process.env.STRIPE_SECRET_KEY) {
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    if (!supabaseUrl || !supabaseAnonKey || !serviceRoleKey || !stripeSecretKey) {
       return NextResponse.json({ error: 'ServerConfigMissing' }, { status: 500 });
     }
     if (!accessToken) {
@@ -38,6 +39,7 @@ export async function GET(req: Request) {
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
       auth: { persistSession: false },
     });
+    const stripe = createStripe(stripeSecretKey);
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('stripe_account_id')

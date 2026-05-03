@@ -5,11 +5,11 @@ import { getCoinChargePlan, getCoinChargePlanByCoins } from '../../../coinPlans'
 
 export const runtime = 'nodejs';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+const createStripe = (apiKey: string) => new Stripe(apiKey, {
   apiVersion: '2026-03-25.dahlia',
 });
 
-const constructStripeEvent = (payload: string, signature: string) => {
+const constructStripeEvent = (stripe: Stripe, payload: string, signature: string) => {
   const secrets = [
     process.env.STRIPE_WEBHOOK_SECRET,
     process.env.STRIPE_CONNECT_WEBHOOK_SECRET,
@@ -106,12 +106,18 @@ const syncPayoutEvent = async (
 };
 
 export async function POST(req: Request) {
+  const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+  if (!stripeSecretKey) {
+    return NextResponse.json({ error: 'ServerConfigMissing' }, { status: 500 });
+  }
+
   const payload = await req.text();
   const signature = req.headers.get('stripe-signature');
+  const stripe = createStripe(stripeSecretKey);
 
   let event: Stripe.Event;
   try {
-    event = constructStripeEvent(payload, signature || '');
+    event = constructStripeEvent(stripe, payload, signature || '');
   } catch (err) {
     const message = err instanceof Error ? err.message : 'InvalidWebhookSignature';
     return NextResponse.json({ error: message }, { status: 400 });

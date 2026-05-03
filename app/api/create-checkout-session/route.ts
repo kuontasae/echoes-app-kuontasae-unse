@@ -5,7 +5,7 @@ import { getCoinChargePlan } from '../../coinPlans';
 
 export const runtime = 'nodejs';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+const createStripe = (apiKey: string) => new Stripe(apiKey, {
   apiVersion: '2026-03-25.dahlia',
 });
 
@@ -34,7 +34,8 @@ export async function POST(req: Request) {
     const authHeader = req.headers.get('authorization');
     const accessToken = authHeader?.startsWith('Bearer ') ? authHeader.slice('Bearer '.length).trim() : '';
 
-    if (!supabaseUrl || !supabaseAnonKey || !process.env.STRIPE_SECRET_KEY) {
+    const stripeSecretKey = process.env.STRIPE_SECRET_KEY;
+    if (!supabaseUrl || !supabaseAnonKey || !stripeSecretKey) {
       return NextResponse.json({ error: 'ServerConfigMissing' }, { status: 500 });
     }
     if (!accessToken) {
@@ -50,6 +51,7 @@ export async function POST(req: Request) {
     }
 
     const appOrigin = getAppOrigin(req);
+    const stripe = createStripe(stripeSecretKey);
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
