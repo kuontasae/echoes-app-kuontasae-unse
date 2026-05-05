@@ -9,10 +9,29 @@ import {
 } from "../../Icons";
 import type { User } from "../../types";
 
-const IconArticle = () => <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M2 15h10"></path><path d="M2 18h10"></path><path d="M2 21h10"></path></svg>;
 const IconEdit = () => <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
 const IconEdit2 = () => <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>;
 const IconTrash = () => <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>;
+
+const tabIconClassName = "h-3.5 w-3.5 shrink-0";
+const tabIconProps = {
+  "aria-hidden": true,
+  className: tabIconClassName,
+  fill: "none",
+  focusable: false,
+  stroke: "currentColor",
+  strokeLinecap: "round" as const,
+  strokeLinejoin: "round" as const,
+  strokeWidth: 2,
+  viewBox: "0 0 24 24",
+};
+
+const IconTabTrend = () => <svg {...tabIconProps}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg>;
+const IconTabGlobe = () => <svg {...tabIconProps}><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10A15.3 15.3 0 0 1 12 2z"></path></svg>;
+const IconTabUsers = () => <svg {...tabIconProps}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>;
+const IconTabHeart = () => <svg {...tabIconProps}><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"></path></svg>;
+const IconTabUserArticle = () => <svg {...tabIconProps}><path d="M15 18.5a4 4 0 0 0-6 0"></path><circle cx="12" cy="11" r="2.5"></circle><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>;
+const IconTabDraft = () => <svg {...tabIconProps}><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"></path></svg>;
 
 type ArticleTabMode = 'global' | 'trend' | 'following' | 'liked' | 'my_posts' | 'drafts';
 
@@ -29,6 +48,8 @@ type ArticleListSectionProps = {
     liked: string;
     mine: string;
     drafts: string;
+    emptyArticles: string;
+    emptyDrafts: string;
   };
   onChangeTab: (mode: ArticleTabMode) => void;
   onOpenWriter: () => void;
@@ -67,12 +88,12 @@ export const ArticleListSection: React.FC<ArticleListSectionProps> = ({
 	      </button>
 	    </div>
 	    <div className="flex gap-6 mb-6 px-3 border-b border-zinc-900 overflow-x-auto scrollbar-hide">
-	      <button onClick={() => onChangeTab('trend')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'trend' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>{labels.trend}</button>
-	      <button onClick={() => onChangeTab('global')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'global' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>{labels.global}</button>
-	      <button onClick={() => onChangeTab('following')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'following' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>{labels.following}</button>
-	      <button onClick={() => onChangeTab('liked')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'liked' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>{labels.liked}</button>
-	      <button onClick={() => onChangeTab('my_posts')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'my_posts' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>{labels.mine}</button>
-	      <button onClick={() => onChangeTab('drafts')} className={`pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'drafts' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}>{labels.drafts}</button>
+	      <button onClick={() => onChangeTab('trend')} className={`flex items-center gap-1.5 pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'trend' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}><IconTabTrend />{labels.trend}</button>
+	      <button onClick={() => onChangeTab('global')} className={`flex items-center gap-1.5 pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'global' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}><IconTabGlobe />{labels.global}</button>
+	      <button onClick={() => onChangeTab('following')} className={`flex items-center gap-1.5 pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'following' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}><IconTabUsers />{labels.following}</button>
+	      <button onClick={() => onChangeTab('liked')} className={`flex items-center gap-1.5 pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'liked' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}><IconTabHeart />{labels.liked}</button>
+	      <button onClick={() => onChangeTab('my_posts')} className={`flex items-center gap-1.5 pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'my_posts' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}><IconTabUserArticle />{labels.mine}</button>
+	      <button onClick={() => onChangeTab('drafts')} className={`flex items-center gap-1.5 pb-2 text-sm font-bold whitespace-nowrap transition-colors ${articleTabMode === 'drafts' ? 'text-white border-b-2 border-white' : 'text-zinc-500'}`}><IconTabDraft />{labels.drafts}</button>
 	    </div>
     {articleTabMode === 'drafts' ? (
       <div className="flex flex-col gap-5">
@@ -91,9 +112,8 @@ export const ArticleListSection: React.FC<ArticleListSectionProps> = ({
             </button>
           </div>
         )) : (
-          <div className="py-20 text-center text-zinc-500">
-            <IconEdit2 />
-            <p className="text-sm font-bold mt-4">保存された下書きはありません</p>
+          <div className="py-20 text-center text-zinc-500" data-testid="article-empty-state">
+            <p className="text-sm font-bold">{labels.emptyDrafts}</p>
           </div>
         )}
       </div>
@@ -133,9 +153,8 @@ export const ArticleListSection: React.FC<ArticleListSectionProps> = ({
             </div>
           </div>
         )) : (
-          <div className="py-20 text-center text-zinc-500">
-            <IconArticle />
-            <p className="text-sm font-bold mt-4">記事がありません</p>
+          <div className="py-20 text-center text-zinc-500" data-testid="article-empty-state">
+            <p className="text-sm font-bold">{labels.emptyArticles}</p>
           </div>
         )}
       </div>

@@ -66,6 +66,18 @@ const getArtistCommunityId = (artistId: string | number | undefined, artistName:
   const key = String(artistId || "").trim() || normalizeArtistCommunityKey(artistName);
   return `artist:${key || "unknown"}`;
 };
+const getArtistCommunityMetricKey = (artistName?: string) => normalizeMusicLabel(artistName || "");
+const getArtistFavoriteId = (artist: { artistId?: string | number; artistName?: string }) => {
+  const rawId = String(artist.artistId || "").trim();
+  if (rawId && rawId !== "0") return rawId;
+  return normalizeArtistCommunityKey(artist.artistName || "") || "unknown";
+};
+const getSupabaseErrorInfo = (err: any) => ({
+  code: err?.code,
+  message: err?.message,
+  details: err?.details,
+  hint: err?.hint
+});
 const isCommunityChatId = (id: string) => id.startsWith('com') || id.startsWith('artist:');
 const buildArtistCommunity = (artist: { artistId?: string | number; artistName: string; artworkUrl?: string }, joinedIds: Set<string>, memberCounts: Record<string, number>): LiveCommunity => {
   const id = getArtistCommunityId(artist.artistId, artist.artistName);
@@ -83,6 +95,8 @@ const buildArtistCommunity = (artist: { artistId?: string | number; artistName: 
     artworkUrl: artist.artworkUrl
   };
 };
+const getArtistCommunityRecommendationScore = (community: LiveCommunity) =>
+  (community.memberCount || 0) + (community.recentMemberCount || 0) * 3 + (community.recentPostCount || 0) * 2 + (community.trendScore || 0) * 5;
 
 const toChatMessage = (msg: any): ChatMessage => {
   const targetId = String(msg.target_id || "");
@@ -178,6 +192,13 @@ Object.assign(localI18n["日本語"], {
   liked: "いいね",
   mine: "自分の記事",
   drafts: "下書き",
+  emptyArticles: "記事がありません",
+  emptyDrafts: "保存された下書きはありません",
+  artistCommunities: "アーティストコミュニティ",
+  communityMembersCount: "参加者 {count}人",
+  communityRecentMembersCount: "今週 {count}人参加",
+  communityRecentPostsCount: "今週 {count}投稿",
+  communityJoinedCount: "{count}人が参加中",
   clear: "クリア",
   Success: "成功しました",
   UpdateFailed: "保存に失敗しました",
@@ -192,7 +213,14 @@ Object.assign(localI18n["日本語"], {
   ProfileUpdated: "プロフィールを更新しました",
   PostSuccess: "投稿しました",
   SaveFailed: "保存に失敗しました",
-  DeleteSuccess: "削除しました"
+  DeleteSuccess: "削除しました",
+  popularSongsInJapan: "日本の人気曲",
+  recommendedSongs: "おすすめ曲",
+  artistFavoriteCountPrefix: "お気に入り ",
+  artistFavoriteCountSuffix: "人",
+  FavoriteSaved: "お気に入りに追加しました",
+  FavoriteRemoved: "お気に入りを解除しました",
+  ArtistFavoritesSetupRequired: "お気に入り保存の準備がまだ完了していません"
 });
 
 Object.assign(localI18n["English"], {
@@ -210,6 +238,13 @@ Object.assign(localI18n["English"], {
   liked: "Liked",
   mine: "Mine",
   drafts: "Drafts",
+  emptyArticles: "No articles",
+  emptyDrafts: "No saved drafts",
+  artistCommunities: "Artist Communities",
+  communityMembersCount: "{count} members",
+  communityRecentMembersCount: "{count} joined this week",
+  communityRecentPostsCount: "{count} posts this week",
+  communityJoinedCount: "{count} members joined",
   clear: "Clear",
   Success: "Success",
   UpdateFailed: "Failed to save",
@@ -224,7 +259,14 @@ Object.assign(localI18n["English"], {
   ProfileUpdated: "Profile updated",
   PostSuccess: "Posted",
   SaveFailed: "Failed to save",
-  DeleteSuccess: "Deleted"
+  DeleteSuccess: "Deleted",
+  popularSongsInJapan: "Popular Songs in Japan",
+  recommendedSongs: "Recommended Songs",
+  artistFavoriteCountPrefix: "",
+  artistFavoriteCountSuffix: " Favorites",
+  FavoriteSaved: "Added to favorites",
+  FavoriteRemoved: "Removed from favorites",
+  ArtistFavoritesSetupRequired: "Favorites storage is not ready yet"
 });
 
 Object.assign(localI18n["中文"], {
@@ -242,6 +284,13 @@ Object.assign(localI18n["中文"], {
   liked: "已赞",
   mine: "我的文章",
   drafts: "草稿",
+  emptyArticles: "暂无文章",
+  emptyDrafts: "暂无保存的草稿",
+  artistCommunities: "艺人社区",
+  communityMembersCount: "{count}人参加",
+  communityRecentMembersCount: "本周 {count}人加入",
+  communityRecentPostsCount: "本周 {count}条投稿",
+  communityJoinedCount: "{count}人参加中",
   clear: "清除",
   Success: "成功",
   UpdateFailed: "保存失败",
@@ -256,7 +305,14 @@ Object.assign(localI18n["中文"], {
   ProfileUpdated: "个人资料已更新",
   PostSuccess: "已发布",
   SaveFailed: "保存失败",
-  DeleteSuccess: "已删除"
+  DeleteSuccess: "已删除",
+  popularSongsInJapan: "日本热门歌曲",
+  recommendedSongs: "推荐歌曲",
+  artistFavoriteCountPrefix: "",
+  artistFavoriteCountSuffix: "人收藏",
+  FavoriteSaved: "已加入收藏",
+  FavoriteRemoved: "已取消收藏",
+  ArtistFavoritesSetupRequired: "收藏保存尚未准备好"
 });
 function MainApp() {
   const searchParams = useSearchParams();
@@ -1200,6 +1256,7 @@ const handleSaveDraft = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchArtistInfo, setSearchArtistInfo] = useState<any>(null);
   const [trendingSongs, setTrendingSongs] = useState<any[]>([]);
+  const [trendingSongsSource, setTrendingSongsSource] = useState<'ranking' | 'fallback'>('fallback');
   const [draftSong, setDraftSong] = useState<any>(null);
   const [draftCaption, setDraftCaption] = useState("");
   const [showPostOverrideConfirm, setShowPostOverrideConfirm] = useState<Song | null>(null);
@@ -1211,6 +1268,7 @@ const handleSaveDraft = () => {
   const [artistSongs, setArtistSongs] = useState<any[]>([]);
   const [isArtistLoading, setIsArtistLoading] = useState(false);
   const [favoriteArtists, setFavoriteArtists] = useState<FavoriteArtist[]>([]);
+  const [artistFavoriteCounts, setArtistFavoriteCounts] = useState<Record<string, number>>({});
   const [activeAlbumProfile, setActiveAlbumProfile] = useState<any>(null);
   const [albumSongs, setAlbumSongs] = useState<any[]>([]);
   const [isAlbumLoading, setIsAlbumLoading] = useState(false);
@@ -1250,6 +1308,10 @@ const handleSaveDraft = () => {
   const [showCommDrumroll, setShowCommDrumroll] = useState(false);
   const [realCommunities, setRealCommunities] = useState<LiveCommunity[]>([]);
   const [communityMemberCounts, setCommunityMemberCounts] = useState<Record<string, number>>({});
+  const [communityRecentMemberCounts, setCommunityRecentMemberCounts] = useState<Record<string, number>>({});
+  const [recentArtistPostCounts, setRecentArtistPostCounts] = useState<Record<string, number>>({});
+  const [artistImageOverrides, setArtistImageOverrides] = useState<Record<string, string>>({});
+  const requestedArtistImageKeys = useRef<Set<string>>(new Set());
   useEffect(() => {
     const fetchLiveSchedules = async () => {
       let apiLives: LiveCommunity[] = [];
@@ -1290,7 +1352,7 @@ const handleSaveDraft = () => {
       }
       let customLives: LiveCommunity[] = [];
       try {
-        const { data: dbData, error: dbError } = await supabase.from('custom_communities').select('*');
+        const { data: dbData, error: dbError } = await supabase.from('custom_communities').select('*').limit(200);
         if (dbError) {
           throw dbError;
         }
@@ -1321,16 +1383,33 @@ const handleSaveDraft = () => {
     if (!currentUser) return;
     const fetchJoinedCommunities = async () => {
       try {
-        const { data, error } = await supabase
+        let { data, error }: { data: any[] | null; error: any } = await supabase
           .from('community_members')
-          .select('community_id, user_id');
+          .select('community_id, user_id, created_at')
+          .limit(1000);
+        if (error && (error.code === '42703' || error.code === 'PGRST204')) {
+          const fallback = await supabase
+            .from('community_members')
+            .select('community_id, user_id')
+            .limit(1000);
+          data = fallback.data;
+          error = fallback.error;
+        }
         if (data && !error) {
+          const recentCutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
           const joinedIds = new Set(data.filter((d: any) => d.user_id === currentUser.id).map((d: any) => d.community_id));
           const counts = data.reduce((acc: Record<string, number>, d: any) => {
             acc[d.community_id] = (acc[d.community_id] || 0) + 1;
             return acc;
           }, {});
+          const recentCounts = data.reduce((acc: Record<string, number>, d: any) => {
+            if (d.created_at && new Date(d.created_at).getTime() >= recentCutoff) {
+              acc[d.community_id] = (acc[d.community_id] || 0) + 1;
+            }
+            return acc;
+          }, {});
           setCommunityMemberCounts(counts);
+          setCommunityRecentMemberCounts(recentCounts);
           const missingJoinedIds = [...joinedIds].filter(id => !realCommunities.some(c => c.id === id));
           let recoveredCommunities: LiveCommunity[] = [];
           if (missingJoinedIds.length > 0) {
@@ -1379,6 +1458,31 @@ const handleSaveDraft = () => {
     };
     fetchJoinedCommunities();
   }, [currentUser, realCommunities]);
+  useEffect(() => {
+    if (!currentUser) return;
+    const fetchRecentArtistPosts = async () => {
+      const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+      try {
+        const { data, error } = await supabase
+          .from('vibes')
+          .select('artist, created_at')
+          .gte('created_at', since)
+          .order('created_at', { ascending: false })
+          .limit(200);
+        if (error) throw error;
+        const counts = (data || []).reduce((acc: Record<string, number>, row: any) => {
+          const key = getArtistCommunityMetricKey(row.artist);
+          if (key) acc[key] = (acc[key] || 0) + 1;
+          return acc;
+        }, {});
+        setRecentArtistPostCounts(counts);
+      } catch (err) {
+        console.warn("Recent artist posts load failed", err);
+        setRecentArtistPostCounts({});
+      }
+    };
+    fetchRecentArtistPosts();
+  }, [currentUser]);
   useEffect(() => {
     if (!currentUser) return;
     let isMounted = true;
@@ -1490,35 +1594,100 @@ const handleSaveDraft = () => {
   const [chatCommunities, setChatCommunities] = useState<LiveCommunity[]>([]);
   const joinedCommunityIds = useMemo(() => new Set(chatCommunities.map(c => c.id)), [chatCommunities]);
   const artistCommunities = useMemo(() => {
+    const trendingArtistSignals = new Map<string, { artistName: string; artistId?: string | number; artworkUrl?: string; trendScore: number }>();
+    trendingSongs.slice(0, 30).forEach((song, index) => {
+      const artistName = String(song.artistName || "").trim();
+      if (!artistName) return;
+      const artistId = song.artistId && Number(song.artistId) !== 0 ? song.artistId : undefined;
+      const signalKey = artistId ? `id:${artistId}` : `name:${getArtistCommunityMetricKey(artistName)}`;
+      const rankScore = Math.max(1, 30 - index);
+      const existing = trendingArtistSignals.get(signalKey);
+      trendingArtistSignals.set(signalKey, {
+        artistName,
+        artistId,
+        artworkUrl: song.artworkUrl100 || song.artworkUrl60,
+        trendScore: (existing?.trendScore || 0) + rankScore
+      });
+    });
+    const enrichCommunity = (community: LiveCommunity): LiveCommunity => {
+      const memberCount = communityMemberCounts[community.id] || community.memberCount || 0;
+      const recentMemberCount = communityRecentMemberCounts[community.id] || community.recentMemberCount || 0;
+      const recentPostCount = recentArtistPostCounts[getArtistCommunityMetricKey(community.artistName || community.name.replace(' ファンコミュニティ', ''))] || community.recentPostCount || 0;
+      const artworkUrl = artistImageOverrides[community.id] || community.artworkUrl;
+      const enriched = {
+        ...community,
+        memberCount,
+        recentMemberCount,
+        recentPostCount,
+        artworkUrl,
+        isJoined: joinedCommunityIds.has(community.id) || community.isJoined
+      };
+      return {
+        ...enriched,
+        recommendationScore: getArtistCommunityRecommendationScore(enriched)
+      };
+    };
     const existing = realCommunities.filter(c => c.communityType === 'artist');
-    const byId = new Map(existing.map(c => [
-      c.id,
-      {
-        ...c,
-        memberCount: communityMemberCounts[c.id] || c.memberCount,
-        isJoined: joinedCommunityIds.has(c.id) || c.isJoined
+    const byId = new Map<string, LiveCommunity>();
+    const idByArtistKey = new Map<string, string>();
+    const upsertCommunity = (community: LiveCommunity) => {
+      const enriched = enrichCommunity(community);
+      const artistKey = getArtistCommunityMetricKey(enriched.artistName || enriched.name.replace(' ファンコミュニティ', ''));
+      const existingId = byId.has(enriched.id) ? enriched.id : (artistKey ? idByArtistKey.get(artistKey) : undefined);
+      if (existingId) {
+        const current = byId.get(existingId);
+        if (!current) return;
+        const merged = enrichCommunity({
+          ...current,
+          artworkUrl: current.artworkUrl || enriched.artworkUrl,
+          artistId: current.artistId || enriched.artistId,
+          artistName: current.artistName || enriched.artistName,
+          trendScore: (current.trendScore || 0) + (enriched.trendScore || 0)
+        });
+        byId.set(existingId, merged);
+        return;
       }
-    ]));
-    const addArtist = (artistName?: string, artistId?: string | number, artworkUrl?: string) => {
+      byId.set(enriched.id, enriched);
+      if (artistKey) idByArtistKey.set(artistKey, enriched.id);
+    };
+    existing.forEach(upsertCommunity);
+    const addArtist = (artistName?: string, artistId?: string | number, artworkUrl?: string, trendScore = 0) => {
       const cleanName = (artistName || "").trim();
       if (!cleanName) return;
-      const community = buildArtistCommunity({ artistId, artistName: cleanName, artworkUrl }, joinedCommunityIds, communityMemberCounts);
-      if (!byId.has(community.id)) byId.set(community.id, community);
+      upsertCommunity({
+        ...buildArtistCommunity({ artistId, artistName: cleanName, artworkUrl }, joinedCommunityIds, communityMemberCounts),
+        trendScore
+      });
     };
-    favoriteArtists.forEach(a => addArtist(a.artistName, a.artistId, a.artworkUrl));
+    trendingArtistSignals.forEach(signal => addArtist(signal.artistName, signal.artistId, signal.artworkUrl, signal.trendScore));
+    favoriteArtists.forEach(a => addArtist(a.artistName, a.favoriteKey || a.artistId, a.artworkUrl));
     (myProfile.topArtists || []).forEach(a => addArtist(a));
     allProfiles.forEach(u => (u.topArtists || []).forEach(a => addArtist(a)));
     vibes.slice(0, 20).forEach(v => addArtist(v.artist, v.artistId, v.imgUrl));
     if (activeArtistProfile) addArtist(activeArtistProfile.artistName, activeArtistProfile.artistId, activeArtistProfile.artworkUrl);
-    return Array.from(byId.values()).slice(0, 8);
-  }, [realCommunities, communityMemberCounts, joinedCommunityIds, favoriteArtists, myProfile.topArtists, allProfiles, vibes, activeArtistProfile]);
+    return Array.from(byId.values()).sort((a, b) =>
+      (b.recommendationScore || 0) - (a.recommendationScore || 0) ||
+      (b.trendScore || 0) - (a.trendScore || 0) ||
+      (b.recentMemberCount || 0) - (a.recentMemberCount || 0) ||
+      (b.recentPostCount || 0) - (a.recentPostCount || 0) ||
+      (b.memberCount || 0) - (a.memberCount || 0) ||
+      a.name.localeCompare(b.name)
+    ).slice(0, 8);
+  }, [realCommunities, communityMemberCounts, communityRecentMemberCounts, recentArtistPostCounts, artistImageOverrides, joinedCommunityIds, trendingSongs, favoriteArtists, myProfile.topArtists, allProfiles, vibes, activeArtistProfile]);
   const activeArtistCommunity = useMemo(() => {
     if (!activeArtistProfile?.artistName) return null;
     const id = getArtistCommunityId(activeArtistProfile.artistId, activeArtistProfile.artistName);
-    return artistCommunities.find(c => c.id === id) || buildArtistCommunity({
+    const existingCommunity = artistCommunities.find(c => c.id === id);
+    if (existingCommunity) {
+      return {
+        ...existingCommunity,
+        artworkUrl: activeArtistProfile.artistImageUrl || existingCommunity.artworkUrl
+      };
+    }
+    return buildArtistCommunity({
       artistId: activeArtistProfile.artistId,
       artistName: activeArtistProfile.artistName,
-      artworkUrl: activeArtistProfile.artworkUrl
+      artworkUrl: activeArtistProfile.artistImageUrl || activeArtistProfile.artworkUrl
     }, joinedCommunityIds, communityMemberCounts);
   }, [activeArtistProfile, artistCommunities, joinedCommunityIds, communityMemberCounts]);
   const suggestedCommunities = useMemo(() => {
@@ -1537,6 +1706,59 @@ const handleSaveDraft = () => {
     const q = communitySearchQuery.trim().toLowerCase();
     return artistCommunities.filter(c => !q || c.name.toLowerCase().includes(q) || (c.artistName || "").toLowerCase().includes(q));
   }, [artistCommunities, communitySearchQuery]);
+  const formatCountTemplate = (key: string, count: number) => String(t(key) || "").replace("{count}", String(count));
+  const formatArtistCommunityStats = (community: LiveCommunity) => formatCountTemplate('communityJoinedCount', community.memberCount || 0);
+  const fetchArtistImage = async (artist: { artistId?: string | number; artistName?: string; fallbackArtworkUrl?: string }) => {
+    const artistName = (artist.artistName || "").trim();
+    if (!artistName) return null;
+    try {
+      const response = await fetch('/api/artist-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          artistId: artist.artistId,
+          artistName,
+          fallbackArtworkUrl: artist.fallbackArtworkUrl || "",
+        }),
+      });
+      if (!response.ok) throw new Error(`Artist image API returned ${response.status}`);
+      const data = await response.json();
+      return typeof data.artistImageUrl === 'string' && data.artistImageUrl ? data.artistImageUrl : null;
+    } catch (error) {
+      console.warn("Artist image lookup failed", { artistName, error });
+      return null;
+    }
+  };
+  useEffect(() => {
+    visibleArtistCommunities.slice(0, 8).forEach((community) => {
+      const requestKey = `community:${community.id}:${community.artworkUrl || ""}`;
+      if (requestedArtistImageKeys.current.has(requestKey)) return;
+      requestedArtistImageKeys.current.add(requestKey);
+      fetchArtistImage({
+        artistId: community.artistId,
+        artistName: community.artistName || community.name.replace(' ファンコミュニティ', ''),
+        fallbackArtworkUrl: community.artworkUrl,
+      }).then((artistImageUrl) => {
+        if (!artistImageUrl) return;
+        setArtistImageOverrides(prev => prev[community.id] === artistImageUrl ? prev : { ...prev, [community.id]: artistImageUrl });
+        setRealCommunities(prev => prev.map(c => c.id === community.id ? { ...c, artworkUrl: artistImageUrl } : c));
+      });
+    });
+  }, [visibleArtistCommunities]);
+  useEffect(() => {
+    if (!activeArtistProfile?.artistName) return;
+    const requestKey = `active:${activeArtistProfile.artistId || ""}:${activeArtistProfile.artistName}:${activeArtistProfile.artworkUrl || ""}`;
+    if (requestedArtistImageKeys.current.has(requestKey)) return;
+    requestedArtistImageKeys.current.add(requestKey);
+    fetchArtistImage({
+      artistId: activeArtistProfile.artistId,
+      artistName: activeArtistProfile.artistName,
+      fallbackArtworkUrl: activeArtistProfile.artworkUrl,
+    }).then((artistImageUrl) => {
+      if (!artistImageUrl) return;
+      setActiveArtistProfile((prev: any) => prev?.artistName === activeArtistProfile.artistName ? { ...prev, artworkUrl: artistImageUrl, artistImageUrl } : prev);
+    });
+  }, [activeArtistProfile?.artistId, activeArtistProfile?.artistName, activeArtistProfile?.artworkUrl]);
   const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const [newGroupName, setNewGroupName] = useState("");
   const [newGroupMembers, setNewGroupMembers] = useState<Set<string>>(new Set());
@@ -1946,6 +2168,27 @@ const handleSaveDraft = () => {
       const { data: blocksData } = await supabase.from('blocks').select('blocked_id').eq('blocker_id', session.user.id);
       if (blocksData) setBlockedUsers(new Set(blocksData.map(d => d.blocked_id)));
       if (followersData) setMyFollowers(new Set(followersData.map(d => d.follower_id)));
+      const { data: artistFavoritesData, error: artistFavoritesError } = await supabase
+        .from('artist_favorites')
+        .select('artist_id, artist_name, artwork_url')
+        .eq('user_id', session.user.id);
+      if (artistFavoritesError) {
+        logArtistFavoritesError("Artist favorites load failed", artistFavoritesError, { userId: session.user.id });
+      } else if (artistFavoritesData) {
+        setFavoriteArtists(artistFavoritesData.map(row => ({
+          artistId: Number(row.artist_id) || 0,
+          favoriteKey: row.artist_id,
+          artistName: row.artist_name,
+          artworkUrl: row.artwork_url || ""
+        })));
+        setArtistFavoriteCounts(prev => {
+          const next = { ...prev };
+          artistFavoritesData.forEach(row => {
+            next[row.artist_id] = Math.max(next[row.artist_id] || 0, 1);
+          });
+          return next;
+        });
+      }
       if (shouldShowInitialOnboarding) showToast("好きな音楽を登録して、つながりやすくしましょう", "success");
     };
     const checkSession = async () => {
@@ -1967,11 +2210,52 @@ const handleSaveDraft = () => {
   useEffect(() => { try { setTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone); } catch (e) { setTimeZone("Asia/Tokyo"); } }, []);
   useEffect(() => { if (audioRef.current) audioRef.current.muted = !settings.audio; }, [settings.audio]);
   useEffect(() => { if (draftSong && draftSong.previewUrl && audioRef.current && settings.audio) { audioRef.current.src = draftSong.previewUrl; audioRef.current.play().then(() => setPlayingSong(draftSong.previewUrl)).catch(() => { }); } }, [draftSong]);
-  const { data: trendingData, error: trendingError } = useSWR("https://itunes.apple.com/search?term=jpop+top&entity=song&country=jp&limit=5", fetcher);
+  const isArtistFavoritesTableMissing = (err: any) => {
+    const code = String(err?.code || "");
+    const message = String(err?.message || "");
+    return (
+      code === "42P01" ||
+      code === "PGRST205" ||
+      /relation .*artist_favorites.* does not exist/i.test(message) ||
+      /could not find .*artist_favorites.* schema cache/i.test(message)
+    );
+  };
+  const logArtistFavoritesError = (context: string, error: any, meta?: Record<string, unknown>) => {
+    console.warn(context, {
+      error: getSupabaseErrorInfo(error),
+      ...meta
+    });
+  };
+  const getArtistFavoriteCountLabel = (count: number) => `${t('artistFavoriteCountPrefix')}${count}${t('artistFavoriteCountSuffix')}`;
+  const isFavoriteArtist = (artist: any) => {
+    const artistId = getArtistFavoriteId(artist);
+    return favoriteArtists.some(a => (a.favoriteKey || String(a.artistId)) === artistId);
+  };
+  const fetchArtistFavoriteCount = async (artistId: string) => {
+    if (!artistId || !currentUser) return;
+    const { data, error } = await supabase
+      .from('artist_favorites')
+      .select('artist_id')
+      .eq('artist_id', artistId);
+    if (error) {
+      logArtistFavoritesError("Artist favorite count load failed", error, { artistId, userId: currentUser.id });
+      return;
+    }
+    setArtistFavoriteCounts(prev => ({ ...prev, [artistId]: data?.length || 0 }));
+  };
   useEffect(() => {
-    if (trendingData) setTrendingSongs(trendingData.results);
-    if (trendingError) showToast("Network Error", "error");
+    if (!activeArtistProfile) return;
+    fetchArtistFavoriteCount(getArtistFavoriteId(activeArtistProfile));
+  }, [activeArtistProfile?.artistId, activeArtistProfile?.artistName, currentUser?.id]);
+  const { data: trendingData, error: trendingError } = useSWR("/api/trending-songs", fetcher);
+  useEffect(() => {
+    if (trendingData?.songs) {
+      setTrendingSongs(trendingData.songs);
+      setTrendingSongsSource(trendingData.source === 'apple-music-rss' ? 'ranking' : 'fallback');
+    }
+    if (trendingError) console.warn("Trending songs load failed", trendingError);
   }, [trendingData, trendingError]);
+  const trendingSongsLabel = trendingSongsSource === 'ranking' ? t('popularSongsInJapan') : t('recommendedSongs');
   const [vibePage, setVibePage] = useState(0);
   const [hasMoreVibes, setHasMoreVibes] = useState(true);
   const [isLoadingVibes, setIsLoadingVibes] = useState(false);
@@ -2429,13 +2713,79 @@ const handleSaveDraft = () => {
       }
     }
   };
-  const handleArtistClick = (e: React.MouseEvent, id: number | undefined, name: string, url: string) => {
+  const handleArtistClick = (e: React.MouseEvent, id: number | string | undefined, name: string, url: string) => {
     e.preventDefault(); e.stopPropagation();
     setShowMatchFilterModal(false); setSelectedCalendarPopupVibe(null); activeAlbumProfile && setActiveAlbumProfile(null);
     if (name) { setActiveArtistProfile({ artistId: id || 0, artistName: name, artworkUrl: url.replace('100x100bb', '600x600bb'), isVerifiedReal: false }); }
     else { setSearchQuery(name); setActiveTab('home'); setIsSearchFocused(true); }
   };
-  const toggleFavoriteArtist = (a: any) => { setFavoriteArtists(p => p.some(x => x.artistId === a.artistId) ? p.filter(x => x.artistId !== a.artistId) : [...p, a]); };
+  const toggleFavoriteArtist = async (a: any) => {
+    const artistId = getArtistFavoriteId(a);
+    if (!artistId || artistId === "unknown") {
+      console.warn("Artist favorite save skipped: invalid artist id", {
+        artistId,
+        artistName: a?.artistName,
+        rawArtistId: a?.artistId
+      });
+      showToast(t('SaveFailed'), "error");
+      return;
+    }
+    const favoriteArtist: FavoriteArtist = {
+      artistId: Number(artistId) || 0,
+      favoriteKey: artistId,
+      artistName: a.artistName,
+      artworkUrl: a.artistImageUrl || a.artworkUrl || ""
+    };
+    const wasFavorite = isFavoriteArtist(a);
+    const { data: authUserData, error: authUserError } = await supabase.auth.getUser();
+    if (authUserError) {
+      logArtistFavoritesError("Artist favorite auth user load failed", authUserError, {
+        currentUserId: currentUser?.id,
+        artistId
+      });
+    }
+    const userId = authUserData?.user?.id || currentUser?.id;
+    if (!userId) {
+      showToast(t('Unauthorized'), "error");
+      return;
+    }
+    setFavoriteArtists(prev => wasFavorite ? prev.filter(x => (x.favoriteKey || String(x.artistId)) !== artistId) : [...prev, favoriteArtist]);
+    setArtistFavoriteCounts(prev => ({ ...prev, [artistId]: Math.max(0, (prev[artistId] || 0) + (wasFavorite ? -1 : 1)) }));
+
+    const result = wasFavorite
+      ? await supabase.from('artist_favorites').delete().eq('user_id', userId).eq('artist_id', artistId)
+      : await supabase.from('artist_favorites').insert({
+          user_id: userId,
+          artist_id: artistId,
+          artist_name: favoriteArtist.artistName,
+          artwork_url: favoriteArtist.artworkUrl
+        });
+
+    if (!wasFavorite && result.error?.code === '23505') {
+      fetchArtistFavoriteCount(artistId);
+      return;
+    }
+
+    if (result.error) {
+      setFavoriteArtists(prev => wasFavorite ? [...prev, favoriteArtist] : prev.filter(x => (x.favoriteKey || String(x.artistId)) !== artistId));
+      setArtistFavoriteCounts(prev => ({ ...prev, [artistId]: Math.max(0, (prev[artistId] || 0) + (wasFavorite ? 1 : -1)) }));
+      showToast(isArtistFavoritesTableMissing(result.error) ? t('ArtistFavoritesSetupRequired') : t('SaveFailed'), "error");
+      logArtistFavoritesError("Artist favorite save failed", result.error, {
+        action: wasFavorite ? "delete" : "insert",
+        userId,
+        authUserId: authUserData?.user?.id,
+        currentUserId: currentUser?.id,
+        artistId,
+        rawArtistId: a?.artistId,
+        artistName: favoriteArtist.artistName,
+        userIdType: typeof userId,
+        artistIdType: typeof artistId
+      });
+      return;
+    }
+    showToast(wasFavorite ? t('FavoriteRemoved') : t('FavoriteSaved'), "success");
+    fetchArtistFavoriteCount(artistId);
+  };
   const cancelDraft = () => { if (audioRef.current) audioRef.current.pause(); setPlayingSong(null); setDraftSong(null); setDraftCaption(""); setShowPostOverrideConfirm(null); };
   const isAlreadyPostedToday = () => vibes.find(v => v.year === new Date().getFullYear() && v.month === (new Date().getMonth() + 1) && v.dayIndex === new Date().getDate() && v.user.id === myProfile.id);
   const checkAndPost = () => {
@@ -3013,6 +3363,7 @@ const handleSaveDraft = () => {
       const persistedCommunity = { ...ensuredCommunity, isJoined: true, memberCount: nextCount };
       setChatCommunities(p => p.some(x => x.id === persistedCommunity.id) ? p.map(x => x.id === persistedCommunity.id ? { ...x, ...persistedCommunity } : x) : [...p, persistedCommunity]);
       setCommunityMemberCounts(prev => ({ ...prev, [persistedCommunity.id]: nextCount }));
+      if (!wasJoined) setCommunityRecentMemberCounts(prev => ({ ...prev, [persistedCommunity.id]: (prev[persistedCommunity.id] || 0) + 1 }));
       openCommunityChat(persistedCommunity);
       void mutateActiveCommunityMemberIds?.((ids = []) => Array.from(new Set([...(ids as string[]), currentUser.id])), { revalidate: true });
       showToast("CommunityJoined", "success");
@@ -4261,7 +4612,11 @@ const renderFeedCard = (s: Song) => (
       {activeArtistProfile && (
         <div className="fixed inset-0 bg-black z-[1000] animate-fade-in flex flex-col overflow-y-auto">
           <div className="absolute top-0 w-full h-[50vh] z-0 pointer-events-none">
-            <img src={activeArtistProfile.artworkUrl} className="w-full h-full object-cover opacity-60" />
+            {(activeArtistProfile.artistImageUrl || activeArtistProfile.artworkUrl) && (
+              <img src={activeArtistProfile.artistImageUrl || activeArtistProfile.artworkUrl} className="w-full h-full object-cover opacity-60" onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }} />
+            )}
             <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/60 to-black"></div>
           </div>
           <div className="flex items-center p-4 sticky top-0 z-20">
@@ -4277,20 +4632,31 @@ const renderFeedCard = (s: Song) => (
                 </span>
               )}
             </h1>
-            <p className="text-xs text-zinc-300 font-bold mb-6 drop-shadow">{activeArtistProfile.artistId.toString().substring(0, 3)}K Followers</p>
+            <p className="text-xs text-zinc-300 font-bold mb-6 drop-shadow">
+              {getArtistFavoriteCountLabel(artistFavoriteCounts[getArtistFavoriteId(activeArtistProfile)] || 0)}
+            </p>
             <div className="flex items-center gap-4 mb-6">
               <button onClick={() => artistSongs[0] && togglePlay(artistSongs[0].previewUrl)} className="w-14 h-14 bg-[#1DB954] rounded-full flex items-center justify-center text-black shadow-xl hover:scale-105 transition-transform">
                 {playingSong === artistSongs[0]?.previewUrl ? <IconStop /> : <IconPlay />}
               </button>
-              <button onClick={() => toggleFavoriteArtist(activeArtistProfile)} className="w-12 h-12 bg-black/40 backdrop-blur rounded-full flex items-center justify-center border border-zinc-700/50">
-                <IconHeart filled={favoriteArtists.some(a => a.artistId === activeArtistProfile.artistId)} />
+              <button aria-label={t('favoriteArtists')} aria-pressed={isFavoriteArtist(activeArtistProfile)} onClick={() => toggleFavoriteArtist(activeArtistProfile)} className="w-12 h-12 bg-black/40 backdrop-blur rounded-full flex items-center justify-center border border-zinc-700/50">
+                <IconHeart filled={isFavoriteArtist(activeArtistProfile)} />
               </button>
             </div>
             {activeArtistCommunity && (
               <div className="bg-[#1c1c1e]/90 border border-[#1DB954]/20 rounded-2xl p-4 shadow-2xl backdrop-blur-md">
                 <div className="flex gap-4">
                   <div className="w-14 h-14 rounded-xl bg-zinc-800 overflow-hidden flex-shrink-0">
-                    {activeArtistCommunity.artworkUrl ? <img src={activeArtistCommunity.artworkUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-zinc-500"><IconUsers /></div>}
+                    {activeArtistCommunity.artworkUrl ? (
+                      <>
+                        <img src={activeArtistCommunity.artworkUrl} className="w-full h-full object-cover" onError={(e) => {
+                          e.currentTarget.style.display = 'none';
+                          const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
+                          if (fallback) fallback.style.display = 'flex';
+                        }} />
+                        <div className="hidden w-full h-full items-center justify-center text-zinc-500"><IconUsers /></div>
+                      </>
+                    ) : <div className="w-full h-full flex items-center justify-center text-zinc-500"><IconUsers /></div>}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-base font-black text-white truncate">{activeArtistCommunity.name}</p>
@@ -4523,7 +4889,16 @@ const renderFeedCard = (s: Song) => (
             </div>
             <div className="flex flex-col items-center mb-8">
               <div className="w-20 h-20 bg-zinc-800 rounded-2xl flex items-center justify-center text-zinc-500 mb-4 shadow-lg overflow-hidden">
-                {activeCommunityDetail.artworkUrl ? <img src={activeCommunityDetail.artworkUrl} className="w-full h-full object-cover" /> : <IconTicket />}
+                {activeCommunityDetail.artworkUrl ? (
+                  <>
+                    <img src={activeCommunityDetail.artworkUrl} className="w-full h-full object-cover" onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
+                      if (fallback) fallback.style.display = 'flex';
+                    }} />
+                    <div className="hidden w-full h-full items-center justify-center text-zinc-500">{activeCommunityDetail.communityType === 'artist' ? <IconUsers /> : <IconTicket />}</div>
+                  </>
+                ) : activeCommunityDetail.communityType === 'artist' ? <IconUsers /> : <IconTicket />}
               </div>
               {/* 💡 公式マークを表示 */}
               <h2 className="text-2xl font-black text-center mb-2 flex items-center justify-center gap-2">
@@ -4633,7 +5008,7 @@ const renderFeedCard = (s: Song) => (
                           {searchResults.length > 0 && <p className="text-[10px] font-bold text-zinc-500 uppercase px-2 pt-2 pb-1">ヒット</p>}
                         </>
                       )}
-                      {!searchQuery && trendingSongs.length > 0 && <p className="text-[10px] font-bold text-zinc-500 uppercase px-2 pt-2 pb-1 flex items-center"><IconTrend />Trending Now</p>}
+                      {!searchQuery && trendingSongs.length > 0 && <p className="text-[10px] font-bold text-zinc-500 uppercase px-2 pt-2 pb-1 flex items-center"><IconTrend />{trendingSongsLabel}</p>}
                       {(searchQuery && searchResults.length > 0 ? searchResults : trendingSongs).map((song, i) => (
                         <div key={i} className="flex items-center gap-3 p-3 bg-zinc-800/30 hover:bg-zinc-800 rounded-2xl cursor-pointer transition-colors group" onClick={() => setSelectedChatSong(song)}>
                           <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-zinc-800">
@@ -5703,6 +6078,7 @@ const renderFeedCard = (s: Song) => (
               searchResults={searchResults}
               trendingSongs={trendingSongs}
               topResultsLabel={t('topResults')}
+              trendingSongsLabel={trendingSongsLabel}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
               onSearchQueryChange={setSearchQuery}
@@ -5883,17 +6259,26 @@ const renderFeedCard = (s: Song) => (
                 </div>
                 {visibleArtistCommunities.length > 0 && (
                   <div className="bg-[#1c1c1e] rounded-3xl p-5 mb-8 shadow-sm">
-                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><IconUsers /> アーティストコミュニティ</h3>
+                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><IconUsers /> {t('artistCommunities')}</h3>
                     <div className="flex flex-col">
                       {visibleArtistCommunities.map(c => (
                         <div key={c.id} className="flex items-center justify-between py-3 border-b border-zinc-800/50 last:border-0 cursor-pointer group" onClick={() => setActiveCommunityDetail(c)}>
                           <div className="flex items-center gap-4 flex-1 overflow-hidden">
                             <div className="w-11 h-11 rounded-xl bg-zinc-800 overflow-hidden flex-shrink-0">
-                              {c.artworkUrl ? <img src={c.artworkUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-zinc-500"><IconUsers /></div>}
+                              {c.artworkUrl ? (
+                                <>
+                                  <img src={c.artworkUrl} className="w-full h-full object-cover" onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                    const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
+                                    if (fallback) fallback.style.display = 'flex';
+                                  }} />
+                                  <div className="hidden w-full h-full items-center justify-center text-zinc-500"><IconUsers /></div>
+                                </>
+                              ) : <div className="w-full h-full flex items-center justify-center text-zinc-500"><IconUsers /></div>}
                             </div>
                             <div className="flex-1 overflow-hidden">
                               <p className="font-bold text-sm text-white truncate group-hover:text-[#1DB954] transition-colors">{c.name}</p>
-                              <p className="text-[10px] text-zinc-500 truncate">{c.description} • {c.memberCount}人が参加中</p>
+                              <p className="text-[10px] text-zinc-500 truncate">{formatArtistCommunityStats(c)}</p>
                             </div>
                           </div>
                           <IconChevronRight />
@@ -5974,6 +6359,8 @@ const renderFeedCard = (s: Song) => (
 	              liked: t('liked'),
 	              mine: t('mine'),
 	              drafts: t('drafts'),
+	              emptyArticles: t('emptyArticles'),
+	              emptyDrafts: t('emptyDrafts'),
 	            }}
 	            onChangeTab={setArticleTabMode}
             onOpenWriter={() => setShowWriteArticleModal(true)}

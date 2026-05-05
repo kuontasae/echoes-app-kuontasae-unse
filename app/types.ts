@@ -47,6 +47,7 @@ export interface Song {
 
 export interface FavoriteArtist {
   artistId: number;
+  favoriteKey?: string;
   artistName: string;
   artworkUrl: string;
 }
@@ -87,4 +88,8 @@ export interface LiveCommunity {
   artistName?: string;
   description?: string;
   artworkUrl?: string;
+  recentMemberCount?: number;
+  recentPostCount?: number;
+  trendScore?: number;
+  recommendationScore?: number;
 }

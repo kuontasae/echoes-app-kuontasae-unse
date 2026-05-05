@@ -11,6 +11,7 @@ type MusicSearchBoxProps = {
   searchResults: any[];
   trendingSongs: any[];
   topResultsLabel: string;
+  trendingSongsLabel: string;
   onFocus: () => void;
   onBlur: () => void;
   onSearchQueryChange: (value: string) => void;
@@ -26,6 +27,7 @@ export const MusicSearchBox: React.FC<MusicSearchBoxProps> = ({
   searchResults,
   trendingSongs,
   topResultsLabel,
+  trendingSongsLabel,
   onFocus,
   onBlur,
   onSearchQueryChange,
@@ -66,7 +68,7 @@ export const MusicSearchBox: React.FC<MusicSearchBoxProps> = ({
     )}
     {isSearchFocused && !searchQuery && trendingSongs.length > 0 && (
       <div className="absolute top-full left-0 w-full mt-2 bg-[#1c1c1e] border border-zinc-800 rounded-xl overflow-hidden shadow-2xl max-h-[300px] overflow-y-auto">
-        <p className="text-[10px] font-bold text-zinc-500 uppercase px-4 pt-4 pb-2 flex items-center"><IconTrend />Trending Now</p>
+        <p className="text-[10px] font-bold text-zinc-500 uppercase px-4 pt-4 pb-2 flex items-center"><IconTrend />{trendingSongsLabel}</p>
         {trendingSongs.map((tr, i) => (
           <div key={tr.trackId} onMouseDown={(e) => { e.preventDefault(); onSelectSong(tr); }} className="p-4 flex items-center gap-4 hover:bg-zinc-800 cursor-pointer group">
             <p className="text-zinc-600 font-bold text-sm w-4 text-right group-hover:hidden">{i + 1}</p>
