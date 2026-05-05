@@ -122,6 +122,7 @@ async function mockLoggedInSupabase(page: Page, profile = mockProfile, options?:
   initialCommunityMembers?: Array<{ community_id: string; user_id: string; created_at?: string }>;
   trendingSongs?: any[];
   failTrendingSongs?: boolean;
+  recommendedSongs?: any[];
 }) {
   const storageKey = getSupabaseStorageKey();
   test.skip(!storageKey, 'NEXT_PUBLIC_SUPABASE_URL is required for the mocked login test.');
@@ -207,6 +208,22 @@ async function mockLoggedInSupabase(page: Page, profile = mockProfile, options?:
             previewUrl: 'https://example.com/lilac-preview.m4a',
           },
         ],
+      },
+    });
+  });
+
+  await page.route('**/api/recommended-songs', async (route) => {
+    const body = route.request().postDataJSON() as { mode?: string; artists?: string[]; recentArtists7?: string[]; recentArtists30?: string[] };
+    const seedArtists = [...(body.recentArtists7 || []), ...(body.recentArtists30 || []), ...(body.artists || [])]
+      .filter((artist, index, artists) => artist && artists.indexOf(artist) === index)
+      .slice(0, 3);
+    await route.fulfill({
+      json: {
+        source: 'lastfm',
+        mode: body.mode || 'home',
+        seedArtists,
+        analysisMessage: body.mode === 'diary' ? `${seedArtists.join(', ')} などの傾向から、今のあなたにぴったりな3曲をピックアップしました。` : undefined,
+        songs: options?.recommendedSongs || [],
       },
     });
   });
@@ -475,6 +492,81 @@ test('Home検索欄に日本の人気曲を表示して選択できる', async (
 
   await expect(page.getByText('人気曲から記録')).toBeVisible();
   expect(postedPreviewUrl).toBe('https://example.com/lilac-preview.m4a');
+});
+
+test('今日のおすすめ曲から投稿モーダルを開ける', async ({ page }) => {
+  await mockLoggedInSupabase(page, mockProfile, {
+    initialVibes: [
+      {
+        id: 'recent-vibe-1',
+        user_id: mockUser.id,
+        track_id: '1001',
+        title: '過去の曲',
+        artist: 'Tele',
+        img_url: 'https://example.com/past-100.jpg',
+        preview_url: 'https://example.com/past-preview.m4a',
+        caption: 'recent',
+        created_at: new Date().toISOString(),
+      },
+    ],
+    recommendedSongs: [
+      {
+        trackId: 2001,
+        trackName: 'Last.fm Recommend',
+        artistName: 'Similar Band',
+        artistId: 3001,
+        artworkUrl60: 'https://example.com/rec-60.jpg',
+        artworkUrl100: 'https://example.com/rec-100.jpg',
+        previewUrl: 'https://example.com/rec-preview.m4a',
+        reason: '最近Teleをよく記録しているので',
+      },
+    ],
+  });
+  await page.goto('/');
+
+  const section = page.getByTestId('today-recommended-songs');
+  await expect(section.getByText('今日のおすすめ曲')).toBeVisible();
+  await expect(section.getByText('Last.fm Recommend')).toBeVisible();
+  await section.getByText('Last.fm Recommend').click();
+  await expect(page.getByPlaceholder('今の気分、思い出、誰に聴いてほしいかを書いてみよう')).toBeVisible();
+});
+
+test('DiaryのAI VIBE ANALYSISからおすすめ曲を投稿できる', async ({ page }) => {
+  await mockLoggedInSupabase(page, mockProfile, {
+    initialVibes: [
+      {
+        id: 'recent-vibe-diary-1',
+        user_id: mockUser.id,
+        track_id: '1101',
+        title: '日記の過去曲',
+        artist: 'Tele',
+        img_url: 'https://example.com/diary-past-100.jpg',
+        preview_url: 'https://example.com/diary-past-preview.m4a',
+        caption: 'diary recent',
+        created_at: new Date().toISOString(),
+      },
+    ],
+    recommendedSongs: [
+      {
+        trackId: 2101,
+        trackName: 'Diary Recommend',
+        artistName: 'Analysis Band',
+        artistId: 3101,
+        artworkUrl60: 'https://example.com/diary-rec-60.jpg',
+        artworkUrl100: 'https://example.com/diary-rec-100.jpg',
+        previewUrl: 'https://example.com/diary-rec-preview.m4a',
+        reason: 'Teleに近いアーティストから',
+      },
+    ],
+  });
+  await page.goto('/');
+
+  await page.getByRole('button', { name: 'ダイアリー' }).click();
+  await expect(page.getByText('AI Vibe Analysis')).toBeVisible();
+  await expect(page.getByText(/Tele などの傾向から/)).toBeVisible();
+  await expect(page.getByText('Diary Recommend')).toBeVisible();
+  await page.getByRole('button', { name: 'Diary Recommendを記録する' }).click();
+  await expect(page.getByPlaceholder('今の気分、思い出、誰に聴いてほしいかを書いてみよう')).toBeVisible();
 });
 
 test('投稿後に近い人を探す次アクションへ進める', async ({ page }) => {

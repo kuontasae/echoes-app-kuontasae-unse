@@ -1257,6 +1257,7 @@ const handleSaveDraft = () => {
   const [searchArtistInfo, setSearchArtistInfo] = useState<any>(null);
   const [trendingSongs, setTrendingSongs] = useState<any[]>([]);
   const [trendingSongsSource, setTrendingSongsSource] = useState<'ranking' | 'fallback'>('fallback');
+  const [recommendedSongs, setRecommendedSongs] = useState<any[]>([]);
   const [draftSong, setDraftSong] = useState<any>(null);
   const [draftCaption, setDraftCaption] = useState("");
   const [showPostOverrideConfirm, setShowPostOverrideConfirm] = useState<Song | null>(null);
@@ -1264,6 +1265,7 @@ const handleSaveDraft = () => {
   const [showPostSuccessCard, setShowPostSuccessCard] = useState(false);
   const [aiRecommendations, setAiRecommendations] = useState<any[]>([]); // 💡 AIが選んだ3曲を入れる箱
   const [aiMessage, setAiMessage] = useState("過去の記録から、あなたにおすすめの曲を分析しています..."); // 💡 AIの分析メッセージ
+  const [isAiRecommendationsLoading, setIsAiRecommendationsLoading] = useState(false);
   const [activeArtistProfile, setActiveArtistProfile] = useState<any>(null);
   const [artistSongs, setArtistSongs] = useState<any[]>([]);
   const [isArtistLoading, setIsArtistLoading] = useState(false);
@@ -2002,40 +2004,24 @@ const handleSaveDraft = () => {
     setArtistSongs([]);
     setAlbumSongs([]);
   };
-  // 💡 AI Vibe Analysis (本番用): 過去の記録からアーティストを抽出し、新しい曲を提案する
-  useEffect(() => {
-    if (!currentUser || vibes.length === 0) return;
-    const analyzeVibes = async () => {
-      const myVibes = vibes.filter(v => v.user.id === currentUser.id || v.user.id === myProfile.id);
-      if (myVibes.length === 0) {
-        setAiMessage(t('aiStart'));
-        setAiRecommendations([]);
-        return;
-      }
-      // 直近に聴いたアーティストを最大3組抽出
-      const recentArtists = [...new Set(myVibes.slice(0, 10).map(v => v.artist))].slice(0, 3);
-      setAiMessage(`${recentArtists.join(', ')} ${t('aiRec')}`);
-      try {
-        let recs: any[] = [];
-        // 各アーティストごとに、自分がまだ記録していない曲をiTunes APIから検索する
-        for (const artist of recentArtists) {
-          const res = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(artist)}&entity=song&country=jp&limit=5`);
-          const d = await res.json();
-          const newSongs = d.results.filter((r: any) => !myVibes.some(v => v.trackId === r.trackId));
-          if (newSongs.length > 0) recs.push(newSongs[0]); // 各アーティストから1曲ずつ選抜
-        }
-        // もし3曲に満たない場合は、トレンド曲で補う
-        if (recs.length < 3 && trendingSongs.length > 0) {
-          const trends = trendingSongs.filter(ts => !recs.some(r => r.trackId === ts.trackId));
-          recs = [...recs, ...trends.slice(0, 3 - recs.length)];
-        }
-        setAiRecommendations(recs);
-      } catch (e) {
-        console.error("AI分析エラー:", e);
-      }
-    };
-    analyzeVibes();
-  }, [vibes, currentUser, myProfile.id, trendingSongs, language]);
+  const getRecentArtistSeeds = React.useCallback((targetVibes: Song[], limit = 3) => {
+    const counts = new Map<string, { artistName: string; count: number; latest: number }>();
+    targetVibes.forEach(vibe => {
+      const artistName = String(vibe.artist || "").trim();
+      const key = normalizeMusicLabel(artistName);
+      if (!artistName || !key) return;
+      const current = counts.get(key) || { artistName, count: 0, latest: 0 };
+      counts.set(key, {
+        artistName: current.artistName,
+        count: current.count + 1,
+        latest: Math.max(current.latest, vibe.timestamp),
+      });
+    });
+    return Array.from(counts.values())
+      .sort((a, b) => b.count - a.count || b.latest - a.latest)
+      .slice(0, limit)
+      .map(item => item.artistName);
+  }, []);
   // 💡 共通の友達を計算する関数
   const getMutualFriends = React.useCallback((userId: string) => {
     if (!currentUser) return [];
@@ -2256,6 +2242,115 @@ const handleSaveDraft = () => {
     if (trendingError) console.warn("Trending songs load failed", trendingError);
   }, [trendingData, trendingError]);
   const trendingSongsLabel = trendingSongsSource === 'ranking' ? t('popularSongsInJapan') : t('recommendedSongs');
+  const myRecentVibesForRecommendation = useMemo(() => {
+    const userId = currentUser?.id || myProfile.id;
+    if (!userId) return [];
+    const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    return vibes.filter(v => v.user.id === userId && v.timestamp >= thirtyDaysAgo);
+  }, [vibes, currentUser?.id, myProfile.id]);
+  const myRecentSevenDayVibesForRecommendation = useMemo(() => {
+    const userId = currentUser?.id || myProfile.id;
+    if (!userId) return [];
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return vibes.filter(v => v.user.id === userId && v.timestamp >= sevenDaysAgo);
+  }, [vibes, currentUser?.id, myProfile.id]);
+  const myRecentArtistSeeds = useMemo(() => {
+    return getRecentArtistSeeds(myRecentVibesForRecommendation, 3);
+  }, [getRecentArtistSeeds, myRecentVibesForRecommendation]);
+  const myRecentSevenDayArtistSeeds = useMemo(() => {
+    return getRecentArtistSeeds(myRecentSevenDayVibesForRecommendation, 3);
+  }, [getRecentArtistSeeds, myRecentSevenDayVibesForRecommendation]);
+  useEffect(() => {
+    if (!currentUser) {
+      setRecommendedSongs([]);
+      return;
+    }
+    if (myRecentArtistSeeds.length === 0) {
+      setRecommendedSongs([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    const loadRecommendedSongs = async () => {
+      try {
+        const response = await fetch('/api/recommended-songs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mode: 'home',
+            artists: myRecentArtistSeeds,
+            hashtags: myProfile.hashtags || [],
+            recordedTrackIds: myRecentVibesForRecommendation.map(v => v.trackId),
+          }),
+          signal: controller.signal,
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        setRecommendedSongs(Array.isArray(data?.songs) ? data.songs : []);
+      } catch (error: any) {
+        if (error?.name !== 'AbortError') console.warn("Recommended songs load failed", error);
+      }
+    };
+
+    loadRecommendedSongs();
+    return () => controller.abort();
+  }, [currentUser?.id, myProfile.hashtags, myRecentArtistSeeds, myRecentVibesForRecommendation]);
+  const todayRecommendedSongs = useMemo(() => {
+    if (recommendedSongs.length > 0) return recommendedSongs.slice(0, 3);
+    const seedArtist = myRecentArtistSeeds[0];
+    return trendingSongs.slice(0, 3).map((song, index) => ({
+      ...song,
+      reason: seedArtist && index === 0 ? `最近${seedArtist}をよく記録しているので` : "Echoesで人気の曲から",
+    }));
+  }, [recommendedSongs, trendingSongs, myRecentArtistSeeds]);
+  useEffect(() => {
+    if (!currentUser) {
+      setAiRecommendations([]);
+      setIsAiRecommendationsLoading(false);
+      setAiMessage(t('aiStart'));
+      return;
+    }
+    if (myRecentArtistSeeds.length === 0) {
+      setAiRecommendations([]);
+      setIsAiRecommendationsLoading(false);
+      setAiMessage("もう少し曲を記録すると、あなたに合う曲を提案できます。");
+      return;
+    }
+
+    const fallbackMessage = `${myRecentArtistSeeds.join(', ')} などの傾向から、今のあなたにぴったりな3曲をピックアップしました。`;
+    setAiMessage(fallbackMessage);
+    setIsAiRecommendationsLoading(true);
+    const controller = new AbortController();
+    const loadDiaryRecommendations = async () => {
+      try {
+        const response = await fetch('/api/recommended-songs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            mode: 'diary',
+            artists: myRecentArtistSeeds,
+            recentArtists7: myRecentSevenDayArtistSeeds,
+            recentArtists30: myRecentArtistSeeds,
+            hashtags: myProfile.hashtags || [],
+            recordedTrackIds: myRecentVibesForRecommendation.map(v => v.trackId),
+          }),
+          signal: controller.signal,
+        });
+        if (!response.ok) return;
+        const data = await response.json();
+        setAiMessage(data?.analysisMessage || fallbackMessage);
+        setAiRecommendations(Array.isArray(data?.songs) ? data.songs.slice(0, 3) : []);
+      } catch (error: any) {
+        if (error?.name !== 'AbortError') console.warn("Diary recommendations load failed", error);
+        setAiRecommendations([]);
+      } finally {
+        setIsAiRecommendationsLoading(false);
+      }
+    };
+
+    loadDiaryRecommendations();
+    return () => controller.abort();
+  }, [currentUser?.id, myProfile.hashtags, myRecentArtistSeeds, myRecentSevenDayArtistSeeds, myRecentVibesForRecommendation, language]);
   const [vibePage, setVibePage] = useState(0);
   const [hasMoreVibes, setHasMoreVibes] = useState(true);
   const [isLoadingVibes, setIsLoadingVibes] = useState(false);
@@ -6085,6 +6180,41 @@ const renderFeedCard = (s: Song) => (
               onArtistMouseDown={handleArtistClick}
               onSelectSong={setDraftSong}
             />
+            {!isSearchFocused && <section className="mb-6" data-testid="today-recommended-songs">
+              <div className="flex items-center justify-between mb-3 px-1">
+                <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
+                  <IconSparkles /> 今日のおすすめ曲
+                </h2>
+              </div>
+              <div className="flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                {todayRecommendedSongs.length > 0 ? todayRecommendedSongs.map((song, index) => (
+                  <button
+                    key={`${song.trackId || song.trackName}-${index}`}
+                    type="button"
+                    onClick={() => setDraftSong(song)}
+                    className="min-w-[240px] max-w-[260px] flex items-center gap-3 rounded-2xl border border-zinc-800 bg-[#1c1c1e] p-3 text-left hover:bg-zinc-800 transition-colors"
+                  >
+                    <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-zinc-800 flex-shrink-0">
+                      <img src={song.artworkUrl100 || song.artworkUrl60} alt="" className="w-full h-full object-cover" />
+                      {song.previewUrl && (
+                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center text-white">
+                          <IconPlay />
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-bold text-sm text-white truncate">{song.trackName}</p>
+                      <p className="text-[10px] text-zinc-400 truncate mt-0.5">{song.artistName}</p>
+                      <p className="text-[10px] text-[#1DB954] mt-2 line-clamp-2">{song.reason || "あなたの記録に近い曲"}</p>
+                    </div>
+                  </button>
+                )) : (
+                  <div className="w-full rounded-2xl border border-zinc-900 bg-[#1c1c1e]/60 px-4 py-5 text-xs text-zinc-500">
+                    曲を記録すると、好みに近いおすすめがここに届きます。
+                  </div>
+                )}
+              </div>
+            </section>}
             {showPostSuccessCard && (
               <div className="mb-6 rounded-2xl border border-[#1DB954]/20 bg-[#1DB954]/10 px-4 py-4">
                 <p className="text-sm font-bold text-white">記録できました。似た音楽が好きな人を見つけに行こう</p>
@@ -6436,8 +6566,8 @@ const renderFeedCard = (s: Song) => (
                 <div className="flex flex-col gap-3 mb-6">
                   {aiRecommendations.length > 0 ? aiRecommendations.map((recSong, idx) => (
                     <div key={idx} className="flex items-center gap-4 bg-black/40 p-3 rounded-2xl group cursor-pointer hover:bg-zinc-800 transition-colors" onClick={() => setDraftSong(recSong)}>
-                      <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-zinc-800 flex-shrink-0" onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePlay(recSong.previewUrl); }}>
-                        <img src={recSong.artworkUrl100} className={`w-full h-full object-cover ${playingSong === recSong.previewUrl ? 'opacity-50' : 'group-hover:opacity-70'} transition-opacity`} />
+                      <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-zinc-800 flex-shrink-0" onClick={(e) => { e.preventDefault(); e.stopPropagation(); if (recSong.previewUrl) togglePlay(recSong.previewUrl); }}>
+                        <img src={recSong.artworkUrl100 || recSong.artworkUrl60} className={`w-full h-full object-cover ${playingSong === recSong.previewUrl ? 'opacity-50' : 'group-hover:opacity-70'} transition-opacity`} />
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                           {playingSong === recSong.previewUrl ? <IconStop /> : <IconPlay />}
                         </div>
@@ -6446,12 +6576,14 @@ const renderFeedCard = (s: Song) => (
                         <p className="font-bold text-sm text-white truncate">{recSong.trackName}</p>
                         <p className="text-[10px] text-zinc-400 truncate mt-0.5">{recSong.artistName}</p>
                       </div>
-                      <button className="w-8 h-8 rounded-full bg-zinc-800 text-[#1DB954] flex items-center justify-center pointer-events-auto hover:scale-110 transition-transform">
+                      <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDraftSong(recSong); }} className="w-8 h-8 rounded-full bg-zinc-800 text-[#1DB954] flex items-center justify-center pointer-events-auto hover:scale-110 transition-transform" aria-label={`${recSong.trackName}を記録する`}>
                         <IconPlus />
                       </button>
                     </div>
-                  )) : (
+                  )) : isAiRecommendationsLoading ? (
                     <div className="py-6 text-center text-zinc-500 text-xs font-bold animate-pulse">{t('aiAnalyzing')}</div>
+                  ) : (
+                    <div className="py-6 text-center text-zinc-500 text-xs font-bold">もう少し曲を記録すると、あなたに合う曲を提案できます。</div>
                   )}
                 </div>
               </div>

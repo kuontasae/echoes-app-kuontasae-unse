@@ -9,13 +9,27 @@ type ArtistImageRequest = {
   fallbackArtworkUrl?: unknown;
 };
 
-type ArtistImageSource = 'spotify' | 'cache' | 'fallback' | 'none';
+type ArtistImageSource = 'lastfm' | 'fallback' | 'none';
 
 type SpotifyArtist = {
   id?: string;
   name?: string;
   popularity?: number;
   images?: Array<{ url?: string; height?: number; width?: number }>;
+};
+
+type LastfmImage = {
+  '#text'?: string;
+  size?: string;
+};
+
+type LastfmArtistInfoResponse = {
+  error?: number;
+  message?: string;
+  artist?: {
+    name?: string;
+    image?: LastfmImage[];
+  };
 };
 
 const normalizeArtistKey = (value: string) =>
@@ -37,7 +51,7 @@ const responseFor = (artistImageUrl: string, source: ArtistImageSource, fallback
   NextResponse.json({
     artistImageUrl,
     source,
-    fallbackUsed: source === 'fallback' && Boolean(fallbackArtworkUrl),
+    fallbackUsed: source !== 'lastfm',
   });
 
 const getSupabaseAdmin = () => {
@@ -114,6 +128,86 @@ const findSpotifyArtistImage = async (artistName: string) => {
   return best?.images?.[0]?.url || null;
 };
 
+const lastfmSizeRank: Record<string, number> = {
+  small: 1,
+  medium: 2,
+  large: 3,
+  extralarge: 4,
+  mega: 5,
+};
+
+const lastfmPlaceholderImageIds = [
+  '2a96cbd8b46e442fc41c2b86b821562f.png',
+];
+
+const isLastfmPlaceholderImageUrl = (url: string) =>
+  !url.trim() || lastfmPlaceholderImageIds.some(imageId => url.includes(imageId));
+
+const pickLargestLastfmImage = (images: LastfmImage[] | undefined) => {
+  const candidates = (images || [])
+    .map(image => ({
+      url: (image['#text'] || '').trim(),
+      size: image.size || '',
+      rank: lastfmSizeRank[(image.size || '').toLowerCase()] || 0,
+    }))
+    .filter(image => !isLastfmPlaceholderImageUrl(image.url));
+
+  return candidates.sort((a, b) => b.rank - a.rank)[0]?.url || null;
+};
+
+const findLastfmArtistImage = async (artistName: string) => {
+  const apiKey = process.env.LASTFM_API_KEY;
+  if (!apiKey) {
+    console.warn('Last.fm artist image lookup skipped: LASTFM_API_KEY is not set', { artistName });
+    return null;
+  }
+
+  const url = `https://ws.audioscrobbler.com/2.0/?${new URLSearchParams({
+    method: 'artist.getInfo',
+    artist: artistName,
+    api_key: apiKey,
+    autocorrect: '1',
+    format: 'json',
+  })}`;
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    console.warn('Last.fm artist image lookup failed', { artistName, status: response.status });
+    return null;
+  }
+
+  const data = (await response.json()) as LastfmArtistInfoResponse;
+  if (data.error) {
+    console.warn('Last.fm artist image lookup returned an error', {
+      artistName,
+      error: data.error,
+      message: data.message,
+    });
+    return null;
+  }
+
+  const images = data.artist?.image || [];
+  const placeholderImages = images
+    .map(image => ({
+      size: image.size || '',
+      url: (image['#text'] || '').trim(),
+    }))
+    .filter(image => isLastfmPlaceholderImageUrl(image.url));
+  if (placeholderImages.length) {
+    console.warn('Last.fm artist image lookup returned placeholder images', {
+      artistName,
+      resolvedArtistName: data.artist?.name,
+      placeholderImages,
+    });
+  }
+
+  const imageUrl = pickLargestLastfmImage(images);
+  if (!imageUrl) {
+    console.warn('Last.fm artist image lookup returned no image', { artistName });
+  }
+  return imageUrl;
+};
+
 export async function POST(req: Request) {
   let body: ArtistImageRequest;
   try {
@@ -132,44 +226,23 @@ export async function POST(req: Request) {
   const artistKey = artistId || normalizeArtistKey(artistName);
   const supabaseAdmin = getSupabaseAdmin();
 
-  if (supabaseAdmin) {
-    const { data: cached, error } = await supabaseAdmin
-      .from('artist_profiles')
-      .select('image_url')
-      .eq('artist_key', artistKey)
-      .maybeSingle();
-    if (!error && cached?.image_url) {
-      return responseFor(cached.image_url, 'cache', fallbackArtworkUrl);
-    }
-    if (error && !isMissingArtistProfilesTable(error)) {
-      console.warn('Artist profile cache lookup failed', {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-        artistKey,
-      });
-    }
-  }
-
   let artistImageUrl = '';
   let source: ArtistImageSource = fallbackArtworkUrl ? 'fallback' : 'none';
   try {
-    artistImageUrl = await findSpotifyArtistImage(artistName) || '';
-    if (artistImageUrl) source = 'spotify';
+    artistImageUrl = await findLastfmArtistImage(artistName) || '';
+    if (artistImageUrl) source = 'lastfm';
   } catch (error) {
-    console.warn('Spotify artist image lookup failed', { artistName, artistId, error });
+    console.warn('Last.fm artist image lookup failed', { artistName, artistId, error });
   }
 
   const resolvedUrl = artistImageUrl || fallbackArtworkUrl;
-  if (supabaseAdmin) {
+  if (supabaseAdmin && artistImageUrl) {
     const payload = {
       artist_key: artistKey,
       artist_id: artistId || null,
       artist_name: artistName,
-      image_url: artistImageUrl || null,
-      image_source: artistImageUrl ? 'spotify' : source,
-      fallback_artwork_url: fallbackArtworkUrl || null,
+      image_url: artistImageUrl,
+      image_source: 'lastfm',
       updated_at: new Date().toISOString(),
     };
     const { error } = await supabaseAdmin
@@ -185,29 +258,27 @@ export async function POST(req: Request) {
       });
     }
 
-    if (artistImageUrl) {
-      const byArtistId = artistId ? await supabaseAdmin
-        .from('custom_communities')
-        .update({ artwork_url: artistImageUrl })
-        .eq('community_type', 'artist')
-        .eq('artist_id', artistId) : { error: null };
-      const byArtistName = await supabaseAdmin
-        .from('custom_communities')
-        .update({ artwork_url: artistImageUrl })
-        .eq('community_type', 'artist')
-        .eq('artist_name', artistName);
-      const communityError = byArtistId.error || byArtistName.error;
-      if (communityError) {
-        console.warn('Artist community artwork cache update failed', {
-          code: communityError.code,
-          message: communityError.message,
-          details: communityError.details,
-          hint: communityError.hint,
-          artistKey,
-        });
-      }
+    const byArtistId = artistId ? await supabaseAdmin
+      .from('custom_communities')
+      .update({ artwork_url: artistImageUrl })
+      .eq('community_type', 'artist')
+      .eq('artist_id', artistId) : { error: null };
+    const byArtistName = await supabaseAdmin
+      .from('custom_communities')
+      .update({ artwork_url: artistImageUrl })
+      .eq('community_type', 'artist')
+      .eq('artist_name', artistName);
+    const communityError = byArtistId.error || byArtistName.error;
+    if (communityError) {
+      console.warn('Artist community artwork cache update failed', {
+        code: communityError.code,
+        message: communityError.message,
+        details: communityError.details,
+        hint: communityError.hint,
+        artistKey,
+      });
     }
   }
 
-  return responseFor(resolvedUrl, artistImageUrl ? 'spotify' : source, fallbackArtworkUrl);
+  return responseFor(resolvedUrl, source, fallbackArtworkUrl);
 }
