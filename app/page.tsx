@@ -328,84 +328,6 @@ function MainApp() {
   const [isAuthLoading, setIsAuthLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [settings, setSettings] = useState({ audio: true, notifications: true });
-  const [spotifyAccessToken, setSpotifyAccessToken] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const urlParams = new URLSearchParams(window.location.search);
-      const code = urlParams.get('code');
-      if (code) {
-        const getToken = async () => {
-          const codeVerifier = window.localStorage.getItem('code_verifier');
-          const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID as string;
-          const redirectUri = window.location.origin;
-          const payload = new URLSearchParams({
-            client_id: clientId,
-            grant_type: 'authorization_code',
-            code: code,
-            redirect_uri: redirectUri,
-            code_verifier: codeVerifier || '',
-          });
-          try {
-            const targetEndpoint = ["https:", "", "accounts.spotify.com", "api", "token"].join("/");
-            const response = await fetch(targetEndpoint, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-              },
-              body: payload.toString()
-            });
-            const data = await response.json();
-            if (data.access_token) {
-              setSpotifyAccessToken(data.access_token);
-              window.history.replaceState(null, '', window.location.pathname);
-            }
-          } catch (err) {
-          }
-        };
-        getToken();
-      }
-    }
-  }, []);
-
-  const handleSpotifyLoginPkce = async () => {
-    const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID as string;
-    if (!clientId) {
-      return;
-    }
-    const redirectUri = window.location.origin + '/';
-    const scope = 'streaming user-read-email user-read-private';
-    const generateRandomString = (length: number) => {
-      const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-      const values = crypto.getRandomValues(new Uint8Array(length));
-      return values.reduce((acc, x) => acc + possible[x % possible.length], "");
-    };
-    const sha256 = async (plain: string) => {
-      const encoder = new TextEncoder();
-      const data = encoder.encode(plain);
-      return window.crypto.subtle.digest('SHA-256', data);
-    };
-    const base64encode = (input: ArrayBuffer) => {
-      return btoa(String.fromCharCode(...new Uint8Array(input)))
-        .replace(/=/g, '')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_');
-    };
-    const codeVerifier = generateRandomString(64);
-    window.localStorage.setItem('code_verifier', codeVerifier);
-    const hashed = await sha256(codeVerifier);
-    const codeChallenge = base64encode(hashed);
-    const params = new URLSearchParams({
-      response_type: 'code',
-      client_id: clientId,
-      scope: scope,
-      code_challenge_method: 'S256',
-      code_challenge: codeChallenge,
-      redirect_uri: redirectUri,
-    });
-    const targetEndpoint = ["https:", "", "accounts.spotify.com", "authorize"].join("/");
-    window.location.href = targetEndpoint + "?" + params.toString();
-  };
 
   const [timeZone, setTimeZone] = useState("Asia/Tokyo");
   const [language, setLanguage] = useState("日本語");
@@ -480,12 +402,45 @@ function MainApp() {
   const [articleTabMode, setArticleTabMode] = useState<'global' | 'trend' | 'following' | 'liked' | 'my_posts' | 'drafts'>('trend');
   // 💡 リロードしても消えないようにブラウザの保存領域（localStorage）を使うss
   const [articles, setArticles] = useState<any[]>([]);
+  const fetchArticleDetail = async (article: any) => {
+    const { data: sessionData } = await supabase.auth.getSession();
+    const accessToken = sessionData.session?.access_token;
+    const response = await fetch(`/api/article-detail?id=${encodeURIComponent(String(article.id))}`, {
+      headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined,
+    });
+    if (!response.ok) throw new Error('ArticleDetailFailed');
+    const detail = await response.json();
+    return {
+      ...article,
+      title: detail.title ?? article.title,
+      content: detail.content ?? article.content,
+      premium_content: detail.premium_content ?? undefined,
+      price: detail.price ?? article.price,
+      coverUrl: detail.cover_url ?? article.coverUrl,
+      hasPremiumAccess: Boolean(detail.hasPremiumAccess),
+    };
+  };
+  const handleOpenArticle = async (article: any) => {
+    setViewingArticle({ ...article, premium_content: undefined });
+    if (article.price > 0) {
+      mutatePurchase(Boolean(article.author?.id === currentUser?.id), { revalidate: false });
+    }
+    try {
+      const detailedArticle = await fetchArticleDetail(article);
+      setViewingArticle((prev: any) => prev?.id === article.id ? detailedArticle : prev);
+      if (detailedArticle.price > 0) {
+        mutatePurchase(Boolean(detailedArticle.hasPremiumAccess), { revalidate: false });
+      }
+    } catch (error) {
+      console.warn('Article detail fetch failed', error);
+    }
+  };
   useEffect(() => {
   const fetchArticlesFromDB = async () => {
     try {
       const { data: articlesData, error: articlesError } = await supabase
         .from('articles')
-        .select('*')
+        .select('id, title, content, price, cover_url, author_id, created_at')
         .order('created_at', { ascending: false });
       if (articlesError) throw articlesError;
       if (!articlesData || articlesData.length === 0) {
@@ -524,7 +479,7 @@ function MainApp() {
           id: a.id,
           title: a.title,
           content: a.content,
-          premium_content: a.premium_content || "",
+          premium_content: undefined,
           price: a.price || 0,
           coverUrl: a.cover_url,
           author: authorProfile || {
@@ -552,12 +507,12 @@ function MainApp() {
   useEffect(() => {
     if (!searchParams) return;
     const articleId = searchParams.get('article');
-    if (articleId && articles.length > 0) {
-      const targetArticle = articles.find(a => a.id === articleId);
-      if (targetArticle) {
-        setViewingArticle(targetArticle);
-      }
-    }
+	    if (articleId && articles.length > 0) {
+	      const targetArticle = articles.find(a => a.id === articleId);
+	      if (targetArticle) {
+	        void handleOpenArticle(targetArticle);
+	      }
+	    }
   }, [searchParams, articles]);
   const [articleCommentInput, setArticleCommentInput] = useState("");
   // 💡 自分で記事を書くための箱
@@ -683,13 +638,6 @@ function MainApp() {
       if (videoIdMatch && videoIdMatch[1]) {
         const cleanId = videoIdMatch[1].replace(/[^a-zA-Z0-9_-]/g, '');
         embedHtml = `<br/><iframe width="100%" height="315" src="https://www.youtube.com/embed/${cleanId}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius: 12px; margin: 16px 0;"></iframe><br/>`;
-      }
-    } else if (safeUrl.includes('open.spotify.com/')) {
-      const pathParts = parsedUrl.pathname.split('/').filter(Boolean);
-      const type = pathParts[0];
-      const id = pathParts[1];
-      if ((type === 'track' || type === 'album' || type === 'playlist') && /^[a-zA-Z0-9]+$/.test(id)) {
-        embedHtml = `<br/><iframe src="https://open.spotify.com/embed/${type}/${id}" width="100%" height="152" frameborder="0" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" style="border-radius: 12px; margin: 16px 0;"></iframe><br/>`;
       }
     }
     if (articleTextareaRef.current) {
@@ -907,14 +855,27 @@ function MainApp() {
     showToast("DatabaseError", "error");
   }
 };
-  // 💡 記事の編集を開始する（画像もセットする）
-  const startEditingArticle = (article: any) => {
-    setNewArticleTitle(article.title);
-    setNewArticleContent(article.content);
-    setNewArticleCover(article.coverUrl);
-    setEditingArticleId(article.id);
-    setShowWriteArticleModal(true);
-  };
+	  const buildEditableArticleContent = (article: any) => {
+	    if ((Number(article.price) || 0) <= 0) return article.content || "";
+	    const paywallSeparator = '<br/><div contenteditable="false"><hr style="border-top:2px dashed #1DB954;margin:32px 0;"/><p style="text-align:center;color:#1DB954;font-weight:bold;font-size:12px;letter-spacing:0.1em;margin-bottom:32px;">ここから先は有料エリアです</p></div><br/>';
+	    return `${article.content || ""}${paywallSeparator}${article.premium_content || ""}`;
+	  };
+	  // 💡 記事の編集を開始する（画像もセットする）
+	  const startEditingArticle = async (article: any) => {
+	    let editableArticle = article;
+	    if ((Number(article.price) || 0) > 0 && article.author?.id === currentUser?.id && article.premium_content === undefined) {
+	      try {
+	        editableArticle = await fetchArticleDetail(article);
+	      } catch (error) {
+	        console.warn('Article detail fetch for editing failed', error);
+	      }
+	    }
+	    setNewArticleTitle(editableArticle.title);
+	    setNewArticleContent(buildEditableArticleContent(editableArticle));
+	    setNewArticleCover(editableArticle.coverUrl);
+	    setEditingArticleId(editableArticle.id);
+	    setShowWriteArticleModal(true);
+	  };
   useEffect(() => {
     if (showWriteArticleModal && articleTextareaRef.current) {
       articleTextareaRef.current.innerHTML = newArticleContent;
@@ -1187,20 +1148,21 @@ const handleSaveDraft = () => {
         return;
       }
 
-      // 💡 サーバーで計算された最新のコイン残高を画面に反映
-      setMyProfile(prev => ({ 
-        ...prev, 
-        free_coin: data.new_free_coin, 
-        paid_coin: data.new_paid_coin 
-      } as any));
+	      // 💡 サーバーで計算された最新のコイン残高を画面に反映
+	      setMyProfile(prev => ({ 
+	        ...prev, 
+	        free_coin: data.new_free_coin, 
+	        paid_coin: data.new_paid_coin 
+	      } as any));
 
-      showToast("記事を購入しました！", "success");
-      mutatePurchase(true); // 記事のロックを解除
+	      showToast("記事を購入しました！", "success");
+	      mutatePurchase(true); // 記事のロックを解除
+	      void handleOpenArticle(article);
 
-    } catch (err) {
-      showToast("通信エラーが発生しました", "error");
-    }
-  };
+	    } catch (err) {
+	      showToast("通信エラーが発生しました", "error");
+	    }
+	  };
   const handleUnlockArticle = (article: any) => {
     const currentBalance = getAvailableCoins(myProfile as User & CoinFields);
     if (currentBalance < article.price) {
@@ -4629,49 +4591,6 @@ const renderFeedCard = (s: Song) => (
       )}
     </div>
   );
-  function handleSpotifyLogin(event: React.MouseEvent<HTMLButtonElement>): void {
-    event.preventDefault();
-    const clientId = process.env.NEXT_PUBLIC_SPOTIFY_CLIENT_ID;
-    if (!clientId) {
-      showToast("Spotify client ID is not configured", "error");
-      return;
-    }
-
-    const redirectUri = window.location.origin + '/';
-    const scope = 'user-read-private user-read-email';
-
-    const randomString = (length: number) =>
-      Array.from(crypto.getRandomValues(new Uint8Array(length)))
-        .map((b) => ('0' + (b % 36).toString(36)).slice(-1))
-        .join('');
-
-    const codeVerifier = randomString(64);
-    localStorage.setItem('code_verifier', codeVerifier);
-
-    const toBase64Url = (buffer: ArrayBuffer) =>
-      btoa(String.fromCharCode(...new Uint8Array(buffer)))
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=+$/, '');
-
-    crypto.subtle.digest('SHA-256', new TextEncoder().encode(codeVerifier))
-      .then((digest) => {
-        const codeChallenge = toBase64Url(digest);
-        const params = new URLSearchParams({
-          response_type: 'code',
-          client_id: clientId,
-          scope,
-          redirect_uri: redirectUri,
-          code_challenge_method: 'S256',
-          code_challenge: codeChallenge,
-        });
-        window.location.href = `https://accounts.spotify.com/authorize?${params.toString()}`;
-      })
-      .catch(() => {
-        showToast("Spotify login initialization failed", "error");
-      });
-  }
-
   return (
     <main className="min-h-screen bg-black text-white pb-24 font-sans relative selection:bg-zinc-800 overflow-x-hidden">
       <audio ref={audioRef} onEnded={() => setPlayingSong(null)} />
@@ -5714,17 +5633,6 @@ const renderFeedCard = (s: Song) => (
             <div className="bg-[#1c1c1e] rounded-2xl mb-8"><div className="flex items-center justify-between p-4"><div className="flex items-center gap-3"><IconMusic /><p className="font-bold text-sm">{t('audio')}</p></div><button onClick={() => setSettings({ ...settings, audio: !settings.audio })} className={`w-12 h-6 rounded-full p-1 transition-colors ${settings.audio ? 'bg-[#1DB954]' : 'bg-zinc-700'}`}><div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${settings.audio ? 'translate-x-6' : 'translate-x-0'}`}></div></button></div></div>
             <p className="text-xs font-bold text-zinc-500 mb-2 px-2">{t('settings')}</p>
             <div className="bg-[#1c1c1e] rounded-2xl mb-8 flex flex-col">
-              <div className="flex items-center justify-between p-4 border-b border-zinc-800/50">
-                <div className="flex items-center gap-3">
-                  <IconMusic />
-                  <p className="font-bold text-sm">Spotify連携</p>
-                </div>
-                {spotifyAccessToken ? (
-                  <span className="text-[10px] font-bold text-[#1DB954] bg-[#1DB954]/10 px-3 py-1 rounded-full border border-[#1DB954]/20">連携済み</span>
-                ) : (
-                  <button onClick={handleSpotifyLogin} className="px-4 py-1.5 bg-[#1DB954] text-black font-bold text-xs rounded-full hover:scale-105 transition-transform shadow-md">連携する</button>
-                )}
-              </div>
               <div className="flex items-center justify-between p-4 border-b border-zinc-800/50"><div className="flex items-center gap-3"><IconBell /><p className="font-bold text-sm">{t('notifications')}</p></div><button onClick={() => { setSettings({ ...settings, notifications: !settings.notifications }); }} className={`w-12 h-6 rounded-full p-1 transition-colors ${settings.notifications ? 'bg-[#1DB954]' : 'bg-zinc-700'}`}><div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${settings.notifications ? 'translate-x-6' : 'translate-x-0'}`}></div></button></div>
               <div className="flex items-center justify-between p-4 border-b border-zinc-800/50"><div className="flex items-center gap-3"><IconLockSetting /><p className="font-bold text-sm">{t('privateAcc')}</p></div><button onClick={() => { setEditIsPrivate(!myProfile.isPrivate); setMyProfile({ ...myProfile, isPrivate: !myProfile.isPrivate }); }} className={`w-12 h-6 rounded-full p-1 transition-colors ${myProfile.isPrivate ? 'bg-white' : 'bg-zinc-700'}`}><div className={`w-4 h-4 rounded-full shadow-md transform transition-transform ${myProfile.isPrivate ? 'translate-x-6 bg-black' : 'translate-x-0 bg-white'}`}></div></button></div>
               <div className="relative flex items-center justify-between p-4 border-b border-zinc-800/50 cursor-pointer"><div className="flex items-center gap-3"><IconClock /><p className="font-bold text-sm">{t('timezone')}: {timeZone.split('/').pop()?.replace('_', ' ')}</p></div><IconChevronRight /><select value={timeZone} onChange={(e) => setTimeZone(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"><optgroup label="Asia"><option value="Asia/Tokyo">Tokyo (JST)</option><option value="Asia/Seoul">Seoul (KST)</option><option value="Asia/Shanghai">Shanghai (CST)</option></optgroup><optgroup label="America"><option value="America/New_York">New York (EST/EDT)</option><option value="America/Los_Angeles">Los Angeles (PST/PDT)</option></optgroup><optgroup label="Europe"><option value="Europe/London">London (GMT/BST)</option><option value="Europe/Paris">Paris (CET/CEST)</option></optgroup></select></div>
@@ -6188,10 +6096,12 @@ const renderFeedCard = (s: Song) => (
               </div>
               <div className="flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {todayRecommendedSongs.length > 0 ? todayRecommendedSongs.map((song, index) => (
-                  <button
+                  <div
                     key={`${song.trackId || song.trackName}-${index}`}
-                    type="button"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => setDraftSong(song)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setDraftSong(song); }}
                     className="min-w-[240px] max-w-[260px] flex items-center gap-3 rounded-2xl border border-zinc-800 bg-[#1c1c1e] p-3 text-left hover:bg-zinc-800 transition-colors"
                   >
                     <div className="relative w-14 h-14 rounded-xl overflow-hidden border border-zinc-800 flex-shrink-0">
@@ -6207,7 +6117,7 @@ const renderFeedCard = (s: Song) => (
                       <p className="text-[10px] text-zinc-400 truncate mt-0.5">{song.artistName}</p>
                       <p className="text-[10px] text-[#1DB954] mt-2 line-clamp-2">{song.reason || "あなたの記録に近い曲"}</p>
                     </div>
-                  </button>
+                  </div>
                 )) : (
                   <div className="w-full rounded-2xl border border-zinc-900 bg-[#1c1c1e]/60 px-4 py-5 text-xs text-zinc-500">
                     曲を記録すると、好みに近いおすすめがここに届きます。
@@ -7068,7 +6978,6 @@ const renderFeedCard = (s: Song) => (
         activeTrackInfo={activeTrackInfo} 
         playingSong={playingSong} 
         togglePlay={togglePlay} 
-        spotifyAccessToken={spotifyAccessToken}
       />
     </main>
   );

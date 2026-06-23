@@ -11,13 +11,6 @@ type ArtistImageRequest = {
 
 type ArtistImageSource = 'lastfm' | 'fallback' | 'none';
 
-type SpotifyArtist = {
-  id?: string;
-  name?: string;
-  popularity?: number;
-  images?: Array<{ url?: string; height?: number; width?: number }>;
-};
-
 type LastfmImage = {
   '#text'?: string;
   size?: string;
@@ -40,13 +33,6 @@ const normalizeArtistKey = (value: string) =>
     .replace(/[^a-z0-9一-龯ぁ-んァ-ヶー]+/gi, '-')
     .replace(/^-+|-+$/g, '') || 'unknown';
 
-const normalizeForMatch = (value: string) =>
-  value
-    .trim()
-    .normalize('NFKC')
-    .toLowerCase()
-    .replace(/[^\p{Letter}\p{Number}]+/gu, '');
-
 const responseFor = (artistImageUrl: string, source: ArtistImageSource, fallbackArtworkUrl = '') =>
   NextResponse.json({
     artistImageUrl,
@@ -66,66 +52,6 @@ const getSupabaseAdmin = () => {
 const isMissingArtistProfilesTable = (error: any) => {
   const message = `${error?.message || ''} ${error?.details || ''} ${error?.hint || ''}`;
   return error?.code === '42P01' || error?.code === 'PGRST205' || /artist_profiles/i.test(message);
-};
-
-const getSpotifyAccessToken = async () => {
-  const clientId = process.env.SPOTIFY_CLIENT_ID;
-  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
-  if (!clientId || !clientSecret) return null;
-
-  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-  const response = await fetch('https://accounts.spotify.com/api/token', {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${credentials}`,
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
-    body: new URLSearchParams({ grant_type: 'client_credentials' }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Spotify token request failed: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return typeof data.access_token === 'string' ? data.access_token : null;
-};
-
-const scoreSpotifyArtist = (artistName: string, artist: SpotifyArtist) => {
-  const target = normalizeForMatch(artistName);
-  const candidate = normalizeForMatch(artist.name || '');
-  let score = artist.popularity || 0;
-  if (candidate === target) score += 1000;
-  else if (candidate.includes(target) || target.includes(candidate)) score += 200;
-  if (artist.images?.length) score += 50;
-  return score;
-};
-
-const findSpotifyArtistImage = async (artistName: string) => {
-  const token = await getSpotifyAccessToken();
-  if (!token) return null;
-
-  const url = `https://api.spotify.com/v1/search?${new URLSearchParams({
-    q: artistName,
-    type: 'artist',
-    limit: '5',
-    market: 'JP',
-  })}`;
-  const response = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Spotify artist search failed: ${response.status}`);
-  }
-
-  const data = await response.json();
-  const artists = (data?.artists?.items || []) as SpotifyArtist[];
-  const best = artists
-    .filter(artist => artist.name)
-    .sort((a, b) => scoreSpotifyArtist(artistName, b) - scoreSpotifyArtist(artistName, a))[0];
-
-  return best?.images?.[0]?.url || null;
 };
 
 const lastfmSizeRank: Record<string, number> = {

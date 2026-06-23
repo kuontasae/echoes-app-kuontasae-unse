@@ -123,6 +123,7 @@ async function mockLoggedInSupabase(page: Page, profile = mockProfile, options?:
   trendingSongs?: any[];
   failTrendingSongs?: boolean;
   recommendedSongs?: any[];
+  initialArticles?: any[];
 }) {
   const storageKey = getSupabaseStorageKey();
   test.skip(!storageKey, 'NEXT_PUBLIC_SUPABASE_URL is required for the mocked login test.');
@@ -133,6 +134,7 @@ async function mockLoggedInSupabase(page: Page, profile = mockProfile, options?:
   const customCommunities: any[] = [...(options?.initialCustomCommunities || [])];
   const communityMembers: Array<{ community_id: string; user_id: string; created_at?: string }> = [...(options?.initialCommunityMembers || [])];
   const artistFavorites: Array<{ user_id: string; artist_id: string; artist_name: string; artwork_url?: string }> = [];
+  const articles: any[] = [...(options?.initialArticles || [])];
 
   await page.addInitScript(
     ({ key, value }) => {
@@ -235,6 +237,30 @@ async function mockLoggedInSupabase(page: Page, profile = mockProfile, options?:
         artistImageUrl: body.fallbackArtworkUrl || '',
         source: body.fallbackArtworkUrl ? 'fallback' : 'none',
         fallbackUsed: Boolean(body.fallbackArtworkUrl),
+      },
+    });
+  });
+
+  await page.route('**/api/article-detail*', async (route) => {
+    const url = new URL(route.request().url());
+    const article = articles.find(a => a.id === url.searchParams.get('id'));
+    if (!article) {
+      await route.fulfill({ status: 404, json: { error: 'ArticleNotFound' } });
+      return;
+    }
+    await route.fulfill({
+      json: {
+        id: article.id,
+        title: article.title,
+        content: article.content,
+        premium_content: article.mockPremiumAccess ? article.premium_content : null,
+        price: article.price || 0,
+        cover_url: article.cover_url,
+        author_id: article.author_id,
+        created_at: article.created_at,
+        hasPremiumAccess: Boolean(article.mockPremiumAccess || !article.price),
+        hasPurchased: Boolean(article.mockPremiumAccess),
+        isAuthor: article.author_id === mockUser.id,
       },
     });
   });
@@ -362,7 +388,19 @@ async function mockLoggedInSupabase(page: Page, profile = mockProfile, options?:
       return;
     }
 
-    if (table === 'follows' || table === 'blocks' || table === 'likes' || table === 'comments' || table === 'articles' || table === 'transactions' || table === 'notifications' || table === 'chat_messages') {
+    if (table === 'articles') {
+      if (route.request().method() === 'POST' || route.request().method() === 'PATCH' || route.request().method() === 'DELETE') {
+        await route.fulfill({ json: [] });
+        return;
+      }
+      let result = articles;
+      const idMatch = url.searchParams.get('id')?.match(/^eq\.(.+)$/);
+      if (idMatch) result = result.filter(a => a.id === decodeURIComponent(idMatch[1]));
+      await route.fulfill({ json: accept.includes('application/vnd.pgrst.object+json') ? (result[0] || null) : result });
+      return;
+    }
+
+    if (table === 'follows' || table === 'blocks' || table === 'likes' || table === 'comments' || table === 'transactions' || table === 'notifications' || table === 'chat_messages') {
       await route.fulfill({ json: [] });
       return;
     }
@@ -457,6 +495,31 @@ test('モックログイン状態で主要タブを表示できる', async ({ pa
 
   await page.getByRole('button', { name: 'フィード' }).click();
   await expect(page.getByRole('heading', { name: 'Echoes' })).toBeVisible();
+});
+
+test('未購入の有料記事は詳細でも有料本文を表示しない', async ({ page }) => {
+  await mockLoggedInSupabase(page, mockProfile, {
+    initialArticles: [
+      {
+        id: 'paid-article-1',
+        title: '有料ライブレポ',
+        content: '<p>公開される前半です。</p>',
+        premium_content: '<p>SECRET PAID BODY</p>',
+        price: 300,
+        cover_url: 'https://example.com/article-cover.jpg',
+        author_id: 'tagged-user',
+        created_at: new Date().toISOString(),
+      },
+    ],
+  });
+  await page.goto('/');
+
+  await page.getByRole('button', { name: '読む' }).click();
+  await page.getByText('有料ライブレポ').click();
+
+  await expect(page.getByText('公開される前半です。').nth(1)).toBeVisible();
+  await expect(page.getByText('この続きは有料コンテンツです')).toBeVisible();
+  await expect(page.getByText('SECRET PAID BODY')).not.toBeVisible();
 });
 
 test('Homeから最初の1曲を記録する導線が分かる', async ({ page }) => {
