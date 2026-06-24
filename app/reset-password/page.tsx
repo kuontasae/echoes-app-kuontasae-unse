@@ -12,7 +12,7 @@ const passwordResetMessages = {
   checkingSession: "認証リンクを確認しています...",
   missingSession: "認証セッションが見つかりません。メールのリンクをもう一度開いてください。",
   invalidLink: "リンクの有効期限が切れているか、無効です。もう一度パスワード再設定メールを送信してください。",
-  weakPassword: "パスワードは6文字以上で入力してください。",
+  weakPassword: "パスワードは8文字以上で、英字と数字を含めてください。",
   missingPassword: "新しいパスワードを入力してください",
   passwordMismatch: "パスワードが一致しません",
   updateFailed: "パスワードの更新に失敗しました。時間をおいてもう一度お試しください。",
@@ -39,7 +39,8 @@ const mapPasswordResetError = (error: unknown) => {
   if (
     lowerMessage.includes("weak") ||
     lowerMessage.includes("password should be") ||
-    lowerMessage.includes("at least 6")
+    lowerMessage.includes("at least 6") ||
+    lowerMessage.includes("at least 8")
   ) {
     return passwordResetMessages.weakPassword;
   }
@@ -152,7 +153,8 @@ export default function ResetPasswordPage() {
       setMessage({ text: passwordResetMessages.passwordMismatch, type: "error" });
       return;
     }
-    if (password.length < 6) {
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+    if (!passwordRegex.test(password)) {
       setMessage({ text: passwordResetMessages.weakPassword, type: "error" });
       return;
     }
