@@ -320,7 +320,7 @@ function MainApp() {
   const [showAlignmentMenu, setShowAlignmentMenu] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'signup' | 'reset'>('login');
   const [signupSuccess, setSignupSuccess] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [email, setEmail] = useState("");
@@ -332,6 +332,54 @@ function MainApp() {
   const [timeZone, setTimeZone] = useState("Asia/Tokyo");
   const [language, setLanguage] = useState("日本語");
   const t = (k: string) => localI18n[language]?.[k] || localI18n["日本語"][k];
+  const passwordResetText = {
+    missingEmail: {
+      "日本語": "メールアドレスを入力してください",
+      English: "Please enter your email address.",
+      "中文": "请输入邮箱地址",
+    },
+    invalidEmail: {
+      "日本語": "メールアドレスの形式が正しくありません",
+      English: "Please enter a valid email address.",
+      "中文": "邮箱地址格式不正确",
+    },
+    sent: {
+      "日本語": "パスワード再設定メールを送信しました",
+      English: "Password reset email has been sent.",
+      "中文": "密码重置邮件已发送",
+    },
+    sendFailed: {
+      "日本語": "メール送信に失敗しました。時間をおいてもう一度お試しください。",
+      English: "Could not send the reset email. Please try again later.",
+      "中文": "邮件发送失败。请稍后再试。",
+    },
+    expiredLink: {
+      "日本語": "リンクの有効期限が切れているか、無効です。もう一度パスワード再設定メールを送信してください。",
+      English: "The link is expired or invalid. Please request another password reset email.",
+      "中文": "链接已过期或无效。请重新发送密码重置邮件。",
+    },
+  } as const;
+  type PasswordResetLanguage = keyof typeof passwordResetText.missingEmail;
+  const passwordResetLanguages: PasswordResetLanguage[] = ["日本語", "English", "中文"];
+  const getPasswordResetText = (key: keyof typeof passwordResetText) => {
+    const activeLanguage = passwordResetLanguages.includes(language as PasswordResetLanguage)
+      ? language as PasswordResetLanguage
+      : "日本語";
+    return passwordResetText[key][activeLanguage];
+  };
+  const mapPasswordResetAuthError = (error: unknown) => {
+    const message = error instanceof Error ? error.message : String(error || "");
+    const lowerMessage = message.toLowerCase();
+    if (
+      lowerMessage.includes("expired") ||
+      lowerMessage.includes("invalid") ||
+      lowerMessage.includes("token") ||
+      lowerMessage.includes("otp")
+    ) {
+      return getPasswordResetText("expiredLink");
+    }
+    return getPasswordResetText("sendFailed");
+  };
   const [toastMsg, setToastMsg] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
   const showToast = (text: string, type: 'success' | 'error' = 'success') => { setToastMsg({ text: t(text) || text, type }); setTimeout(() => setToastMsg(null), 3000); };
   const getOnboardingSkippedKey = (userId: string) => `echoes_onboarding_skipped_${userId}`;
@@ -3974,6 +4022,33 @@ const handleDeleteCommunity = async (id: string) => {
     setIsAuthLoading(false);
   }
 };
+  const handlePasswordResetRequest = async () => {
+    if (!email) {
+      showToast(getPasswordResetText("missingEmail"), "error");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      showToast(getPasswordResetText("invalidEmail"), "error");
+      return;
+    }
+    setIsAuthLoading(true);
+    try {
+      const redirectTo = `${window.location.origin}/reset-password`;
+      const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo });
+      if (error) {
+        showToast(mapPasswordResetAuthError(error), "error");
+        return;
+      }
+      showToast(getPasswordResetText("sent"), "success");
+      setAuthMode('login');
+      setPassword("");
+    } catch {
+      showToast(getPasswordResetText("sendFailed"), "error");
+    } finally {
+      setIsAuthLoading(false);
+    }
+  };
   const saveProfileChanges = async () => {
   if (!currentUser) return;
   const tName = editName.trim();
@@ -4526,12 +4601,21 @@ const renderFeedCard = (s: Song) => (
           </div>
         ) : (
           <>
-            <h2 className="text-xl font-bold text-center mb-2">{authMode === 'login' ? 'ログインして始める' : '新しいアカウントを作成'}</h2>
+            <h2 className="text-xl font-bold text-center mb-2">{authMode === 'login' ? 'ログインして始める' : authMode === 'reset' ? 'パスワードを再設定' : '新しいアカウントを作成'}</h2>
             <input type="email" placeholder="メールアドレス" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#1c1c1e] border border-zinc-800 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none" />
-            <input type="password" placeholder="パスワード" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1c1c1e] border border-zinc-800 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none" />
-            {authMode === 'login' ? (
+            {authMode !== 'reset' && (
+              <input type="password" placeholder="パスワード" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1c1c1e] border border-zinc-800 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none" />
+            )}
+            {authMode === 'reset' ? (
+              <>
+                <p className="text-xs text-zinc-500 leading-relaxed text-center px-2">登録済みのメールアドレスに、パスワード再設定用のリンクを送信します。</p>
+                <button onClick={handlePasswordResetRequest} disabled={isAuthLoading} className="w-full bg-white text-black font-bold py-3.5 rounded-xl mt-4 disabled:opacity-50 transition-transform active:scale-95">{isAuthLoading ? "送信中..." : "再設定メールを送信"}</button>
+                <p className="text-center text-xs text-zinc-500 mt-4">ログイン画面に戻りますか？ <button onClick={() => { setAuthMode('login'); setPassword(""); }} className="text-white font-bold hover:underline">ログイン</button></p>
+              </>
+            ) : authMode === 'login' ? (
               <>
                 <button onClick={handleLogin} disabled={isAuthLoading} className="w-full bg-white text-black font-bold py-3.5 rounded-xl mt-4 disabled:opacity-50 transition-transform active:scale-95">{isAuthLoading ? "処理中..." : "ログイン"}</button>
+                <p className="text-center text-xs text-zinc-500 mt-4"><button onClick={() => { setAuthMode('reset'); setPassword(""); }} className="text-white font-bold hover:underline">パスワードを忘れた方</button></p>
                 <p className="text-center text-xs text-zinc-500 mt-4">アカウントを持っていませんか？ <button onClick={() => { setAuthMode('signup'); setEmail(""); setPassword(""); }} className="text-white font-bold hover:underline">新規登録</button></p>
               </>
             ) : (
