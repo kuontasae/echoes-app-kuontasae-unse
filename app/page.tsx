@@ -205,6 +205,7 @@ Object.assign(localI18n["日本語"], {
   SystemError: "エラーが発生しました",
   Unauthorized: "ログインが必要です",
   ValidationError: "入力内容を確認してください",
+  WeakPassword: "パスワードは8文字以上で、英字と数字を含めてください。",
   InvalidNameLength: "名前は1〜50文字で入力してください",
   InvalidHandleFormat: "ユーザーIDは3〜20文字の英数字とアンダーバーで入力してください",
   InsertFailed: "保存に失敗しました",
@@ -4219,7 +4220,7 @@ const handleDeleteCommunity = async (id: string) => {
     showToast("InvalidEmailFormat", "error");
     return;
   }
-  const pwRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+  const pwRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
   if (!pwRegex.test(password)) {
     showToast("WeakPassword", "error");
     return;
