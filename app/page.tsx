@@ -9,6 +9,7 @@ import { FeedCard } from './components/FeedCard';
 import { ArticleEditorModal } from './components/articles/ArticleEditorModal';
 import { ArticleListSection } from './components/articles/ArticleListSection';
 import { ArticleDetailModal } from './components/articles/ArticleDetailModal';
+import { ArticlePublishSettingsModal } from './components/articles/ArticlePublishSettingsModal';
 import { MusicSearchBox } from './components/music/MusicSearchBox';
 import { SongPostModal } from './components/music/SongPostModal';
 import { EditProfileModal } from './components/profile/EditProfileModal';
@@ -6798,61 +6799,19 @@ const renderFeedCard = (s: Song) => (
             </div>
           )}
       </ArticleEditorModal>
-      {showPublishSettingsModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[1100] flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowPublishSettingsModal(false)}>
-          <div className="bg-[#1c1c1e] border border-zinc-800 rounded-[32px] w-full max-w-md overflow-hidden shadow-2xl relative flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-5 border-b border-zinc-800/50">
-              <h3 className="font-bold text-lg text-white">公開設定</h3>
-              <button onClick={() => setShowPublishSettingsModal(false)} className="w-8 h-8 bg-zinc-800/50 hover:bg-zinc-800 rounded-full flex items-center justify-center text-zinc-400 transition-colors">
-                <IconCross />
-              </button>
-            </div>
-            <div className="p-6 flex flex-col gap-6">
-              <div>
-                <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2">プレビュー</p>
-                <div className="bg-black rounded-2xl border border-zinc-800 overflow-hidden">
-                  <img src={newArticleCover || '/default-bg.jpg'} className="w-full h-32 object-cover" />
-                  <div className="p-4">
-                    <p className="font-bold text-base text-white truncate">{newArticleTitle || "無題の記事"}</p>
-                    <div className="flex items-center gap-2 mt-3">
-                      <img src={myProfile.avatar} className="w-5 h-5 rounded-full object-cover border border-zinc-700" />
-                      <span className="text-xs text-zinc-400">{myProfile.name}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="bg-black rounded-2xl border border-zinc-800 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[#1DB954]/10 flex items-center justify-center text-[#1DB954]">
-                      <IconYen />
-                    </div>
-                    <div>
-                      <p className="font-bold text-sm text-white">有料記事として公開</p>
-                      <p className="text-[10px] text-zinc-500 mt-0.5">※本文に有料エリアの区切り線が必要です</p>
-                    </div>
-                  </div>
-                  <button onClick={() => setIsArticlePremium(!isArticlePremium)} className={`w-12 h-6 rounded-full p-1 transition-colors relative ${isArticlePremium ? 'bg-[#1DB954]' : 'bg-zinc-700'}`}>
-                    <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${isArticlePremium ? 'translate-x-6' : 'translate-x-0'}`}></div>
-                  </button>
-                </div>
-                {isArticlePremium && (
-                  <div className="mt-4 pt-4 border-t border-zinc-800 animate-fade-in flex items-center justify-between">
-                    <p className="text-sm font-bold text-zinc-300">販売価格</p>
-                    <div className="flex items-center gap-2">
-                      <input type="number" min="1" value={articlePriceInput} onChange={(e) => setArticlePriceInput(parseInt(e.target.value) || 0)} className="w-24 bg-[#1c1c1e] border border-zinc-700 rounded-lg px-3 py-2 text-sm text-white text-right focus:outline-none focus:border-[#1DB954]" />
-                      <span className="font-bold text-zinc-400">コイン</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-              <button onClick={handlePostArticle} disabled={isPosting} className="w-full py-4 bg-[#1DB954] text-black rounded-xl text-sm font-bold shadow-lg hover:scale-[1.02] transition-transform disabled:opacity-50 mt-2">
-                {isPosting ? "投稿中..." : "この記事を投稿する"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ArticlePublishSettingsModal
+        isOpen={showPublishSettingsModal}
+        newArticleCover={newArticleCover}
+        newArticleTitle={newArticleTitle}
+        myProfile={myProfile}
+        isArticlePremium={isArticlePremium}
+        articlePriceInput={articlePriceInput}
+        isPosting={isPosting}
+        onClose={() => setShowPublishSettingsModal(false)}
+        onTogglePremium={() => setIsArticlePremium(!isArticlePremium)}
+        onPriceInputChange={setArticlePriceInput}
+        onPostArticle={handlePostArticle}
+      />
       {showCoinChargeModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[1200] flex justify-center items-end sm:items-center animate-fade-in" onClick={() => {
           if (!isCharging) {
