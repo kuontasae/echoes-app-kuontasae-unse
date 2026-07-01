@@ -51,6 +51,7 @@ const getAvailableCoins = (profile: CoinFields) => {
   return splitBalance > 0 ? splitBalance : Number(profile.coin_balance) || 0;
 };
 
+const LANGUAGE_STORAGE_KEY = "echoes_language";
 const DEFAULT_ONBOARDING_GENRES = ["邦ロック", "J-POP", "K-POP", "洋楽", "ヒップホップ", "R&B", "EDM", "テクノ", "ジャズ", "アニソン", "ボカロ", "アイドル"];
 const DEFAULT_ONBOARDING_HASHTAGS = ["フェス勢", "ライブ好き", "チルい曲", "カラオケ好き", "音楽友達募集", "新譜チェック", "推し活", "レコード好き"];
 const DEFAULT_ONBOARDING_LIVE_HISTORY = ["VIVA LA ROCK", "ROCK IN JAPAN", "FUJI ROCK", "SUMMER SONIC", "COUNTDOWN JAPAN", "METROCK", "RISING SUN", "SWEET LOVE SHOWER"];
@@ -383,6 +384,22 @@ function MainApp() {
   const [timeZone, setTimeZone] = useState("Asia/Tokyo");
   const [language, setLanguage] = useState("日本語");
   const t = (k: string) => localI18n[language]?.[k] || localI18n["日本語"][k];
+  useEffect(() => {
+    try {
+      const savedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+      if (savedLanguage && localI18n[savedLanguage]) setLanguage(savedLanguage);
+    } catch (e) {
+      console.warn("Language preference restore failed", e);
+    }
+  }, []);
+  const handleLanguageChange = (nextLanguage: string) => {
+    setLanguage(nextLanguage);
+    try {
+      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
+    } catch (e) {
+      console.warn("Language preference save failed", e);
+    }
+  };
   const passwordResetText = {
     missingEmail: {
       "日本語": "メールアドレスを入力してください",
@@ -5770,7 +5787,7 @@ const renderFeedCard = (s: Song) => (
               <div className="flex items-center justify-between p-4 border-b border-zinc-800/50"><div className="flex items-center gap-3"><IconBell /><p className="font-bold text-sm">{t('notifications')}</p></div><button onClick={() => { setSettings({ ...settings, notifications: !settings.notifications }); }} className={`w-12 h-6 rounded-full p-1 transition-colors ${settings.notifications ? 'bg-[#1DB954]' : 'bg-zinc-700'}`}><div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${settings.notifications ? 'translate-x-6' : 'translate-x-0'}`}></div></button></div>
               <div className="flex items-center justify-between p-4 border-b border-zinc-800/50"><div className="flex items-center gap-3"><IconLockSetting /><p className="font-bold text-sm">{t('privateAcc')}</p></div><button onClick={() => { setEditIsPrivate(!myProfile.isPrivate); setMyProfile({ ...myProfile, isPrivate: !myProfile.isPrivate }); }} className={`w-12 h-6 rounded-full p-1 transition-colors ${myProfile.isPrivate ? 'bg-white' : 'bg-zinc-700'}`}><div className={`w-4 h-4 rounded-full shadow-md transform transition-transform ${myProfile.isPrivate ? 'translate-x-6 bg-black' : 'translate-x-0 bg-white'}`}></div></button></div>
               <div className="relative flex items-center justify-between p-4 border-b border-zinc-800/50 cursor-pointer"><div className="flex items-center gap-3"><IconClock /><p className="font-bold text-sm">{t('timezone')}: {timeZone.split('/').pop()?.replace('_', ' ')}</p></div><IconChevronRight /><select value={timeZone} onChange={(e) => setTimeZone(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"><optgroup label="Asia"><option value="Asia/Tokyo">Tokyo (JST)</option><option value="Asia/Seoul">Seoul (KST)</option><option value="Asia/Shanghai">Shanghai (CST)</option></optgroup><optgroup label="America"><option value="America/New_York">New York (EST/EDT)</option><option value="America/Los_Angeles">Los Angeles (PST/PDT)</option></optgroup><optgroup label="Europe"><option value="Europe/London">London (GMT/BST)</option><option value="Europe/Paris">Paris (CET/CEST)</option></optgroup></select></div>
-              <div className="relative flex items-center justify-between p-4 cursor-pointer"><div className="flex items-center gap-3"><IconGlobe /><p className="font-bold text-sm">{t('language')}: {language}</p></div><IconChevronRight /><select value={language} onChange={(e) => setLanguage(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"><option value="日本語">日本語</option><option value="English">English</option><option value="中文">中文</option></select></div>
+              <div className="relative flex items-center justify-between p-4 cursor-pointer"><div className="flex items-center gap-3"><IconGlobe /><p className="font-bold text-sm">{t('language')}: {language}</p></div><IconChevronRight /><select value={language} onChange={(e) => handleLanguageChange(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"><option value="日本語">日本語</option><option value="English">English</option><option value="中文">中文</option></select></div>
               <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-zinc-800/50 transition-colors" onClick={() => { setShowSettingsMenu(false); setShowBlockedUsersModal(true); }}><div className="flex items-center gap-3"><IconLock /><p className="font-bold text-sm">ブロックしたユーザー</p></div><IconChevronRight /></div>
             </div>
             <p className="text-xs font-bold text-zinc-500 mb-2 px-2">{t('appInfo')}</p>
