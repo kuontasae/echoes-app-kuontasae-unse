@@ -417,6 +417,7 @@ Object.assign(localI18n["日本語"], {
   ArticleFileInsertFailed: "ファイルの挿入に失敗しました",
   ArticleTitleTooLong: "タイトルは100文字以内で入力してください",
   ArticleMissingPaywallSeparator: "有料エリアの区切りを挿入してください",
+  ArticlePaywallSeparatorLabel: "ここから先は有料エリアです",
   ArticleInvalidPrice: "価格が不正です",
   ArticleDatabaseError: "記事の保存に失敗しました",
   ArticleStorageQuotaExceeded: "下書きの保存容量が不足しています",
@@ -902,6 +903,7 @@ Object.assign(localI18n["English"], {
   ArticleFileInsertFailed: "Could not insert file",
   ArticleTitleTooLong: "Title must be 100 characters or less",
   ArticleMissingPaywallSeparator: "Insert the paid-area separator",
+  ArticlePaywallSeparatorLabel: "Paid area starts here",
   ArticleInvalidPrice: "Invalid price",
   ArticleDatabaseError: "Failed to save article",
   ArticleStorageQuotaExceeded: "Not enough storage for drafts",
@@ -1387,6 +1389,7 @@ Object.assign(localI18n["中文"], {
   ArticleFileInsertFailed: "文件插入失败",
   ArticleTitleTooLong: "标题请控制在100个字符以内",
   ArticleMissingPaywallSeparator: "请插入付费区域分隔线",
+  ArticlePaywallSeparatorLabel: "以下为付费区域",
   ArticleInvalidPrice: "价格无效",
   ArticleDatabaseError: "文章保存失败",
   ArticleStorageQuotaExceeded: "草稿保存空间不足",
@@ -1652,6 +1655,16 @@ function MainApp() {
   const [language, setLanguage] = useState("日本語");
   const [isLanguageRestored, setIsLanguageRestored] = useState(false);
   const t = (k: string) => localI18n[language]?.[k] || localI18n["日本語"][k];
+  const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const getPaywallSeparatorLabel = () => t("ArticlePaywallSeparatorLabel");
+  const getPaywallSeparatorHtml = () => `<br/><div contenteditable="false"><hr style="border-top:2px dashed #1DB954;margin:32px 0;"/><p style="text-align:center;color:#1DB954;font-weight:bold;font-size:12px;letter-spacing:0.1em;margin-bottom:32px;">${getPaywallSeparatorLabel()}</p></div><br/>`;
+  const getPaywallSeparatorRegex = () => {
+    const labels = Array.from(new Set(
+      Object.values(localI18n).map((dict: any) => dict.ArticlePaywallSeparatorLabel).filter(Boolean)
+    ));
+    const labelPattern = labels.map(escapeRegExp).join('|');
+    return new RegExp(`(?:<br\\s*\\/?>\\s*)*(?:<div[^>]*>\\s*)?<hr[^>]*>[\\s\\S]*?(?:${labelPattern})[\\s\\S]*?<\\/p>(?:\\s*<\\/div>)?(?:<br\\s*\\/?>\\s*)*`, 'i');
+  };
   useEffect(() => {
     try {
       const savedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
@@ -2169,7 +2182,7 @@ function MainApp() {
   let premiumContent = "";
   let articlePrice = 0;
   if (isArticlePremium) {
-    const paywallRegex = /(?:<br\s*\/?>\s*)*(?:<div[^>]*>\s*)?<hr[^>]*>[\s\S]*?ここから先は有料エリアです[\s\S]*?<\/p>(?:\s*<\/div>)?(?:<br\s*\/?>\s*)*/i;
+    const paywallRegex = getPaywallSeparatorRegex();
     if (!paywallRegex.test(trimmedContent)) {
       showToast(t("ArticleMissingPaywallSeparator"), "error");
       return;
@@ -2244,7 +2257,7 @@ function MainApp() {
 };
 	  const buildEditableArticleContent = (article: any) => {
 	    if ((Number(article.price) || 0) <= 0) return article.content || "";
-	    const paywallSeparator = '<br/><div contenteditable="false"><hr style="border-top:2px dashed #1DB954;margin:32px 0;"/><p style="text-align:center;color:#1DB954;font-weight:bold;font-size:12px;letter-spacing:0.1em;margin-bottom:32px;">ここから先は有料エリアです</p></div><br/>';
+	    const paywallSeparator = getPaywallSeparatorHtml();
 	    return `${article.content || ""}${paywallSeparator}${article.premium_content || ""}`;
 	  };
 	  // 💡 記事の編集を開始する（画像もセットする）
@@ -8232,7 +8245,7 @@ const renderFeedCard = (s: Song) => (
                     <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors"><IconMinus /></div>
                     <span className="text-[10px] text-zinc-300 font-bold">{t('articleEditorElementDivider')}</span>
                   </div>
-                  <div className="flex flex-col items-center gap-2 cursor-pointer group" onMouseDown={e => { e.preventDefault(); document.execCommand('insertHTML', false, '<br/><div contenteditable="false"><hr style="border-top:2px dashed #1DB954;margin:32px 0;"/><p style="text-align:center;color:#1DB954;font-weight:bold;font-size:12px;letter-spacing:0.1em;margin-bottom:32px;">ここから先は有料エリアです</p></div><br/>'); setShowElementMenu(false); }}>
+                  <div className="flex flex-col items-center gap-2 cursor-pointer group" onMouseDown={e => { e.preventDefault(); document.execCommand('insertHTML', false, getPaywallSeparatorHtml()); setShowElementMenu(false); }}>
                     <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors"><IconYen /></div>
                     <span className="text-[10px] text-zinc-300 font-bold">{t('articleEditorElementPaidArea')}</span>
                   </div>
