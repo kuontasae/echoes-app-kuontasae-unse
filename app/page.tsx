@@ -228,6 +228,34 @@ Object.assign(localI18n["日本語"], {
   AuthFailed: "ログインに失敗しました",
   SignupFailed: "登録に失敗しました",
   EmailAlreadyInUse: "このメールアドレスはすでに登録されています",
+  AuthSignupSuccessTitle: "メールを送信しました",
+  AuthSignupSuccessBodyLine1: "{email} 宛に確認メールを送りました。",
+  AuthSignupSuccessBodyLine2: "リンクをクリックしてログインしてください。",
+  AuthBackToLoginScreen: "ログイン画面へ",
+  AuthLoginHeading: "ログインして始める",
+  AuthResetHeading: "パスワードを再設定",
+  AuthSignupHeading: "新しいアカウントを作成",
+  AuthEmailPlaceholder: "メールアドレス",
+  AuthPasswordPlaceholder: "パスワード",
+  AuthResetDescription: "登録済みのメールアドレスに、パスワード再設定用のリンクを送信します。",
+  AuthSending: "送信中...",
+  AuthSendResetEmail: "再設定メールを送信",
+  AuthReturnToLoginPrompt: "ログイン画面に戻りますか？",
+  AuthLoginButton: "ログイン",
+  AuthProcessing: "処理中...",
+  AuthForgotPassword: "パスワードを忘れた方",
+  AuthNoAccountPrompt: "アカウントを持っていませんか？",
+  AuthSignupButton: "新規登録",
+  AuthAlreadyHaveAccountPrompt: "すでにアカウントをお持ちですか？",
+  AuthCreateAccountButton: "登録する",
+  AuthAgreementPrefix: "",
+  AuthAgreementJoiner: "と",
+  AuthAgreementSuffix: "に同意します。",
+  AuthClose: "閉じる",
+  TermsTitle: "利用規約",
+  PrivacyPolicyTitle: "プライバシーポリシー",
+  TermsContent: "第1条（適用）\n本規約は、ユーザーと本アプリ「Echoes」の利用に関わる一切の関係に適用されます。\n\n第2条（禁止事項）\nユーザーは、以下の行為をしてはなりません。\n・法令または公序良俗に違反する行為\n・著作権、商標権などの知的財産権を侵害する行為\n・他のユーザーや第三者を誹謗中傷する行為\n・スパム、宣伝、勧誘を目的とする行為\n\n第3条（免責事項）\n運営は、本アプリに起因してユーザーに生じたあらゆる損害について、一切の責任を負いません。\n\n第4条（規約の変更）\n運営は、必要と判断した場合には、いつでも本規約を変更することができるものとします。",
+  PrivacyPolicyContent: "1. 取得する情報\n本アプリは、アカウント登録時のメールアドレス、プロフィール情報、投稿された文章や画像、音声を取得します。\n\n2. 利用目的\n取得した情報は、本サービスの提供、ユーザー間のコミュニケーションの円滑化、AIによるおすすめコンテンツの提示のために利用されます。\n\n3. 第三者提供\n本アプリは、法令に定めがある場合を除き、ユーザーの同意を得ることなく第三者に個人情報を提供することはありません。\n\n4. データの削除\nユーザーはアカウント設定から退会処理を行うことで、紐づくすべてのデータをシステムから完全に消去することができます。",
   ProfileCreationError: "プロフィールの作成に失敗しました",
   BioTooLong: "自己紹介は160文字以内で入力してください",
   ProfileSaved: "プロフィールを保存しました",
@@ -326,6 +354,34 @@ Object.assign(localI18n["English"], {
   AuthFailed: "Login failed",
   SignupFailed: "Sign up failed",
   EmailAlreadyInUse: "This email address is already registered",
+  AuthSignupSuccessTitle: "Email sent",
+  AuthSignupSuccessBodyLine1: "We sent a confirmation email to {email}.",
+  AuthSignupSuccessBodyLine2: "Click the link, then log in.",
+  AuthBackToLoginScreen: "Back to login",
+  AuthLoginHeading: "Log in to get started",
+  AuthResetHeading: "Reset your password",
+  AuthSignupHeading: "Create a new account",
+  AuthEmailPlaceholder: "Email address",
+  AuthPasswordPlaceholder: "Password",
+  AuthResetDescription: "We will send a password reset link to your registered email address.",
+  AuthSending: "Sending...",
+  AuthSendResetEmail: "Send reset email",
+  AuthReturnToLoginPrompt: "Back to the login screen?",
+  AuthLoginButton: "Log in",
+  AuthProcessing: "Processing...",
+  AuthForgotPassword: "Forgot your password?",
+  AuthNoAccountPrompt: "Don't have an account?",
+  AuthSignupButton: "Sign up",
+  AuthAlreadyHaveAccountPrompt: "Already have an account?",
+  AuthCreateAccountButton: "Create account",
+  AuthAgreementPrefix: "I agree to the ",
+  AuthAgreementJoiner: " and ",
+  AuthAgreementSuffix: ".",
+  AuthClose: "Close",
+  TermsTitle: "Terms of Service",
+  PrivacyPolicyTitle: "Privacy Policy",
+  TermsContent: "Article 1 (Application)\nThese terms apply to all relationships between users and the Echoes app.\n\nArticle 2 (Prohibited Acts)\nUsers must not engage in the following acts:\n- Acts that violate laws or public order and morals\n- Acts that infringe copyrights, trademarks, or other intellectual property rights\n- Acts that defame or harass other users or third parties\n- Acts for spam, advertising, or solicitation\n\nArticle 3 (Disclaimer)\nThe operator is not responsible for any damages incurred by users arising from this app.\n\nArticle 4 (Changes to Terms)\nThe operator may change these terms at any time when deemed necessary.",
+  PrivacyPolicyContent: "1. Information We Collect\nThis app collects email addresses used for account registration, profile information, and posted text, images, and audio.\n\n2. Purpose of Use\nCollected information is used to provide the service, support communication between users, and present AI-powered recommendations.\n\n3. Third-Party Disclosure\nExcept as required by law, this app will not provide personal information to third parties without user consent.\n\n4. Data Deletion\nUsers can permanently delete all linked data from the system by deleting their account from account settings.",
   ProfileCreationError: "Failed to create profile",
   BioTooLong: "Bio must be 160 characters or less",
   ProfileSaved: "Profile saved",
@@ -424,6 +480,34 @@ Object.assign(localI18n["中文"], {
   AuthFailed: "登录失败",
   SignupFailed: "注册失败",
   EmailAlreadyInUse: "该邮箱地址已被注册",
+  AuthSignupSuccessTitle: "邮件已发送",
+  AuthSignupSuccessBodyLine1: "已向 {email} 发送确认邮件。",
+  AuthSignupSuccessBodyLine2: "请点击链接后登录。",
+  AuthBackToLoginScreen: "返回登录页面",
+  AuthLoginHeading: "登录后开始使用",
+  AuthResetHeading: "重置密码",
+  AuthSignupHeading: "创建新账号",
+  AuthEmailPlaceholder: "邮箱地址",
+  AuthPasswordPlaceholder: "密码",
+  AuthResetDescription: "我们会向已注册的邮箱地址发送密码重置链接。",
+  AuthSending: "发送中...",
+  AuthSendResetEmail: "发送重置邮件",
+  AuthReturnToLoginPrompt: "返回登录页面吗？",
+  AuthLoginButton: "登录",
+  AuthProcessing: "处理中...",
+  AuthForgotPassword: "忘记密码？",
+  AuthNoAccountPrompt: "还没有账号？",
+  AuthSignupButton: "注册",
+  AuthAlreadyHaveAccountPrompt: "已经有账号？",
+  AuthCreateAccountButton: "创建账号",
+  AuthAgreementPrefix: "我同意",
+  AuthAgreementJoiner: "和",
+  AuthAgreementSuffix: "。",
+  AuthClose: "关闭",
+  TermsTitle: "服务条款",
+  PrivacyPolicyTitle: "隐私政策",
+  TermsContent: "第1条（适用）\n本条款适用于用户与本应用 Echoes 使用相关的一切关系。\n\n第2条（禁止事项）\n用户不得进行以下行为：\n・违反法律法规或公序良俗的行为\n・侵犯著作权、商标权等知识产权的行为\n・诽谤中伤其他用户或第三方的行为\n・以垃圾信息、宣传或招揽为目的的行为\n\n第3条（免责声明）\n运营方不对用户因本应用产生的任何损害承担责任。\n\n第4条（条款变更）\n运营方在认为必要时，可以随时变更本条款。",
+  PrivacyPolicyContent: "1. 收集的信息\n本应用会收集账号注册时的邮箱地址、个人资料信息，以及发布的文字、图片和音频。\n\n2. 使用目的\n收集的信息将用于提供本服务、促进用户之间的沟通，以及通过 AI 提供推荐内容。\n\n3. 向第三方提供\n除法律法规规定的情况外，本应用不会在未经用户同意的情况下向第三方提供个人信息。\n\n4. 数据删除\n用户可以通过账号设置办理注销，从系统中永久删除关联的全部数据。",
   ProfileCreationError: "个人资料创建失败",
   BioTooLong: "个人简介请控制在160个字符以内",
   ProfileSaved: "个人资料已保存",
@@ -4768,50 +4852,51 @@ const renderFeedCard = (s: Song) => (
         {signupSuccess ? (
           <div className="bg-[#1c1c1e] border border-zinc-800 p-8 rounded-3xl text-center animate-fade-in">
             <div className="w-16 h-16 bg-[#1DB954]/20 text-[#1DB954] rounded-full flex items-center justify-center mx-auto mb-6"><IconBell /></div>
-            <h2 className="text-xl font-bold mb-4">メールを送信しました</h2>
-            <p className="text-sm text-zinc-400 mb-8 leading-relaxed">{email} 宛に確認メールを送りました。<br />リンクをクリックしてログインしてください。</p>
-            <button onClick={() => { setSignupSuccess(false); setAuthMode('login'); }} className="w-full bg-white text-black font-bold py-3.5 rounded-xl">ログイン画面へ</button>
+            <h2 className="text-xl font-bold mb-4">{t('AuthSignupSuccessTitle')}</h2>
+            <p className="text-sm text-zinc-400 mb-8 leading-relaxed">{String(t('AuthSignupSuccessBodyLine1')).replace("{email}", email)}<br />{t('AuthSignupSuccessBodyLine2')}</p>
+            <button onClick={() => { setSignupSuccess(false); setAuthMode('login'); }} className="w-full bg-white text-black font-bold py-3.5 rounded-xl">{t('AuthBackToLoginScreen')}</button>
           </div>
         ) : (
           <>
-            <h2 className="text-xl font-bold text-center mb-2">{authMode === 'login' ? 'ログインして始める' : authMode === 'reset' ? 'パスワードを再設定' : '新しいアカウントを作成'}</h2>
-            <input type="email" placeholder="メールアドレス" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#1c1c1e] border border-zinc-800 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none" />
+            <h2 className="text-xl font-bold text-center mb-2">{authMode === 'login' ? t('AuthLoginHeading') : authMode === 'reset' ? t('AuthResetHeading') : t('AuthSignupHeading')}</h2>
+            <input type="email" placeholder={t('AuthEmailPlaceholder')} value={email} onChange={(e) => setEmail(e.target.value)} className="w-full bg-[#1c1c1e] border border-zinc-800 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none" />
             {authMode !== 'reset' && (
-              <input type="password" placeholder="パスワード" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1c1c1e] border border-zinc-800 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none" />
+              <input type="password" placeholder={t('AuthPasswordPlaceholder')} value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-[#1c1c1e] border border-zinc-800 rounded-xl px-4 py-3.5 text-sm text-white focus:outline-none" />
             )}
             {authMode === 'reset' ? (
               <>
-                <p className="text-xs text-zinc-500 leading-relaxed text-center px-2">登録済みのメールアドレスに、パスワード再設定用のリンクを送信します。</p>
-                <button onClick={handlePasswordResetRequest} disabled={isAuthLoading} className="w-full bg-white text-black font-bold py-3.5 rounded-xl mt-4 disabled:opacity-50 transition-transform active:scale-95">{isAuthLoading ? "送信中..." : "再設定メールを送信"}</button>
-                <p className="text-center text-xs text-zinc-500 mt-4">ログイン画面に戻りますか？ <button onClick={() => { setAuthMode('login'); setPassword(""); }} className="text-white font-bold hover:underline">ログイン</button></p>
+                <p className="text-xs text-zinc-500 leading-relaxed text-center px-2">{t('AuthResetDescription')}</p>
+                <button onClick={handlePasswordResetRequest} disabled={isAuthLoading} className="w-full bg-white text-black font-bold py-3.5 rounded-xl mt-4 disabled:opacity-50 transition-transform active:scale-95">{isAuthLoading ? t('AuthSending') : t('AuthSendResetEmail')}</button>
+                <p className="text-center text-xs text-zinc-500 mt-4">{t('AuthReturnToLoginPrompt')} <button onClick={() => { setAuthMode('login'); setPassword(""); }} className="text-white font-bold hover:underline">{t('AuthLoginButton')}</button></p>
               </>
             ) : authMode === 'login' ? (
               <>
-                <button onClick={handleLogin} disabled={isAuthLoading} className="w-full bg-white text-black font-bold py-3.5 rounded-xl mt-4 disabled:opacity-50 transition-transform active:scale-95">{isAuthLoading ? "処理中..." : "ログイン"}</button>
-                <p className="text-center text-xs text-zinc-500 mt-4"><button onClick={() => { setAuthMode('reset'); setPassword(""); }} className="text-white font-bold hover:underline">パスワードを忘れた方</button></p>
-                <p className="text-center text-xs text-zinc-500 mt-4">アカウントを持っていませんか？ <button onClick={() => { setAuthMode('signup'); setEmail(""); setPassword(""); }} className="text-white font-bold hover:underline">新規登録</button></p>
+                <button onClick={handleLogin} disabled={isAuthLoading} className="w-full bg-white text-black font-bold py-3.5 rounded-xl mt-4 disabled:opacity-50 transition-transform active:scale-95">{isAuthLoading ? t('AuthProcessing') : t('AuthLoginButton')}</button>
+                <p className="text-center text-xs text-zinc-500 mt-4"><button onClick={() => { setAuthMode('reset'); setPassword(""); }} className="text-white font-bold hover:underline">{t('AuthForgotPassword')}</button></p>
+                <p className="text-center text-xs text-zinc-500 mt-4">{t('AuthNoAccountPrompt')} <button onClick={() => { setAuthMode('signup'); setEmail(""); setPassword(""); }} className="text-white font-bold hover:underline">{t('AuthSignupButton')}</button></p>
               </>
             ) : (
               <>
                 <div className="flex items-start gap-2 mt-4 px-1">
   <input type="checkbox" id="terms-checkbox" className="mt-1 w-4 h-4 rounded border-zinc-700 bg-black accent-[#1DB954] cursor-pointer shrink-0" />
   <label htmlFor="terms-checkbox" className="text-xs text-zinc-400 leading-relaxed cursor-pointer select-none">
+    {t('AuthAgreementPrefix')}
     <button type="button" className="text-[#1DB954] hover:underline" onClick={(e) => { 
       e.preventDefault(); 
       e.stopPropagation(); 
       setShowAppInfoModal({ 
-        title: "利用規約", 
-        content: "第1条（適用）\n本規約は、ユーザーと本アプリ「Echoes」の利用に関わる一切の関係に適用されます。\n\n第2条（禁止事項）\nユーザーは、以下の行為をしてはなりません。\n・法令または公序良俗に違反する行為\n・著作権、商標権などの知的財産権を侵害する行為\n・他のユーザーや第三者を誹謗中傷する行為\n・スパム、宣伝、勧誘を目的とする行為\n\n第3条（免責事項）\n運営は、本アプリに起因してユーザーに生じたあらゆる損害について、一切の責任を負いません。\n\n第4条（規約の変更）\n運営は、必要と判断した場合には、いつでも本規約を変更することができるものとします。" 
+        title: t('TermsTitle'), 
+        content: t('TermsContent') 
       }); 
-    }}>利用規約</button>と
+    }}>{t('TermsTitle')}</button>{t('AuthAgreementJoiner')}
     <button type="button" className="text-[#1DB954] hover:underline" onClick={(e) => { 
       e.preventDefault(); 
       e.stopPropagation(); 
       setShowAppInfoModal({ 
-        title: "プライバシーポリシー", 
-        content: "1. 取得する情報\n本アプリは、アカウント登録時のメールアドレス、プロフィール情報、投稿された文章や画像、音声を取得します。\n\n2. 利用目的\n取得した情報は、本サービスの提供、ユーザー間のコミュニケーションの円滑化、AIによるおすすめコンテンツの提示のために利用されます。\n\n3. 第三者提供\n本アプリは、法令に定めがある場合を除き、ユーザーの同意を得ることなく第三者に個人情報を提供することはありません。\n\n4. データの削除\nユーザーはアカウント設定から退会処理を行うことで、紐づくすべてのデータをシステムから完全に消去することができます。" 
+        title: t('PrivacyPolicyTitle'), 
+        content: t('PrivacyPolicyContent') 
       }); 
-    }}>プライバシーポリシー</button>に同意します。
+    }}>{t('PrivacyPolicyTitle')}</button>{t('AuthAgreementSuffix')}
   </label>
 </div>
                 <button 
@@ -4826,9 +4911,9 @@ const renderFeedCard = (s: Song) => (
                   disabled={isAuthLoading} 
                   className="w-full bg-[#1DB954] text-black font-bold py-3.5 rounded-xl mt-4 disabled:opacity-50 transition-transform active:scale-95"
                 >
-                  {isAuthLoading ? "処理中..." : "登録する"}
+                  {isAuthLoading ? t('AuthProcessing') : t('AuthCreateAccountButton')}
                 </button>
-                <p className="text-center text-xs text-zinc-500 mt-4">すでにアカウントをお持ちですか？ <button onClick={() => { setAuthMode('login'); setEmail(""); setPassword(""); }} className="text-white font-bold hover:underline">ログイン</button></p>
+                <p className="text-center text-xs text-zinc-500 mt-4">{t('AuthAlreadyHaveAccountPrompt')} <button onClick={() => { setAuthMode('login'); setEmail(""); setPassword(""); }} className="text-white font-bold hover:underline">{t('AuthLoginButton')}</button></p>
               </>
             )}
           </>
@@ -4842,7 +4927,7 @@ const renderFeedCard = (s: Song) => (
             <div className="max-h-[50vh] overflow-y-auto mb-8 scrollbar-hide text-left">
               <p className="text-sm text-zinc-400 leading-relaxed whitespace-pre-line">{showAppInfoModal.content}</p>
             </div>
-            <button onClick={() => setShowAppInfoModal(null)} className="w-full py-3 bg-white text-black rounded-xl text-sm font-bold uppercase hover:bg-zinc-200 transition-colors">閉じる</button>
+            <button onClick={() => setShowAppInfoModal(null)} className="w-full py-3 bg-white text-black rounded-xl text-sm font-bold uppercase hover:bg-zinc-200 transition-colors">{t('AuthClose')}</button>
           </div>
         </div>
       )}
