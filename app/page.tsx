@@ -300,6 +300,7 @@ Object.assign(localI18n["日本語"], {
   matchFilterArtistPlaceholder: "例: Tele, Vaundy",
   matchFilterTagLiveLabel: "ハッシュタグ / ライブ",
   matchFilterTagLivePlaceholder: "例: 邦ロック, VIVA LA ROCK",
+  matchFilterTitle: "Vibeフィルター",
   matchFilterAgeRange: "年齢",
   matchFilterSex: "性別",
   matchFilterSexAll: "すべて",
@@ -340,6 +341,7 @@ Object.assign(localI18n["日本語"], {
   matchPercentSuffix: "% マッチ",
   topArtists: "トップアーティスト",
   noUsersFound: "該当するユーザーはいません",
+  notificationsEmpty: "新しい通知はありません",
   artistFavoriteCountPrefix: "お気に入り ",
   artistFavoriteCountSuffix: "人",
   FavoriteSaved: "お気に入りに追加しました",
@@ -779,6 +781,7 @@ Object.assign(localI18n["English"], {
   matchFilterArtistPlaceholder: "Example: Tele, Vaundy",
   matchFilterTagLiveLabel: "Hashtag / Live",
   matchFilterTagLivePlaceholder: "Example: J-rock, VIVA LA ROCK",
+  matchFilterTitle: "Vibe Filter",
   matchFilterAgeRange: "Age range",
   matchFilterSex: "Gender",
   matchFilterSexAll: "All",
@@ -819,6 +822,7 @@ Object.assign(localI18n["English"], {
   matchPercentSuffix: "% match",
   topArtists: "Top artists",
   noUsersFound: "No users found",
+  notificationsEmpty: "No new notifications",
   artistFavoriteCountPrefix: "",
   artistFavoriteCountSuffix: " Favorites",
   FavoriteSaved: "Added to favorites",
@@ -1259,6 +1263,7 @@ Object.assign(localI18n["中文"], {
   matchFilterArtistPlaceholder: "例: Tele, Vaundy",
   matchFilterTagLiveLabel: "标签 / 现场",
   matchFilterTagLivePlaceholder: "例: 日摇, VIVA LA ROCK",
+  matchFilterTitle: "Vibe 筛选",
   matchFilterAgeRange: "年龄范围",
   matchFilterSex: "性别",
   matchFilterSexAll: "全部",
@@ -1299,6 +1304,7 @@ Object.assign(localI18n["中文"], {
   matchPercentSuffix: "% 匹配",
   topArtists: "热门艺人",
   noUsersFound: "未找到用户",
+  notificationsEmpty: "暂无新通知",
   artistFavoriteCountPrefix: "",
   artistFavoriteCountSuffix: "人收藏",
   FavoriteSaved: "已加入收藏",
@@ -6475,7 +6481,7 @@ const renderFeedCard = (s: Song) => (
                             <div className="flex-1"><p className="font-bold text-sm text-white">{searchArtistInfo.artistName}</p><p className="text-[10px] text-zinc-400 mt-0.5">{t('chatArtist')}</p></div>
                             <IconChevronRight />
                           </div>
-                          {searchResults.length > 0 && <p className="text-[10px] font-bold text-zinc-500 uppercase px-2 pt-2 pb-1">ヒット</p>}
+                          {searchResults.length > 0 && <p className="text-[10px] font-bold text-zinc-500 uppercase px-2 pt-2 pb-1">{t('topResults')}</p>}
                         </>
                       )}
                       {!searchQuery && trendingSongs.length > 0 && <p className="text-[10px] font-bold text-zinc-500 uppercase px-2 pt-2 pb-1 flex items-center"><IconTrend />{trendingSongsLabel}</p>}
@@ -6914,10 +6920,10 @@ const renderFeedCard = (s: Song) => (
       {showMatchFilterModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[950] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowMatchFilterModal(false)}>
           <div className="bg-[#1c1c1e] border border-zinc-800 p-8 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-6"><h3 className="font-bold text-lg">Vibe Filter</h3><button onClick={() => setShowMatchFilterModal(false)} className="text-zinc-500 hover:text-white"><IconCross /></button></div>
+            <div className="flex justify-between items-center mb-6"><h3 className="font-bold text-lg">{t('matchFilterTitle')}</h3><button onClick={() => setShowMatchFilterModal(false)} className="text-zinc-500 hover:text-white"><IconCross /></button></div>
             <div className="flex flex-col gap-6">
               <div className="relative">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Artist</label>
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">{t('artist')}</label>
                 {matchFilter.artists.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-3">
                     {matchFilter.artists.map(a => (
@@ -7074,7 +7080,7 @@ const renderFeedCard = (s: Song) => (
       <div><p className={`text-sm ${n.read ? 'text-zinc-400 font-normal' : 'text-white font-bold'}`}>{n.text}</p><p className="text-[10px] text-zinc-500 mt-1">{n.time}</p></div>
     </div>
   ))}
-  {notifications.length === 0 && <p className="text-zinc-500 text-xs text-center py-4">No new notifications</p>}
+  {notifications.length === 0 && <p className="text-zinc-500 text-xs text-center py-4">{t('notificationsEmpty')}</p>}
 </div>
           </div>
         </div>
@@ -7559,6 +7565,7 @@ const renderFeedCard = (s: Song) => (
               trendingSongs={trendingSongs}
               topResultsLabel={t('topResults')}
               trendingSongsLabel={trendingSongsLabel}
+              artistLabel={t('artist')}
               onFocus={() => setIsSearchFocused(true)}
               onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
               onSearchQueryChange={setSearchQuery}

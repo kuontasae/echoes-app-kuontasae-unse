@@ -12,6 +12,7 @@ type MusicSearchBoxProps = {
   trendingSongs: any[];
   topResultsLabel: string;
   trendingSongsLabel: string;
+  artistLabel?: string;
   onFocus: () => void;
   onBlur: () => void;
   onSearchQueryChange: (value: string) => void;
@@ -28,6 +29,7 @@ export const MusicSearchBox: React.FC<MusicSearchBoxProps> = ({
   trendingSongs,
   topResultsLabel,
   trendingSongsLabel,
+  artistLabel = "Artist",
   onFocus,
   onBlur,
   onSearchQueryChange,
@@ -49,7 +51,7 @@ export const MusicSearchBox: React.FC<MusicSearchBoxProps> = ({
         {searchArtistInfo && (
           <div className="p-4 border-b border-zinc-800 flex items-center gap-4 cursor-pointer hover:bg-zinc-800/50" onMouseDown={e => onArtistMouseDown(e, searchArtistInfo.artistId, searchArtistInfo.artistName, searchArtistInfo.artworkUrl)}>
             <img src={searchArtistInfo.artworkUrl} className="w-12 h-12 rounded-full object-cover" />
-            <div className="flex-1"><p className="font-bold text-sm">{searchArtistInfo.artistName}</p><p className="text-[10px] text-zinc-400 mt-0.5">アーティスト</p></div>
+            <div className="flex-1"><p className="font-bold text-sm">{searchArtistInfo.artistName}</p><p className="text-[10px] text-zinc-400 mt-0.5">{artistLabel}</p></div>
             <IconChevronRight />
           </div>
         )}
