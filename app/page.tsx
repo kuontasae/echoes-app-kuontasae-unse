@@ -247,7 +247,34 @@ Object.assign(localI18n["日本語"], {
   UserReported: "通報が完了しました。ご協力ありがとうございます。",
   ReportFailed: "通報に失敗しました",
   HelpSupportContent: "サポート窓口: echos.jpn@gmail.com\n\n24時間以内に担当者がお答えします。",
-  AppInfoContent: "バージョン: 42.0.0\n\nEchoesは、音楽を通じて日々の記録を残す新しい形のSNSです。"
+  AppInfoContent: "バージョン: 42.0.0\n\nEchoesは、音楽を通じて日々の記録を残す新しい形のSNSです。",
+  ArticleImageUploading: "画像をアップロードしています...",
+  ArticleImageUploadSuccess: "画像のアップロードが完了しました！",
+  ArticleImageUploadFailed: "画像のアップロードに失敗しました",
+  ArticleImageInserting: "画像を挿入しています...",
+  ArticleImageInsertSuccess: "画像を挿入しました！",
+  ArticleImageInsertFailed: "画像の挿入に失敗しました",
+  ArticleAudioUploading: "音声ファイルをアップロードしています...",
+  ArticleAudioInsertSuccess: "音声ファイルを挿入しました！",
+  ArticleAudioInsertFailed: "音声の挿入に失敗しました",
+  ArticleEnterUrl: "URLを入力してください",
+  ArticleInvalidUrl: "URLが正しくありません",
+  ArticleVoiceInserting: "録音した音声を挿入しています...",
+  ArticleVoiceInsertSuccess: "音声を挿入しました！",
+  ArticleFileUploading: "ファイルをアップロードしています...",
+  ArticleFileInsertSuccess: "ファイルを挿入しました！",
+  ArticleFileInsertFailed: "ファイルの挿入に失敗しました",
+  ArticleTitleTooLong: "タイトルは100文字以内で入力してください",
+  ArticleMissingPaywallSeparator: "有料エリアの区切りを挿入してください",
+  ArticleInvalidPrice: "価格が不正です",
+  ArticleDatabaseError: "記事の保存に失敗しました",
+  ArticleStorageQuotaExceeded: "下書きの保存容量が不足しています",
+  ArticleEmptyDraft: "保存できる内容がありません",
+  ArticleDeletePermissionDenied: "他人の記事は削除できません",
+  ArticleDeleteConfirm: "本当にこの記事を削除しますか？\n（この操作は取り消せません）",
+  ArticleDeleteSuccess: "記事を削除しました！",
+  ArticleDeleteServerFailed: "サーバーでの削除に失敗しました",
+  ArticleDraftDeleteConfirm: "この下書きを削除しますか？"
 });
 
 Object.assign(localI18n["English"], {
@@ -318,7 +345,34 @@ Object.assign(localI18n["English"], {
   UserReported: "Report submitted. Thank you for your help.",
   ReportFailed: "Could not submit report",
   HelpSupportContent: "Support: echos.jpn@gmail.com\n\nA team member will reply within 24 hours.",
-  AppInfoContent: "Version: 42.0.0\n\nEchoes is a new social app for keeping daily music memories."
+  AppInfoContent: "Version: 42.0.0\n\nEchoes is a new social app for keeping daily music memories.",
+  ArticleImageUploading: "Uploading image...",
+  ArticleImageUploadSuccess: "Image upload complete!",
+  ArticleImageUploadFailed: "Image upload failed",
+  ArticleImageInserting: "Inserting image...",
+  ArticleImageInsertSuccess: "Image inserted!",
+  ArticleImageInsertFailed: "Could not insert image",
+  ArticleAudioUploading: "Uploading audio file...",
+  ArticleAudioInsertSuccess: "Audio file inserted!",
+  ArticleAudioInsertFailed: "Could not insert audio",
+  ArticleEnterUrl: "Enter URL",
+  ArticleInvalidUrl: "Invalid URL",
+  ArticleVoiceInserting: "Inserting recorded audio...",
+  ArticleVoiceInsertSuccess: "Audio inserted!",
+  ArticleFileUploading: "Uploading file...",
+  ArticleFileInsertSuccess: "File inserted!",
+  ArticleFileInsertFailed: "Could not insert file",
+  ArticleTitleTooLong: "Title must be 100 characters or less",
+  ArticleMissingPaywallSeparator: "Insert the paid-area separator",
+  ArticleInvalidPrice: "Invalid price",
+  ArticleDatabaseError: "Failed to save article",
+  ArticleStorageQuotaExceeded: "Not enough storage for drafts",
+  ArticleEmptyDraft: "There is nothing to save",
+  ArticleDeletePermissionDenied: "You cannot delete someone else's article",
+  ArticleDeleteConfirm: "Delete this article?\n(This cannot be undone.)",
+  ArticleDeleteSuccess: "Article deleted!",
+  ArticleDeleteServerFailed: "Failed to delete on the server",
+  ArticleDraftDeleteConfirm: "Delete this draft?"
 });
 
 Object.assign(localI18n["中文"], {
@@ -389,7 +443,34 @@ Object.assign(localI18n["中文"], {
   UserReported: "举报已提交。感谢你的协助。",
   ReportFailed: "举报提交失败",
   HelpSupportContent: "客服邮箱: echos.jpn@gmail.com\n\n工作人员会在24小时内回复。",
-  AppInfoContent: "版本: 42.0.0\n\nEchoes 是一款通过音乐记录日常的新型社交应用。"
+  AppInfoContent: "版本: 42.0.0\n\nEchoes 是一款通过音乐记录日常的新型社交应用。",
+  ArticleImageUploading: "正在上传图片...",
+  ArticleImageUploadSuccess: "图片上传完成！",
+  ArticleImageUploadFailed: "图片上传失败",
+  ArticleImageInserting: "正在插入图片...",
+  ArticleImageInsertSuccess: "图片已插入！",
+  ArticleImageInsertFailed: "图片插入失败",
+  ArticleAudioUploading: "正在上传音频文件...",
+  ArticleAudioInsertSuccess: "音频文件已插入！",
+  ArticleAudioInsertFailed: "音频插入失败",
+  ArticleEnterUrl: "请输入URL",
+  ArticleInvalidUrl: "URL无效",
+  ArticleVoiceInserting: "正在插入录制的音频...",
+  ArticleVoiceInsertSuccess: "音频已插入！",
+  ArticleFileUploading: "正在上传文件...",
+  ArticleFileInsertSuccess: "文件已插入！",
+  ArticleFileInsertFailed: "文件插入失败",
+  ArticleTitleTooLong: "标题请控制在100个字符以内",
+  ArticleMissingPaywallSeparator: "请插入付费区域分隔线",
+  ArticleInvalidPrice: "价格无效",
+  ArticleDatabaseError: "文章保存失败",
+  ArticleStorageQuotaExceeded: "草稿保存空间不足",
+  ArticleEmptyDraft: "没有可保存的内容",
+  ArticleDeletePermissionDenied: "无法删除他人的文章",
+  ArticleDeleteConfirm: "确定要删除这篇文章吗？\n（此操作无法撤销）",
+  ArticleDeleteSuccess: "文章已删除！",
+  ArticleDeleteServerFailed: "服务器删除失败",
+  ArticleDraftDeleteConfirm: "要删除这个草稿吗？"
 });
 function MainApp() {
   const searchParams = useSearchParams();
@@ -700,7 +781,7 @@ function MainApp() {
     if (!file || !currentUser) return;
     e.target.value = '';
     setIsArticleUploading(true);
-    showToast("画像をアップロードしています...");
+    showToast("ArticleImageUploading");
     try {
       const compressedFile = await compressImage(file);
       const fileName = `article-cover-${currentUser.id}-${Date.now()}.jpeg`;
@@ -709,9 +790,9 @@ function MainApp() {
       if (uploadError) throw uploadError;
       const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
       setNewArticleCover(data.publicUrl);
-      showToast("画像のアップロードが完了しました！", "success");
+      showToast("ArticleImageUploadSuccess", "success");
     } catch (err) {
-          showToast("画像のアップロードに失敗しました", "error");
+          showToast("ArticleImageUploadFailed", "error");
         } finally {
           setIsArticleUploading(false);
         }
@@ -720,7 +801,7 @@ function MainApp() {
         const file = e.target.files?.[0];
         if (!file || !currentUser) return;
         e.target.value = '';
-        showToast("画像を挿入しています...");
+        showToast("ArticleImageInserting");
         try {
           const compressedFile = await compressImage(file);
           const fileName = `article-body-${currentUser.id}-${Date.now()}.jpeg`;
@@ -732,17 +813,17 @@ function MainApp() {
             document.execCommand('insertImage', false, data.publicUrl);
             setNewArticleContent(articleTextareaRef.current.innerHTML);
           }
-          showToast("画像を挿入しました！", "success");
+          showToast("ArticleImageInsertSuccess", "success");
           setShowElementMenu(false);
         } catch (err) {
-          showToast("画像の挿入に失敗しました", "error");
+          showToast("ArticleImageInsertFailed", "error");
         }
       };
       const handleArticleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !currentUser) return;
         e.target.value = '';
-        showToast("音声ファイルをアップロードしています...");
+        showToast("ArticleAudioUploading");
         try {
           const fileExt = file.name.split('.').pop() || "mp3";
           const fileName = `article-audio-${currentUser.id}-${Date.now()}.${fileExt}`;
@@ -755,14 +836,14 @@ function MainApp() {
             document.execCommand('insertHTML', false, audioHtml);
             setNewArticleContent(articleTextareaRef.current.innerHTML);
           }
-          showToast("音声ファイルを挿入しました！", "success");
+          showToast("ArticleAudioInsertSuccess", "success");
           setShowElementMenu(false);
         } catch (err) {
-          showToast("音声の挿入に失敗しました", "error");
+          showToast("ArticleAudioInsertFailed", "error");
         }
       };
       const handleEmbedLink = () => {
-  let url = window.prompt("EnterURL");
+  let url = window.prompt(t("ArticleEnterUrl"));
   if (!url) return;
   url = url.trim();
   try {
@@ -787,13 +868,13 @@ function MainApp() {
       setNewArticleContent(articleTextareaRef.current.innerHTML);
     }
   } catch (err) {
-    showToast("InvalidURL", "error");
+    showToast("ArticleInvalidUrl", "error");
   }
   setShowElementMenu(false);
 };
       const insertEditorVoice = async () => {
         if (!draftVoice || !currentUser) return;
-        showToast("録音した音声を挿入しています...");
+        showToast("ArticleVoiceInserting");
         const tempVoice = draftVoice;
         cancelVoiceRecording();
         setShowEditorVoiceMenu(false);
@@ -808,16 +889,16 @@ function MainApp() {
             document.execCommand('insertHTML', false, audioHtml);
             setNewArticleContent(articleTextareaRef.current.innerHTML);
           }
-          showToast("音声を挿入しました！", "success");
+          showToast("ArticleVoiceInsertSuccess", "success");
         } catch (err) {
-          showToast("音声の挿入に失敗しました", "error");
+          showToast("ArticleAudioInsertFailed", "error");
         }
       };
       const handleArticleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !currentUser) return;
         e.target.value = '';
-        showToast("ファイルをアップロードしています...");
+        showToast("ArticleFileUploading");
         try {
           const fileExt = file.name.split('.').pop() || "file";
           const fileName = `article-file-${currentUser.id}-${Date.now()}.${fileExt}`;
@@ -830,10 +911,10 @@ function MainApp() {
             document.execCommand('insertHTML', false, fileHtml);
             setNewArticleContent(articleTextareaRef.current.innerHTML);
           }
-          showToast("ファイルを挿入しました！", "success");
+          showToast("ArticleFileInsertSuccess", "success");
           setShowElementMenu(false);
         } catch (err) {
-          showToast("ファイルの挿入に失敗しました", "error");
+          showToast("ArticleFileInsertFailed", "error");
         }
       };
   const [isArticlePremium, setIsArticlePremium] = useState(false);
@@ -910,7 +991,7 @@ function MainApp() {
     return;
   }
   if (trimmedTitle.length > 100) {
-    showToast("TitleTooLong", "error");
+    showToast("ArticleTitleTooLong", "error");
     return;
   }
   const sanitizeHtml = (html: string) => {
@@ -925,12 +1006,12 @@ function MainApp() {
   if (isArticlePremium) {
     const paywallRegex = /(?:<br\s*\/?>\s*)*(?:<div[^>]*>\s*)?<hr[^>]*>[\s\S]*?ここから先は有料エリアです[\s\S]*?<\/p>(?:\s*<\/div>)?(?:<br\s*\/?>\s*)*/i;
     if (!paywallRegex.test(trimmedContent)) {
-      showToast("MissingPaywallSeparator", "error");
+      showToast("ArticleMissingPaywallSeparator", "error");
       return;
     }
     const parsedPrice = Math.floor(Number(articlePriceInput));
     if (isNaN(parsedPrice) || parsedPrice < 1) {
-      showToast("InvalidPrice", "error");
+      showToast("ArticleInvalidPrice", "error");
       return;
     }
     const parts = trimmedContent.split(paywallRegex);
@@ -993,7 +1074,7 @@ function MainApp() {
     showToast("Success", "success");
   } catch (err) {
     setArticles(previousArticles);
-    showToast("DatabaseError", "error");
+    showToast("ArticleDatabaseError", "error");
   }
 };
 	  const buildEditableArticleContent = (article: any) => {
@@ -1048,7 +1129,7 @@ const handleCloseModal = () => {
       try {
         localStorage.setItem('echoes_drafts_v2', JSON.stringify(updated));
       } catch (e) {
-        showToast("StorageQuotaExceeded", "error");
+        showToast("ArticleStorageQuotaExceeded", "error");
       }
       return updated;
     });
@@ -1061,7 +1142,7 @@ const handleSaveDraft = () => {
   const plainText = safeHtml.replace(/<[^>]*>/g, '').trim();
   const safeTitle = newArticleTitle.trim().replace(/[<&>]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c));
   if (!safeTitle && !plainText && !newArticleCover) {
-    showToast("EmptyDraft", "error");
+    showToast("ArticleEmptyDraft", "error");
     return;
   }
   const d = new Date();
@@ -1074,7 +1155,7 @@ const handleSaveDraft = () => {
     try {
       localStorage.setItem('echoes_drafts_v2', JSON.stringify(updated));
     } catch {
-      showToast("StorageQuotaExceeded", "error");
+      showToast("ArticleStorageQuotaExceeded", "error");
     }
     return updated;
   });
@@ -1230,10 +1311,10 @@ const handleSaveDraft = () => {
     if (!currentUser) return;
     const targetArticle = articles.find(a => a.id === id);
     if (!targetArticle || targetArticle.author.id !== currentUser.id) {
-      showToast("他人の記事は削除できません", "error");
+      showToast("ArticleDeletePermissionDenied", "error");
       return;
     }
-    if (window.confirm("本当にこの記事を削除しますか？\n（この操作は取り消せません）")) {
+    if (window.confirm(t("ArticleDeleteConfirm"))) {
       const originalArticles = [...articles];
       setArticles(prev => prev.filter(a => a.id !== id));
       if (viewingArticle?.id === id) {
@@ -1246,11 +1327,11 @@ const handleSaveDraft = () => {
           .eq('id', id)
           .eq('author_id', currentUser.id);
         if (error) throw error;
-        showToast("記事を削除しました！", "success");
+        showToast("ArticleDeleteSuccess", "success");
       } catch (err) {
         console.warn("削除エラー:", err);
         setArticles(originalArticles);
-        showToast("サーバーでの削除に失敗しました", "error");
+        showToast("ArticleDeleteServerFailed", "error");
       }
     }
   };
@@ -6591,7 +6672,7 @@ const renderFeedCard = (s: Song) => (
               setShowWriteArticleModal(true);
             }}
             onDeleteDraft={(draftId) => {
-              if(window.confirm("この下書きを削除しますか？")) {
+              if(window.confirm(t("ArticleDraftDeleteConfirm"))) {
                 setDraftArticles(prev => {
                   const next = prev.filter(d => d.id !== draftId);
                   localStorage.setItem('echoes_drafts_v2', JSON.stringify(next));
