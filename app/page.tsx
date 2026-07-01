@@ -222,7 +222,31 @@ Object.assign(localI18n["日本語"], {
   artistFavoriteCountSuffix: "人",
   FavoriteSaved: "お気に入りに追加しました",
   FavoriteRemoved: "お気に入りを解除しました",
-  ArtistFavoritesSetupRequired: "お気に入り保存の準備がまだ完了していません"
+  ArtistFavoritesSetupRequired: "お気に入り保存の準備がまだ完了していません",
+  InvalidEmailFormat: "メールアドレスの形式が正しくありません",
+  AuthFailed: "ログインに失敗しました",
+  SignupFailed: "登録に失敗しました",
+  EmailAlreadyInUse: "このメールアドレスはすでに登録されています",
+  ProfileCreationError: "プロフィールの作成に失敗しました",
+  BioTooLong: "自己紹介は160文字以内で入力してください",
+  ProfileSaved: "プロフィールを保存しました",
+  MusicProfileRequired: "好きな音楽を1つ以上追加してください",
+  MusicProfileSaved: "音楽プロフィールを保存しました",
+  OnboardingPrompt: "好きな音楽を登録して、つながりやすくしましょう",
+  TermsAgreementRequired: "利用規約とプライバシーポリシーへの同意が必要です",
+  LoggingOut: "ログアウトしています...",
+  DeletingAccount: "アカウントを削除しています",
+  CopiedUrl: "URLをクリップボードにコピーしました。",
+  BlockUserConfirm: "このユーザーをブロックしますか？\n（投稿やプロフィールがお互いに見えなくなります）",
+  UserBlocked: "ユーザーをブロックしました",
+  BlockFailed: "ブロックに失敗しました",
+  UserUnblocked: "ブロックを解除しました",
+  NetworkError: "通信エラーが発生しました",
+  ReportUserConfirm: "このユーザーを通報しますか？\n（運営が内容を確認し、適切な対応を行います）",
+  UserReported: "通報が完了しました。ご協力ありがとうございます。",
+  ReportFailed: "通報に失敗しました",
+  HelpSupportContent: "サポート窓口: echos.jpn@gmail.com\n\n24時間以内に担当者がお答えします。",
+  AppInfoContent: "バージョン: 42.0.0\n\nEchoesは、音楽を通じて日々の記録を残す新しい形のSNSです。"
 });
 
 Object.assign(localI18n["English"], {
@@ -268,7 +292,32 @@ Object.assign(localI18n["English"], {
   artistFavoriteCountSuffix: " Favorites",
   FavoriteSaved: "Added to favorites",
   FavoriteRemoved: "Removed from favorites",
-  ArtistFavoritesSetupRequired: "Favorites storage is not ready yet"
+  ArtistFavoritesSetupRequired: "Favorites storage is not ready yet",
+  WeakPassword: "Use at least 8 characters with letters and numbers.",
+  InvalidEmailFormat: "Please enter a valid email address",
+  AuthFailed: "Login failed",
+  SignupFailed: "Sign up failed",
+  EmailAlreadyInUse: "This email address is already registered",
+  ProfileCreationError: "Failed to create profile",
+  BioTooLong: "Bio must be 160 characters or less",
+  ProfileSaved: "Profile saved",
+  MusicProfileRequired: "Add at least one music preference",
+  MusicProfileSaved: "Music profile saved",
+  OnboardingPrompt: "Add your favorite music to help people connect with you",
+  TermsAgreementRequired: "You need to agree to the Terms and Privacy Policy",
+  LoggingOut: "Logging out...",
+  DeletingAccount: "Deleting account",
+  CopiedUrl: "Copied URL to clipboard.",
+  BlockUserConfirm: "Block this user?\n(Your posts and profiles will be hidden from each other.)",
+  UserBlocked: "User blocked",
+  BlockFailed: "Could not block user",
+  UserUnblocked: "User unblocked",
+  NetworkError: "A network error occurred",
+  ReportUserConfirm: "Report this user?\n(The team will review it and take appropriate action.)",
+  UserReported: "Report submitted. Thank you for your help.",
+  ReportFailed: "Could not submit report",
+  HelpSupportContent: "Support: echos.jpn@gmail.com\n\nA team member will reply within 24 hours.",
+  AppInfoContent: "Version: 42.0.0\n\nEchoes is a new social app for keeping daily music memories."
 });
 
 Object.assign(localI18n["中文"], {
@@ -2187,7 +2236,7 @@ const handleSaveDraft = () => {
           return next;
         });
       }
-      if (shouldShowInitialOnboarding) showToast("好きな音楽を登録して、つながりやすくしましょう", "success");
+      if (shouldShowInitialOnboarding) showToast("OnboardingPrompt", "success");
     };
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -3902,7 +3951,7 @@ const handleDeleteCommunity = async (id: string) => {
   };
   const handleBlockUser = async (userId: string) => {
     if (!currentUser) return;
-    if (window.confirm("このユーザーをブロックしますか？\n（投稿やプロフィールがお互いに見えなくなります）")) {
+    if (window.confirm(t("BlockUserConfirm"))) {
       setBlockedUsers(prev => {
         const next = new Set(prev);
         next.add(userId);
@@ -3914,16 +3963,15 @@ const handleDeleteCommunity = async (id: string) => {
           .from('blocks')
           .insert([{ blocker_id: currentUser.id, blocked_id: userId }]);
         if (error) throw error;
-        showToast("ユーザーをブロックしました", "success");
+        showToast("UserBlocked", "success");
       } catch (err) {
         console.error(err);
-        const errorMsg = err instanceof Error ? err.message : "通信エラーが発生しました";
         setBlockedUsers(prev => {
           const next = new Set(prev);
           next.delete(userId);
           return next;
         });
-        showToast(`ブロック失敗: ${errorMsg}`, "error");
+        showToast("BlockFailed", "error");
       }
     }
   };
@@ -3943,7 +3991,7 @@ const handleDeleteCommunity = async (id: string) => {
         .eq('blocker_id', currentUser.id)
         .eq('blocked_id', userId);
       if (error) throw error;
-      showToast("ブロックを解除しました", "success");
+      showToast("UserUnblocked", "success");
     } catch (err) {
       console.warn(err);
       setBlockedUsers(prev => {
@@ -3951,7 +3999,7 @@ const handleDeleteCommunity = async (id: string) => {
         next.add(userId);
         return next;
       });
-      showToast("通信エラーが発生しました", "error");
+      showToast("NetworkError", "error");
     }
   };
   useEffect(() => {
@@ -3973,22 +4021,22 @@ const handleDeleteCommunity = async (id: string) => {
   }, [currentUser]);
   const handleReportUser = async (userId: string) => {
     if (!currentUser) return;
-    if (window.confirm("このユーザーを通報しますか？\n（運営が内容を確認し、適切な対応を行います）")) {
+    if (window.confirm(t("ReportUserConfirm"))) {
       try {
         const { error } = await supabase
           .from('reports')
           .insert([{ reporter_id: currentUser.id, reported_id: userId, type: 'user' }]);
         if (error) throw error;
-        showToast("通報が完了しました。ご協力ありがとうございます。", "success");
+        showToast("UserReported", "success");
       } catch (err: any) {
         console.error("通報エラー:", err);
-        showToast(`エラー: ${err.message || "テーブルが存在しません"}`, "error");
+        showToast("ReportFailed", "error");
       }
     }
   };
   const saveProfile = () => {
     setMyProfile({ ...myProfile, name: editName, handle: editHandle.replace('@', ''), bio: editBio, isPrivate: editIsPrivate, avatar: editAvatar, hashtags: (editHashtags || "").split(',').map(s => s.trim()).filter(s => s), liveHistory: (editLiveHistory || "").split(',').map(s => s.trim()).filter(s => s) });
-    setIsEditingProfile(false); showToast("プロフィールを保存しました");
+    setIsEditingProfile(false); showToast("ProfileSaved");
   };
   const handleShareVibe = (s: Song) => {
     if (navigator.share) { navigator.share({ title: `Echoes - ${s.title}`, text: `${s.user.name}のVibeをチェック！`, url: 'https://echo.es' }).catch(() => { }); }
@@ -3996,7 +4044,7 @@ const handleDeleteCommunity = async (id: string) => {
   };
   const handleShareApp = () => {
     if (navigator.share) { navigator.share({ title: 'Echoes', url: 'https://echo.es' }).catch(() => { }); }
-    else { showToast("URLをクリップボードにコピーしました。"); }
+    else { showToast("CopiedUrl"); }
   };
   const handleLogin = async () => {
   if (!email || !password) {
@@ -4012,7 +4060,7 @@ const handleDeleteCommunity = async (id: string) => {
   try {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      showToast(error.message, "error");
+      showToast("AuthFailed", "error");
     } else if (data.user) {
       setCurrentUser(data.user);
       setIsLoggedIn(true);
@@ -4175,7 +4223,7 @@ const handleDeleteCommunity = async (id: string) => {
       .filter((item, index, arr) => arr.findIndex(x => x.toLowerCase() === item.toLowerCase()) === index);
 
     if (newHashtags.length === 0 && newLiveHistory.length === 0) {
-      showToast("好きな音楽を1つ以上追加してください", "error");
+      showToast("MusicProfileRequired", "error");
       return;
     }
 
@@ -4206,7 +4254,7 @@ const handleDeleteCommunity = async (id: string) => {
       setHistoryStack([]);
       setViewingUser(null);
       setActiveTab('search');
-      showToast("音楽プロフィールを保存しました", "success");
+      showToast("MusicProfileSaved", "success");
     } catch (err) {
       showToast("SystemError", "error");
     }
@@ -4230,7 +4278,7 @@ const handleDeleteCommunity = async (id: string) => {
   try {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) {
-      showToast(error.message, "error");
+      showToast("SignupFailed", "error");
       return;
     }
     if (data.user && data.user.identities && data.user.identities.length === 0) {
@@ -4260,7 +4308,7 @@ const handleDeleteCommunity = async (id: string) => {
 };
   // 💡 ステップ8: ログアウト・退会機能の完全実装
   const handleLogout = async () => {
-    showToast(t('logout') + "しています...");
+    showToast("LoggingOut");
     await supabase.auth.signOut();
     // キャッシュやReactの状態を完全にリセットしてトップへ戻す
     window.location.href = '/';
@@ -4647,7 +4695,7 @@ const renderFeedCard = (s: Song) => (
                   onClick={() => {
                     const cb = document.getElementById('terms-checkbox') as HTMLInputElement;
                     if (cb && !cb.checked) {
-                      showToast("利用規約とプライバシーポリシーへの同意が必要です", "error");
+                      showToast("TermsAgreementRequired", "error");
                       return;
                     }
                     handleSignUp();
@@ -5729,8 +5777,8 @@ const renderFeedCard = (s: Song) => (
             <div className="bg-[#1c1c1e] rounded-2xl mb-8 flex flex-col">
               <div className="flex items-center justify-between p-4 border-b border-zinc-800/50 cursor-pointer" onClick={handleShareApp}><div className="flex items-center gap-3"><IconShareExternal /><p className="font-bold text-sm">{t('shareApp')}</p></div><IconChevronRight /></div>
               <div className="flex items-center justify-between p-4 border-b border-zinc-800/50 cursor-pointer"><div className="flex items-center gap-3"><IconStar /><p className="font-bold text-sm">{t('rateApp')}</p></div><IconChevronRight /></div>
-              <div className="flex items-center justify-between p-4 border-b border-zinc-800/50 cursor-pointer" onClick={() => setShowAppInfoModal({ title: t('help'), content: "サポート窓口: echos.jpn@gmail.com\n\n24時間以内に担当者がお答えします。" })}><div className="flex items-center gap-3"><IconHelp /><p className="font-bold text-sm">{t('help')}</p></div><IconChevronRight /></div>
-              <div className="flex items-center justify-between p-4 cursor-pointer" onClick={() => setShowAppInfoModal({ title: t('appInfo'), content: "バージョン: 42.0.0\n\nEchoesは、音楽を通じて日々の記録を残す新しい形のSNSです。" })}><div className="flex items-center gap-3"><IconInfo /><p className="font-bold text-sm">{t('appInfo')}</p></div><IconChevronRight /></div>
+              <div className="flex items-center justify-between p-4 border-b border-zinc-800/50 cursor-pointer" onClick={() => setShowAppInfoModal({ title: t('help'), content: t('HelpSupportContent') })}><div className="flex items-center gap-3"><IconHelp /><p className="font-bold text-sm">{t('help')}</p></div><IconChevronRight /></div>
+              <div className="flex items-center justify-between p-4 cursor-pointer" onClick={() => setShowAppInfoModal({ title: t('appInfo'), content: t('AppInfoContent') })}><div className="flex items-center gap-3"><IconInfo /><p className="font-bold text-sm">{t('appInfo')}</p></div><IconChevronRight /></div>
             </div>
             {currentUser?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL && (
               <>
