@@ -17,7 +17,7 @@ type ArticleEditorModalProps = {
   newArticleTitle: string;
   newArticleContent: string;
   isArticleUploading: boolean;
-  articleTextareaRef: React.RefObject<any>;
+  articleTextareaRef: React.RefObject<HTMLTextAreaElement | null>;
   onClose: () => void;
   onSaveDraft: () => void;
   onOpenPublishSettings: () => void;
@@ -28,6 +28,23 @@ type ArticleEditorModalProps = {
   onOpenHeadingMenu: () => void;
   onOpenAlignmentMenu: () => void;
   onOpenListMenu: () => void;
+  labels: {
+    savedSuffix: string;
+    saveDraft: string;
+    publishSettings: string;
+    changeCover: string;
+    addCover: string;
+    titlePlaceholder: string;
+    bodyPlaceholder: string;
+    quoteTextPlaceholder: string;
+    quoteSourcePlaceholder: string;
+    characterUnit: string;
+    bold: string;
+    strikethrough: string;
+    heading: string;
+    alignment: string;
+    list: string;
+  };
   children?: React.ReactNode;
 };
 
@@ -49,9 +66,11 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
   onOpenHeadingMenu,
   onOpenAlignmentMenu,
   onOpenListMenu,
+  labels,
   children,
 }) => {
   if (!isOpen) return null;
+  const editableArticleRef = articleTextareaRef as unknown as React.RefObject<HTMLDivElement | null>;
 
   return (
     <div className="fixed inset-0 bg-[#121212] z-[1000] flex flex-col animate-fade-in">
@@ -60,9 +79,9 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
           <IconChevronLeft />
         </button>
         <div className="flex items-center gap-4 text-sm font-bold text-zinc-400">
-          {lastSaved && <span className="text-[10px] font-normal hidden sm:inline">{lastSaved} 保存済</span>}
-          <button onClick={onSaveDraft} className="hover:text-white transition-colors hidden sm:block">下書き保存</button>
-          <button onClick={onOpenPublishSettings} className="text-white hover:text-[#1DB954] transition-colors ml-1 px-4 py-1.5 bg-[#1DB954]/20 text-[#1DB954] font-bold rounded-full border border-[#1DB954]/50">公開設定</button>
+          {lastSaved && <span className="text-[10px] font-normal hidden sm:inline">{lastSaved} {labels.savedSuffix}</span>}
+          <button onClick={onSaveDraft} className="hover:text-white transition-colors hidden sm:block">{labels.saveDraft}</button>
+          <button onClick={onOpenPublishSettings} className="text-white hover:text-[#1DB954] transition-colors ml-1 px-4 py-1.5 bg-[#1DB954]/20 text-[#1DB954] font-bold rounded-full border border-[#1DB954]/50">{labels.publishSettings}</button>
         </div>
       </div>
       <div className="flex-1 overflow-y-auto p-4 sm:p-6 flex flex-col gap-4 relative">
@@ -72,7 +91,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
               <img src={newArticleCover} className="w-full h-full object-cover" />
               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
                 <label className="cursor-pointer px-4 py-2 bg-black/80 rounded-full text-xs font-bold text-white hover:bg-zinc-800 border border-zinc-700 transition-colors flex items-center gap-2">
-                  <IconImage /> 表紙を変更
+                  <IconImage /> {labels.changeCover}
                   <input type="file" accept="image/*" onChange={onCoverUpload} className="hidden" />
                 </label>
               </div>
@@ -84,7 +103,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
               ) : (
                 <div className="flex flex-col items-center gap-1 group-hover:scale-110 transition-transform">
                   <IconImage />
-                  <span className="text-[8px] font-bold">表紙追加</span>
+                  <span className="text-[8px] font-bold">{labels.addCover}</span>
                 </div>
               )}
               <input type="file" accept="image/*" onChange={onCoverUpload} disabled={isArticleUploading} className="hidden" />
@@ -92,7 +111,7 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
           )}
         </div>
         <textarea
-          placeholder="タイトル"
+          placeholder={labels.titlePlaceholder}
           value={newArticleTitle}
           onChange={e => onTitleChange(e.target.value)}
           className="w-full bg-transparent text-3xl font-black text-white focus:outline-none resize-none overflow-hidden placeholder-zinc-600"
@@ -100,12 +119,17 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
           style={{ minHeight: '1.5em' }}
         />
         <div
-          ref={articleTextareaRef}
+          ref={editableArticleRef}
           contentEditable
           suppressContentEditableWarning
           onInput={e => onContentChange(e.currentTarget.innerHTML)}
-          className="w-full flex-1 bg-transparent text-base text-zinc-300 focus:outline-none outline-none leading-relaxed empty:before:content-['ご自由にお書きください。'] empty:before:text-zinc-600 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-white [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-white [&_h3]:mt-4 [&_h3]:mb-2 [&_blockquote]:border-l-4 [&_blockquote]:border-zinc-500 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-zinc-400 [&_ul]:list-disc [&_ul]:list-inside [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:list-inside [&_ol]:my-2 [&_li]:mb-1 [&_hr]:my-6 [&_hr]:border-zinc-700 [&_.quote-text:empty]:before:content-['ここに引用文を入力...'] [&_.quote-text:empty]:before:text-zinc-500 [&_.quote-source:empty]:before:content-['出典を入力'] [&_.quote-source:empty]:before:text-zinc-600"
-          style={{ minHeight: '200px' }}
+          data-placeholder={labels.bodyPlaceholder}
+          className="article-editor-body w-full flex-1 bg-transparent text-base text-zinc-300 focus:outline-none outline-none leading-relaxed [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-white [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-white [&_h3]:mt-4 [&_h3]:mb-2 [&_blockquote]:border-l-4 [&_blockquote]:border-zinc-500 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-zinc-400 [&_ul]:list-disc [&_ul]:list-inside [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:list-inside [&_ol]:my-2 [&_li]:mb-1 [&_hr]:my-6 [&_hr]:border-zinc-700"
+          style={{
+            minHeight: '200px',
+            '--article-quote-placeholder': JSON.stringify(labels.quoteTextPlaceholder),
+            '--article-quote-source-placeholder': JSON.stringify(labels.quoteSourcePlaceholder),
+          } as React.CSSProperties}
           onKeyDown={e => {
             if (e.key === 'Enter') {
               const selection = window.getSelection();
@@ -147,18 +171,18 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
       </div>
       <div className="px-4 py-2 flex justify-end">
         <span className="bg-zinc-800/80 text-zinc-400 text-[10px] px-3 py-1 rounded-full font-bold">
-          {newArticleContent.replace(/<[^>]*>/g, '').length}文字
+          {newArticleContent.replace(/<[^>]*>/g, '').length}{labels.characterUnit}
         </span>
       </div>
       <div className="border-t border-zinc-800/80 bg-[#1c1c1e] px-2 py-3 flex items-center gap-4 overflow-x-auto scrollbar-hide relative z-40">
         <button onClick={onOpenElementMenu} className="p-2 text-white hover:bg-zinc-800 rounded-lg transition-colors shrink-0"><IconPlus /></button>
-        <button onMouseDown={e => { e.preventDefault(); document.execCommand('bold', false, ''); }} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors shrink-0 font-bold" title="太字">B</button>
-        <button onMouseDown={e => { e.preventDefault(); document.execCommand('strikeThrough', false, ''); }} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors shrink-0 font-bold line-through" title="取り消し線">S</button>
-        <button onMouseDown={e => { e.preventDefault(); onOpenHeadingMenu(); }} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors shrink-0 font-bold text-lg leading-none" title="見出し">T</button>
-        <button onMouseDown={e => { e.preventDefault(); onOpenAlignmentMenu(); }} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors shrink-0" title="配置">
+        <button onMouseDown={e => { e.preventDefault(); document.execCommand('bold', false, ''); }} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors shrink-0 font-bold" title={labels.bold}>B</button>
+        <button onMouseDown={e => { e.preventDefault(); document.execCommand('strikeThrough', false, ''); }} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors shrink-0 font-bold line-through" title={labels.strikethrough}>S</button>
+        <button onMouseDown={e => { e.preventDefault(); onOpenHeadingMenu(); }} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors shrink-0 font-bold text-lg leading-none" title={labels.heading}>T</button>
+        <button onMouseDown={e => { e.preventDefault(); onOpenAlignmentMenu(); }} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors shrink-0" title={labels.alignment}>
           <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="15" y2="12"></line><line x1="3" y1="18" x2="19" y2="18"></line></svg>
         </button>
-        <button onMouseDown={e => { e.preventDefault(); onOpenListMenu(); }} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors shrink-0" title="リスト">
+        <button onMouseDown={e => { e.preventDefault(); onOpenListMenu(); }} className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors shrink-0" title={labels.list}>
           <IconList />
         </button>
         <div className="w-px h-5 bg-zinc-700 shrink-0 mx-1"></div>
@@ -167,6 +191,20 @@ export const ArticleEditorModal: React.FC<ArticleEditorModalProps> = ({
           <IconChevronDown />
         </button>
       </div>
+      <style>{`
+        .article-editor-body:empty::before {
+          content: attr(data-placeholder);
+          color: rgb(82 82 91);
+        }
+        .article-editor-body .quote-text:empty::before {
+          content: var(--article-quote-placeholder);
+          color: rgb(113 113 122);
+        }
+        .article-editor-body .quote-source:empty::before {
+          content: var(--article-quote-source-placeholder);
+          color: rgb(82 82 91);
+        }
+      `}</style>
       {children}
     </div>
   );
