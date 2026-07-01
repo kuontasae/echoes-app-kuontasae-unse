@@ -289,6 +289,21 @@ Object.assign(localI18n["日本語"], {
   OperationFailed: "処理に失敗しました",
   ReportConfirm: "この内容を通報しますか？",
   DeleteConfirm: "本当に削除しますか？",
+  matchFilterArtistPlaceholder: "例: Tele, Vaundy",
+  matchFilterTagLiveLabel: "ハッシュタグ / ライブ",
+  matchFilterTagLivePlaceholder: "例: 邦ロック, VIVA LA ROCK",
+  matchFilterAgeRange: "年齢",
+  matchFilterSex: "性別",
+  matchFilterSexAll: "すべて",
+  matchFilterSexMale: "男性",
+  matchFilterSexFemale: "女性",
+  matchFilterApply: "適用して探す",
+  logoutConfirmTitle: "ログアウトしますか？",
+  deleteAccountConfirmTitle: "本当に退会しますか？",
+  deleteAccountWarningLine1: "この操作は取り消せません。",
+  deleteAccountWarningLine2: "プロフィール、Vibe、メッセージなど、",
+  deleteAccountWarningLine3: "すべてのデータが永久に削除されます。",
+  deleteAccountAction: "退会する",
   feedShare: "シェア",
   feedDelete: "削除",
   feedLike: "いいね",
@@ -740,6 +755,21 @@ Object.assign(localI18n["English"], {
   OperationFailed: "Operation failed",
   ReportConfirm: "Report this content?",
   DeleteConfirm: "Delete this item?",
+  matchFilterArtistPlaceholder: "Example: Tele, Vaundy",
+  matchFilterTagLiveLabel: "Hashtag / Live",
+  matchFilterTagLivePlaceholder: "Example: J-rock, VIVA LA ROCK",
+  matchFilterAgeRange: "Age range",
+  matchFilterSex: "Gender",
+  matchFilterSexAll: "All",
+  matchFilterSexMale: "Male",
+  matchFilterSexFemale: "Female",
+  matchFilterApply: "Apply filters",
+  logoutConfirmTitle: "Log out?",
+  deleteAccountConfirmTitle: "Delete your account?",
+  deleteAccountWarningLine1: "This action cannot be undone.",
+  deleteAccountWarningLine2: "Your profile, Vibes, messages,",
+  deleteAccountWarningLine3: "and all related data will be permanently deleted.",
+  deleteAccountAction: "Delete account",
   feedShare: "Share",
   feedDelete: "Delete",
   feedLike: "Like",
@@ -1192,6 +1222,21 @@ Object.assign(localI18n["中文"], {
   OperationFailed: "操作失败",
   ReportConfirm: "要举报此内容吗？",
   DeleteConfirm: "确定要删除吗？",
+  matchFilterArtistPlaceholder: "例: Tele, Vaundy",
+  matchFilterTagLiveLabel: "标签 / 现场",
+  matchFilterTagLivePlaceholder: "例: 日摇, VIVA LA ROCK",
+  matchFilterAgeRange: "年龄范围",
+  matchFilterSex: "性别",
+  matchFilterSexAll: "全部",
+  matchFilterSexMale: "男性",
+  matchFilterSexFemale: "女性",
+  matchFilterApply: "应用并搜索",
+  logoutConfirmTitle: "要退出登录吗？",
+  deleteAccountConfirmTitle: "确定要注销账号吗？",
+  deleteAccountWarningLine1: "此操作无法撤销。",
+  deleteAccountWarningLine2: "个人资料、Vibe、消息等",
+  deleteAccountWarningLine3: "所有数据都将被永久删除。",
+  deleteAccountAction: "注销账号",
   feedShare: "分享",
   feedDelete: "删除",
   feedLike: "点赞",
@@ -5951,10 +5996,10 @@ const renderFeedCard = (s: Song) => (
       {showLogoutConfirm && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-2xl z-[1000] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowLogoutConfirm(false)}>
           <div className="bg-[#1c1c1e] border border-zinc-800 p-8 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
-            <p className="text-center font-bold text-lg mb-8 leading-relaxed">ログアウトしますか？</p>
+            <p className="text-center font-bold text-lg mb-8 leading-relaxed">{t('logoutConfirmTitle')}</p>
             <div className="flex gap-4">
-              <button onClick={() => setShowLogoutConfirm(false)} className="flex-1 py-3.5 border border-zinc-800 rounded-xl text-xs font-bold uppercase">キャンセル</button>
-              <button onClick={async () => { await supabase.auth.signOut(); window.location.reload(); }} className="flex-1 py-3.5 bg-red-500 text-white rounded-xl text-xs font-bold uppercase">ログアウト</button>
+              <button onClick={() => setShowLogoutConfirm(false)} className="flex-1 py-3.5 border border-zinc-800 rounded-xl text-xs font-bold uppercase">{t('cancel')}</button>
+              <button onClick={async () => { await supabase.auth.signOut(); window.location.reload(); }} className="flex-1 py-3.5 bg-red-500 text-white rounded-xl text-xs font-bold uppercase">{t('logout')}</button>
             </div>
           </div>
         </div>
@@ -6845,7 +6890,7 @@ const renderFeedCard = (s: Song) => (
                     ))}
                   </div>
                 )}
-                <input type="text" placeholder="例: Tele, Vaundy" value={filterArtistInput} onChange={e => setFilterArtistInput(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-zinc-500" />
+                <input type="text" placeholder={t('matchFilterArtistPlaceholder')} value={filterArtistInput} onChange={e => setFilterArtistInput(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-zinc-500" />
                 {filterArtistSuggestions.length > 0 && filterArtistInput && (
                   <div className="absolute top-full left-0 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden z-50">
                     {filterArtistSuggestions.map(a => (
@@ -6858,10 +6903,10 @@ const renderFeedCard = (s: Song) => (
                 )}
               </div>
               <div className="relative">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Hashtag / Live</label>
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">{t('matchFilterTagLiveLabel')}</label>
                 {matchFilter.hashtags.length > 0 && (<div className="flex flex-wrap gap-2 mb-3">{matchFilter.hashtags.map(h => (<div key={h} className="flex items-center bg-zinc-800 rounded-full px-3 py-1 gap-2"><span className="text-xs font-bold text-white">#{getMusicTagLabel(h)}</span><button onClick={() => setMatchFilter({ ...matchFilter, hashtags: matchFilter.hashtags.filter(fh => fh !== h) })} className="text-zinc-500 hover:text-white ml-1"><IconCross /></button></div>))}</div>)}
                 {matchFilter.liveHistories.length > 0 && (<div className="flex flex-wrap gap-2 mb-3">{matchFilter.liveHistories.map(l => (<div key={l} className="flex items-center bg-zinc-800 rounded-full px-3 py-1 gap-2"><span className="text-xs font-bold text-white"><IconTicket /> {l}</span><button onClick={() => setMatchFilter({ ...matchFilter, liveHistories: matchFilter.liveHistories.filter(fl => fl !== l) })} className="text-zinc-500 hover:text-white ml-1"><IconCross /></button></div>))}</div>)}
-                <input type="text" placeholder="例: 邦ロック, VIVA LA ROCK" value={filterHashtagInput} onChange={e => setFilterHashtagInput(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-zinc-500" />
+                <input type="text" placeholder={t('matchFilterTagLivePlaceholder')} value={filterHashtagInput} onChange={e => setFilterHashtagInput(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-zinc-500" />
                 {filterHashtagInput && (
                   <div className="absolute top-full left-0 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden z-50">
                     {allAvailableHashtags.filter(h => h.toLowerCase().includes(filterHashtagInput.toLowerCase())).slice(0, 3).map(h => (<div key={h} onMouseDown={(e) => { e.preventDefault(); if (!matchFilter.hashtags.includes(h)) setMatchFilter({ ...matchFilter, hashtags: [...matchFilter.hashtags, h] }); setFilterHashtagInput(""); }} className="p-3 text-xs text-white hover:bg-zinc-700 cursor-pointer border-b border-zinc-700 last:border-0">#{getMusicTagLabel(h)}</div>))}
@@ -6871,7 +6916,7 @@ const renderFeedCard = (s: Song) => (
               </div>
               <div className="flex gap-4">
                 <div className="flex-1">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Age Range</label>
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">{t('matchFilterAgeRange')}</label>
                   <div className="flex items-center gap-2">
                     <select value={matchFilter.ageMin} onChange={e => setMatchFilter({ ...matchFilter, ageMin: parseInt(e.target.value) })} className="bg-black border border-zinc-800 rounded-xl px-2 py-2 text-xs text-white focus:outline-none appearance-none flex-1 text-center">{Array.from({ length: 83 }, (_, i) => 18 + i).map(y => <option key={y} value={y}>{y}</option>)}</select>
                     <span className="text-zinc-500 text-xs">~</span>
@@ -6879,12 +6924,12 @@ const renderFeedCard = (s: Song) => (
                   </div>
                 </div>
                 <div className="flex-1">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Gender</label>
-                  <select value={matchFilter.gender} onChange={e => setMatchFilter({ ...matchFilter, gender: e.target.value })} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2 text-xs text-white focus:outline-none appearance-none"><option value="All">All</option><option value="Male">Male</option><option value="Female">Female</option></select>
+                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">{t('matchFilterSex')}</label>
+                  <select value={matchFilter.gender} onChange={e => setMatchFilter({ ...matchFilter, gender: e.target.value })} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2 text-xs text-white focus:outline-none appearance-none"><option value="All">{t('matchFilterSexAll')}</option><option value="Male">{t('matchFilterSexMale')}</option><option value="Female">{t('matchFilterSexFemale')}</option></select>
                 </div>
               </div>
             </div>
-            <button onClick={() => setShowMatchFilterModal(false)} className="w-full mt-8 bg-white text-black font-bold py-3.5 rounded-xl shadow-lg hover:bg-gray-200 transition-colors">適用して探す</button>
+            <button onClick={() => setShowMatchFilterModal(false)} className="w-full mt-8 bg-white text-black font-bold py-3.5 rounded-xl shadow-lg hover:bg-gray-200 transition-colors">{t('matchFilterApply')}</button>
           </div>
         </div>
       )}
@@ -7210,13 +7255,13 @@ const renderFeedCard = (s: Song) => (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-2xl z-[1000] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowDeleteAccountConfirm(false)}>
           <div className="bg-[#1c1c1e] border border-red-500/50 p-8 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
             <div className="w-16 h-16 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4"><IconWarning /></div>
-            <p className="text-center font-bold text-lg mb-4 text-white">本当に退会しますか？</p>
+            <p className="text-center font-bold text-lg mb-4 text-white">{t('deleteAccountConfirmTitle')}</p>
             <p className="text-xs text-zinc-400 text-center mb-8 leading-relaxed">
-              この操作は取り消せません。<br />プロフィール、Vibe、メッセージなど、<br />すべてのデータが永久に削除されます。
+              {t('deleteAccountWarningLine1')}<br />{t('deleteAccountWarningLine2')}<br />{t('deleteAccountWarningLine3')}
             </p>
             <div className="flex gap-4">
-              <button onClick={() => setShowDeleteAccountConfirm(false)} className="flex-1 py-3.5 border border-zinc-800 rounded-xl text-xs font-bold uppercase hover:bg-zinc-800">キャンセル</button>
-              <button onClick={handleDeleteAccount} className="flex-1 py-3.5 bg-red-500 text-white rounded-xl text-xs font-bold uppercase hover:scale-105 transition-transform shadow-lg">退会する</button>
+              <button onClick={() => setShowDeleteAccountConfirm(false)} className="flex-1 py-3.5 border border-zinc-800 rounded-xl text-xs font-bold uppercase hover:bg-zinc-800">{t('cancel')}</button>
+              <button onClick={handleDeleteAccount} className="flex-1 py-3.5 bg-red-500 text-white rounded-xl text-xs font-bold uppercase hover:scale-105 transition-transform shadow-lg">{t('deleteAccountAction')}</button>
             </div>
           </div>
         </div>
