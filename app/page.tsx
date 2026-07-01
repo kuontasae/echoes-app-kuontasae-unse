@@ -342,7 +342,16 @@ Object.assign(localI18n["日本語"], {
   add: "追加",
   later: "あとで",
   saveAndStart: "保存して始める",
-  likedPostsEmpty: "まだ{label}はありません"
+  likedPostsEmpty: "まだ{label}はありません",
+  articlePublishSettingsTitle: "公開設定",
+  articlePublishPreview: "プレビュー",
+  articlePublishUntitled: "無題の記事",
+  articlePublishAsPremium: "有料記事として公開",
+  articlePublishPremiumDividerHint: "※本文に有料エリアの区切り線が必要です",
+  articlePublishSalePrice: "販売価格",
+  articlePublishCoin: "コイン",
+  articlePublishPosting: "投稿中...",
+  articlePublishPostArticle: "この記事を投稿する"
 });
 
 Object.assign(localI18n["English"], {
@@ -508,7 +517,16 @@ Object.assign(localI18n["English"], {
   add: "Add",
   later: "Later",
   saveAndStart: "Save and start",
-  likedPostsEmpty: "No {label} yet"
+  likedPostsEmpty: "No {label} yet",
+  articlePublishSettingsTitle: "Publish Settings",
+  articlePublishPreview: "Preview",
+  articlePublishUntitled: "Untitled article",
+  articlePublishAsPremium: "Publish as premium",
+  articlePublishPremiumDividerHint: "A paid-area divider is required in the body.",
+  articlePublishSalePrice: "Sale price",
+  articlePublishCoin: "Coins",
+  articlePublishPosting: "Posting...",
+  articlePublishPostArticle: "Post this article"
 });
 
 Object.assign(localI18n["中文"], {
@@ -674,7 +692,16 @@ Object.assign(localI18n["中文"], {
   add: "添加",
   later: "稍后",
   saveAndStart: "保存并开始",
-  likedPostsEmpty: "暂无{label}"
+  likedPostsEmpty: "暂无{label}",
+  articlePublishSettingsTitle: "发布设置",
+  articlePublishPreview: "预览",
+  articlePublishUntitled: "无标题文章",
+  articlePublishAsPremium: "作为付费文章发布",
+  articlePublishPremiumDividerHint: "正文中需要付费区域分隔线。",
+  articlePublishSalePrice: "售价",
+  articlePublishCoin: "金币",
+  articlePublishPosting: "发布中...",
+  articlePublishPostArticle: "发布这篇文章"
 });
 function MainApp() {
   const searchParams = useSearchParams();
@@ -7297,6 +7324,17 @@ const renderFeedCard = (s: Song) => (
         onTogglePremium={() => setIsArticlePremium(!isArticlePremium)}
         onPriceInputChange={setArticlePriceInput}
         onPostArticle={handlePostArticle}
+        labels={{
+          title: t('articlePublishSettingsTitle'),
+          preview: t('articlePublishPreview'),
+          untitledArticle: t('articlePublishUntitled'),
+          publishAsPremium: t('articlePublishAsPremium'),
+          premiumDividerHint: t('articlePublishPremiumDividerHint'),
+          salePrice: t('articlePublishSalePrice'),
+          coin: t('articlePublishCoin'),
+          posting: t('articlePublishPosting'),
+          postArticle: t('articlePublishPostArticle'),
+        }}
       />
       {showCoinChargeModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[1200] flex justify-center items-end sm:items-center animate-fade-in" onClick={() => {
