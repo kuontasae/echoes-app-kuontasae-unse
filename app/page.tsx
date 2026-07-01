@@ -283,8 +283,14 @@ Object.assign(localI18n["日本語"], {
   AudioSizeLimitExceeded: "音声ファイルが大きすぎます",
   VoiceSendFailed: "音声の送信に失敗しました",
   UserSearchFailed: "ユーザー検索に失敗しました",
+  SearchFailed: "検索に失敗しました",
+  ArtistSearchFailed: "アーティスト検索に失敗しました",
   ArtistInfoFetchFailed: "アーティスト情報の取得に失敗しました",
   AlbumInfoFetchFailed: "アルバム情報の取得に失敗しました",
+  AudioOff: "音声がオフです",
+  FollowedUserToast: "{name}さんをフォローしました",
+  FollowedToast: "フォローしました！",
+  UnfollowedToast: "フォローを解除しました",
   MicrophonePermissionRequired: "マイクへのアクセスを許可してください",
   OperationFailed: "処理に失敗しました",
   ReportConfirm: "この内容を通報しますか？",
@@ -768,8 +774,14 @@ Object.assign(localI18n["English"], {
   AudioSizeLimitExceeded: "Audio file is too large",
   VoiceSendFailed: "Could not send voice message",
   UserSearchFailed: "User search failed",
+  SearchFailed: "Search failed",
+  ArtistSearchFailed: "Artist search failed",
   ArtistInfoFetchFailed: "Could not load artist info",
   AlbumInfoFetchFailed: "Could not load album info",
+  AudioOff: "Audio is off",
+  FollowedUserToast: "Followed {name}",
+  FollowedToast: "Followed!",
+  UnfollowedToast: "Unfollowed",
   MicrophonePermissionRequired: "Please allow microphone access",
   OperationFailed: "Operation failed",
   ReportConfirm: "Report this content?",
@@ -1254,8 +1266,14 @@ Object.assign(localI18n["中文"], {
   AudioSizeLimitExceeded: "音频文件过大",
   VoiceSendFailed: "语音发送失败",
   UserSearchFailed: "用户搜索失败",
+  SearchFailed: "搜索失败",
+  ArtistSearchFailed: "艺人搜索失败",
   ArtistInfoFetchFailed: "艺人信息获取失败",
   AlbumInfoFetchFailed: "专辑信息获取失败",
+  AudioOff: "音频已关闭",
+  FollowedUserToast: "已关注{name}",
+  FollowedToast: "已关注！",
+  UnfollowedToast: "已取消关注",
   MicrophonePermissionRequired: "请允许麦克风访问",
   OperationFailed: "操作失败",
   ReportConfirm: "要举报此内容吗？",
@@ -2909,7 +2927,7 @@ const handleSaveDraft = () => {
     const { error } = await supabase.from('follows').insert([{ follower_id: currentUser.id, following_id: uid }]);
     if (!error) {
       setFollowedUsers(prev => { const next = new Set(prev); next.add(uid); return next; });
-      showToast(`${uname}さんをフォローしました`, "success");
+      showToast(t('FollowedUserToast').replace('{name}', uname), "success");
       await supabase.from('notifications').insert([{ user_id: uid, sender_id: currentUser.id, type: 'follow', text: `${myProfile.name}さんにフォローされました` }]);
     }
   };
@@ -4045,7 +4063,7 @@ const handleSaveDraft = () => {
       }
     }
     if (searchError) {
-      showToast("Search Error", "error");
+      showToast(t("SearchFailed"), "error");
       setSearchResults([]);
       setSearchArtistInfo(null);
     }
@@ -4076,7 +4094,7 @@ const handleSaveDraft = () => {
       setFilterArtistSuggestions(unique.slice(0, 5));
     }
     if (filterArtistError) {
-      showToast("Artist Search Error", "error");
+      showToast(t("ArtistSearchFailed"), "error");
       setFilterArtistSuggestions([]);
     }
   }, [debouncedFilterArtistInput, filterArtistData, filterArtistError]);
@@ -4101,7 +4119,7 @@ const handleSaveDraft = () => {
     return unique.slice(0, 5);
   }, [onboardingArtistData]);
   useEffect(() => {
-    if (onboardingArtistError) showToast("Artist Search Error", "error");
+    if (onboardingArtistError) showToast(t("ArtistSearchFailed"), "error");
   }, [onboardingArtistError]);
   const { data: artistData, error: artistError } = useSWR(
     activeArtistProfile ? `https://itunes.apple.com/search?term=${encodeURIComponent(activeArtistProfile.artistName)}&entity=song&country=jp&limit=50` : null,
@@ -4167,7 +4185,7 @@ const handleSaveDraft = () => {
   }, [viewingUser, myProfile.id]);
   const togglePlay = async (url: string | null, meta?: { title: string, artist: string, imgUrl: string }) => {
     if (!url) { showToast(t('noPreview'), 'error'); return; }
-    if (!settings.audio) { showToast("Audio is OFF", 'error'); return; }
+    if (!settings.audio) { showToast(t("AudioOff"), 'error'); return; }
     if (playingSong === url) {
       audioRef.current?.pause();
       setPlayingSong(null);
@@ -5236,13 +5254,13 @@ const handleDeleteCommunity = async (id: string) => {
           .eq('follower_id', currentUser.id)
           .eq('following_id', targetUserId);
         if (error) throw error;
-        showToast(`${t('follow')}を解除しました`, "success");
+        showToast(t("UnfollowedToast"), "success");
       } else {
         const { error } = await supabase
           .from('follows')
           .insert([{ follower_id: currentUser.id, following_id: targetUserId }]);
         if (error) throw error;
-        showToast(`${t('follow')}しました！`, "success");
+        showToast(t("FollowedToast"), "success");
       }
     } catch (err) {
       setFollowedUsers(prev => {
