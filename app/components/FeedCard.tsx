@@ -22,6 +22,17 @@ type FeedCardProps = {
   formatCount: (n?: number) => string;
   displayLocalTime: (ts: number, tz: string) => string;
   renderCaption: (caption: string) => React.ReactNode;
+  labels: {
+    share: string;
+    delete: string;
+    like: string;
+    comments: string;
+    playPreview: string;
+    stopPreview: string;
+    noComments: string;
+    commentPlaceholder: string;
+    postComment: string;
+  };
   onOpenUser: (user: User) => void;
   onOpenOwnProfile: () => void;
   onShareVibe: (song: Song) => void;
@@ -50,6 +61,7 @@ export const FeedCard: React.FC<FeedCardProps> = ({
   formatCount,
   displayLocalTime,
   renderCaption,
+  labels,
   onOpenUser,
   onOpenOwnProfile,
   onShareVibe,
@@ -73,15 +85,15 @@ export const FeedCard: React.FC<FeedCardProps> = ({
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onShareVibe(s); }} className="text-zinc-500 hover:text-white p-1"><IconShareExternal /></button>
-        {(s.user.id === myProfileId || s.user.id === currentUserId || s.user.id === 'me') && <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDeleteVibe(s.id); }} className="text-[10px] font-bold text-zinc-600 hover:text-red-500 uppercase tracking-widest p-1">削除</button>}
+        <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onShareVibe(s); }} className="text-zinc-500 hover:text-white p-1" title={labels.share} aria-label={labels.share}><IconShareExternal /></button>
+        {(s.user.id === myProfileId || s.user.id === currentUserId || s.user.id === 'me') && <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDeleteVibe(s.id); }} className="text-[10px] font-bold text-zinc-600 hover:text-red-500 uppercase tracking-widest p-1" title={labels.delete} aria-label={labels.delete}>{labels.delete}</button>}
       </div>
     </div>
     <div className="flex items-center gap-4 mb-5">
       <div className="relative w-20 h-20 rounded-full overflow-hidden border border-zinc-700 group flex-shrink-0">
         <Image src={s.imgUrl} alt="cover" fill className={`object-cover ${playingSong === s.previewUrl ? 'animate-[spin_4s_linear_infinite]' : ''}`} sizes="80px" unoptimized />
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity">
-          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onTogglePlay(s.previewUrl); }} className="w-10 h-10 bg-black/60 rounded-full flex items-center justify-center text-white pointer-events-auto shadow-lg hover:scale-105 transition-transform relative z-50">
+          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); onTogglePlay(s.previewUrl); }} className="w-10 h-10 bg-black/60 rounded-full flex items-center justify-center text-white pointer-events-auto shadow-lg hover:scale-105 transition-transform relative z-50" title={playingSong === s.previewUrl ? labels.stopPreview : labels.playPreview} aria-label={playingSong === s.previewUrl ? labels.stopPreview : labels.playPreview}>
             {playingSong === s.previewUrl ? <IconStop /> : <IconPlay />}
           </button>
         </div>
@@ -93,8 +105,8 @@ export const FeedCard: React.FC<FeedCardProps> = ({
     </div>
     <p className="text-xs mb-5 leading-relaxed">{renderCaption(s.caption)}</p>
     <div className="flex gap-6 border-t border-zinc-800/60 pt-4">
-      <button onClick={() => onToggleLike(s.id)} className="flex items-center gap-2"><IconHeart filled={s.isLiked} />{formatCount(s.likes)}</button>
-      <button onClick={() => onToggleComments(s.id)} className="flex items-center gap-2"><IconComment />{formatCount(s.comments.length)}</button>
+      <button onClick={() => onToggleLike(s.id)} className="flex items-center gap-2" title={labels.like} aria-label={labels.like}><IconHeart filled={s.isLiked} />{formatCount(s.likes)}</button>
+      <button onClick={() => onToggleComments(s.id)} className="flex items-center gap-2" title={labels.comments} aria-label={labels.comments}><IconComment />{formatCount(s.comments.length)}</button>
     </div>
     {activeCommentSongId === s.id && (
       <div className="mt-4 bg-black border border-zinc-800/80 rounded-xl p-4 animate-fade-in">
@@ -105,11 +117,11 @@ export const FeedCard: React.FC<FeedCardProps> = ({
               <span className="text-zinc-300 leading-relaxed break-words">{c.text}</span>
             </div>
           ))}
-          {s.comments.length === 0 && <p className="text-[10px] text-zinc-500">まだコメントはありません</p>}
+          {s.comments.length === 0 && <p className="text-[10px] text-zinc-500">{labels.noComments}</p>}
         </div>
         <form onSubmit={(e) => { e.preventDefault(); onSubmitComment(s.id); }} className="flex gap-2 items-center">
-          <input type="text" placeholder="コメントを追加..." value={commentInput} onChange={e => onCommentInputChange(e.target.value)} className="flex-1 bg-[#1c1c1e] rounded-full px-4 py-2 text-xs focus:outline-none" />
-          <button type="submit" className="text-[10px] font-bold text-black bg-white px-4 py-2 rounded-full shrink-0">Post</button>
+          <input type="text" placeholder={labels.commentPlaceholder} value={commentInput} onChange={e => onCommentInputChange(e.target.value)} className="flex-1 bg-[#1c1c1e] rounded-full px-4 py-2 text-xs focus:outline-none" />
+          <button type="submit" className="text-[10px] font-bold text-black bg-white px-4 py-2 rounded-full shrink-0">{labels.postComment}</button>
         </form>
       </div>
     )}

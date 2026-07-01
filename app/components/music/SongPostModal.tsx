@@ -2,13 +2,23 @@
 
 import React from "react";
 
+type DraftSong = {
+  artworkUrl100: string;
+  previewUrl: string | null;
+  trackName: string;
+  artistName: string;
+};
+
 type SongPostModalProps = {
-  draftSong: any | null;
+  draftSong: DraftSong | null;
   showOverrideConfirm: boolean;
   draftCaption: string;
   playingSong: string | null;
   cancelLabel: string;
   postLabel: string;
+  captionPlaceholder: string;
+  overrideConfirmLabel: string;
+  overwriteLabel: string;
   onCancelDraft: () => void;
   onCaptionChange: (value: string) => void;
   onPost: () => void;
@@ -23,6 +33,9 @@ export const SongPostModal: React.FC<SongPostModalProps> = ({
   playingSong,
   cancelLabel,
   postLabel,
+  captionPlaceholder,
+  overrideConfirmLabel,
+  overwriteLabel,
   onCancelDraft,
   onCaptionChange,
   onPost,
@@ -38,7 +51,7 @@ export const SongPostModal: React.FC<SongPostModalProps> = ({
           </div>
           <p className="text-center font-bold text-sm truncate mb-1">{draftSong.trackName}</p>
           <p className="text-center text-[#1DB954] text-[10px] mb-8 font-bold">{draftSong.artistName}</p>
-          <textarea placeholder="今の気分、思い出、誰に聴いてほしいかを書いてみよう" value={draftCaption} onChange={(e) => onCaptionChange(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl p-4 text-xs text-white focus:outline-none min-h-[100px] resize-none mb-6" />
+          <textarea placeholder={captionPlaceholder} value={draftCaption} onChange={(e) => onCaptionChange(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl p-4 text-xs text-white focus:outline-none min-h-[100px] resize-none mb-6" />
           <div className="flex gap-4">
             <button onClick={onCancelDraft} className="flex-1 py-3.5 border border-zinc-800 rounded-xl text-xs font-bold uppercase">{cancelLabel}</button>
             <button onClick={onPost} className="flex-1 py-3.5 bg-white text-black rounded-xl text-xs font-bold uppercase">{postLabel}</button>
@@ -49,10 +62,17 @@ export const SongPostModal: React.FC<SongPostModalProps> = ({
     {showOverrideConfirm && (
       <div className="fixed inset-0 bg-black/90 backdrop-blur-2xl z-[1200] flex items-center justify-center p-6 animate-fade-in" onClick={onCancelOverride}>
         <div className="bg-[#1c1c1e] border border-zinc-800 p-8 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
-          <p className="text-center font-bold text-lg mb-6 leading-relaxed">今日はすでに投稿しています。<br />上書きして記録しますか？</p>
+          <p className="text-center font-bold text-lg mb-6 leading-relaxed">
+            {overrideConfirmLabel.split("\n").map((line, index) => (
+              <React.Fragment key={`${line}-${index}`}>
+                {index > 0 && <br />}
+                {line}
+              </React.Fragment>
+            ))}
+          </p>
           <div className="flex gap-4">
             <button onClick={onCancelOverride} className="flex-1 py-3.5 border border-zinc-800 rounded-xl text-xs font-bold uppercase">{cancelLabel}</button>
-            <button onClick={onOverwrite} className="flex-1 py-3.5 bg-white text-black rounded-xl text-xs font-bold uppercase">上書きする</button>
+            <button onClick={onOverwrite} className="flex-1 py-3.5 bg-white text-black rounded-xl text-xs font-bold uppercase">{overwriteLabel}</button>
           </div>
         </div>
       </div>

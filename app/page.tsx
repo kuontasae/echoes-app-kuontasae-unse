@@ -222,6 +222,28 @@ Object.assign(localI18n["日本語"], {
   PostSuccess: "投稿しました",
   SaveFailed: "保存に失敗しました",
   DeleteSuccess: "削除しました",
+  PermissionDenied: "権限がありません",
+  feedShare: "シェア",
+  feedDelete: "削除",
+  feedLike: "いいね",
+  feedComments: "コメント",
+  feedPlayPreview: "プレビューを再生",
+  feedStopPreview: "プレビューを停止",
+  feedNoComments: "まだコメントはありません",
+  feedCommentPlaceholder: "コメントを追加...",
+  feedPostComment: "投稿",
+  feedDeleteConfirm: "この投稿を削除しますか？",
+  feedAllPostsLoaded: "すべての投稿を読み込みました",
+  feedEmptyTitle: "まずは今聴いている1曲を記録しよう",
+  feedEmptyBody: "曲名・アーティスト名で検索して、今日のVibeを残せます。",
+  feedRecommendationEmpty: "曲を記録すると、好みに近いおすすめがここに届きます。",
+  feedPostSuccessTitle: "記録できました。似た音楽が好きな人を見つけに行こう",
+  feedPostSuccessAction: "近い人を探す",
+  songPostCaptionPlaceholder: "今の気分、思い出、誰に聴いてほしいかを書いてみよう",
+  songPostOverrideConfirm: "今日はすでに投稿しています。\n上書きして記録しますか？",
+  songPostOverwrite: "上書きする",
+  songPostRecordAria: "{title}を記録する",
+  aiRecommendationsEmpty: "もう少し曲を記録すると、あなたに合う曲を提案できます。",
   popularSongsInJapan: "日本の人気曲",
   recommendedSongs: "おすすめ曲",
   artistFavoriteCountPrefix: "お気に入り ",
@@ -460,6 +482,28 @@ Object.assign(localI18n["English"], {
   PostSuccess: "Posted",
   SaveFailed: "Failed to save",
   DeleteSuccess: "Deleted",
+  PermissionDenied: "You do not have permission",
+  feedShare: "Share",
+  feedDelete: "Delete",
+  feedLike: "Like",
+  feedComments: "Comments",
+  feedPlayPreview: "Play preview",
+  feedStopPreview: "Stop preview",
+  feedNoComments: "No comments yet",
+  feedCommentPlaceholder: "Add a comment...",
+  feedPostComment: "Post",
+  feedDeleteConfirm: "Delete this post?",
+  feedAllPostsLoaded: "All posts loaded",
+  feedEmptyTitle: "Record the song you are listening to now",
+  feedEmptyBody: "Search by song or artist and save today's Vibe.",
+  feedRecommendationEmpty: "Record songs to see recommendations close to your taste here.",
+  feedPostSuccessTitle: "Recorded. Find people who like similar music.",
+  feedPostSuccessAction: "Find similar people",
+  songPostCaptionPlaceholder: "Write about your mood, memories, or who you want to hear this",
+  songPostOverrideConfirm: "You already posted today.\nOverwrite and record this?",
+  songPostOverwrite: "Overwrite",
+  songPostRecordAria: "Record {title}",
+  aiRecommendationsEmpty: "Record a few more songs to get recommendations for you.",
   popularSongsInJapan: "Popular Songs in Japan",
   recommendedSongs: "Recommended Songs",
   artistFavoriteCountPrefix: "",
@@ -699,6 +743,28 @@ Object.assign(localI18n["中文"], {
   PostSuccess: "已发布",
   SaveFailed: "保存失败",
   DeleteSuccess: "已删除",
+  PermissionDenied: "没有操作权限",
+  feedShare: "分享",
+  feedDelete: "删除",
+  feedLike: "点赞",
+  feedComments: "评论",
+  feedPlayPreview: "播放试听",
+  feedStopPreview: "停止试听",
+  feedNoComments: "暂无评论",
+  feedCommentPlaceholder: "添加评论...",
+  feedPostComment: "发布",
+  feedDeleteConfirm: "要删除这条投稿吗？",
+  feedAllPostsLoaded: "已加载全部投稿",
+  feedEmptyTitle: "先记录一首正在听的歌吧",
+  feedEmptyBody: "搜索歌曲名或艺人名，留下今天的 Vibe。",
+  feedRecommendationEmpty: "记录歌曲后，与你喜好相近的推荐会显示在这里。",
+  feedPostSuccessTitle: "已记录。去发现喜欢相似音乐的人吧",
+  feedPostSuccessAction: "寻找相近的人",
+  songPostCaptionPlaceholder: "写下现在的心情、回忆，或想推荐给谁听",
+  songPostOverrideConfirm: "今天已经投稿了。\n要覆盖并记录吗？",
+  songPostOverwrite: "覆盖",
+  songPostRecordAria: "记录{title}",
+  aiRecommendationsEmpty: "再记录几首歌后，就能为你推荐合适的歌曲。",
   popularSongsInJapan: "日本热门歌曲",
   recommendedSongs: "推荐歌曲",
   artistFavoriteCountPrefix: "",
@@ -2920,7 +2986,7 @@ const handleSaveDraft = () => {
     if (myRecentArtistSeeds.length === 0) {
       setAiRecommendations([]);
       setIsAiRecommendationsLoading(false);
-      setAiMessage("もう少し曲を記録すると、あなたに合う曲を提案できます。");
+      setAiMessage(t('aiRecommendationsEmpty'));
       return;
     }
 
@@ -3681,7 +3747,7 @@ const handleSaveDraft = () => {
     showToast("Unauthorized", "error");
     return;
   }
-  if (window.confirm("DeleteConfirm")) {
+  if (window.confirm(t("feedDeleteConfirm"))) {
     const targetVibe = vibes.find(v => v.id === id) || communityVibes.find(v => v.id === id);
     if (targetVibe && targetVibe.user.id !== currentUser.id) {
       showToast("PermissionDenied", "error");
@@ -4996,7 +5062,7 @@ const handleDeleteCommunity = async (id: string) => {
                       <div className="relative w-16 h-16 flex-shrink-0 group rounded-xl overflow-hidden shadow-md cursor-pointer" onClick={() => setSelectedCalendarPopupVibe(v)}>
                         <img src={v.imgUrl} className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePlay(v.previewUrl, { title: v.title, artist: v.artist, imgUrl: v.imgUrl }); }} className="w-8 h-8 bg-black/80 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform">
+                          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); togglePlay(v.previewUrl, { title: v.title, artist: v.artist, imgUrl: v.imgUrl }); }} className="w-8 h-8 bg-black/80 rounded-full flex items-center justify-center text-white hover:scale-110 transition-transform" title={playingSong === v.previewUrl ? t('feedStopPreview') : t('feedPlayPreview')} aria-label={playingSong === v.previewUrl ? t('feedStopPreview') : t('feedPlayPreview')}>
                             {playingSong === v.previewUrl ? <IconStop /> : <IconPlay />}
                           </button>
                         </div>
@@ -5014,19 +5080,19 @@ const handleDeleteCommunity = async (id: string) => {
                     )}
                     {/* 💡 いいね・コメント・削除ボタンを追加 */}
                     <div className="flex gap-6 border-t border-zinc-800/60 pt-3">
-                      <button onClick={() => toggleLike(v.id)} className="flex items-center gap-2 text-xs"><IconHeart filled={v.isLiked} />{formatCount(v.likes)}</button>
-                      <button onClick={() => setActiveCommentSongId(activeCommentSongId === v.id ? null : v.id)} className="flex items-center gap-2 text-xs"><IconComment />{formatCount(v.comments.length)}</button>
-                      <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteVibe(v.id); }} className="text-[10px] font-bold text-zinc-600 hover:text-red-500 uppercase tracking-widest ml-auto p-1">削除</button>
+                      <button onClick={() => toggleLike(v.id)} className="flex items-center gap-2 text-xs" title={t('feedLike')} aria-label={t('feedLike')}><IconHeart filled={v.isLiked} />{formatCount(v.likes)}</button>
+                      <button onClick={() => setActiveCommentSongId(activeCommentSongId === v.id ? null : v.id)} className="flex items-center gap-2 text-xs" title={t('feedComments')} aria-label={t('feedComments')}><IconComment />{formatCount(v.comments.length)}</button>
+                      <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteVibe(v.id); }} className="text-[10px] font-bold text-zinc-600 hover:text-red-500 uppercase tracking-widest ml-auto p-1" title={t('feedDelete')} aria-label={t('feedDelete')}>{t('feedDelete')}</button>
                     </div>
                     {activeCommentSongId === v.id && (
                       <div className="mt-3 bg-black border border-zinc-800/80 rounded-xl p-3 animate-fade-in">
                         <div className="flex flex-col gap-2 mb-3 max-h-[100px] overflow-y-auto scrollbar-hide">
                           {v.comments.map(c => (<div key={c.id} className="text-[11px]"><span className="font-bold text-[#1DB954] mr-2">@{c.user.handle}</span><span className="text-zinc-300">{c.text}</span></div>))}
-                          {v.comments.length === 0 && <p className="text-[10px] text-zinc-500">まだコメントはありません</p>}
+                          {v.comments.length === 0 && <p className="text-[10px] text-zinc-500">{t('feedNoComments')}</p>}
                         </div>
                         <form onSubmit={(e) => { e.preventDefault(); submitComment(v.id); }} className="flex gap-2 items-center">
-                          <input type="text" placeholder="コメントを追加..." value={commentInput} onChange={e => setCommentInput(e.target.value)} className="flex-1 bg-[#1c1c1e] rounded-full px-3 py-1.5 text-xs focus:outline-none" />
-                          <button type="submit" className="text-[10px] font-bold text-black bg-white px-3 py-1.5 rounded-full">Post</button>
+                          <input type="text" placeholder={t('feedCommentPlaceholder')} value={commentInput} onChange={e => setCommentInput(e.target.value)} className="flex-1 bg-[#1c1c1e] rounded-full px-3 py-1.5 text-xs focus:outline-none" />
+                          <button type="submit" className="text-[10px] font-bold text-black bg-white px-3 py-1.5 rounded-full">{t('feedPostComment')}</button>
                         </form>
                       </div>
                     )}
@@ -5054,6 +5120,17 @@ const renderFeedCard = (s: Song) => (
     formatCount={formatCount}
     displayLocalTime={displayLocalTime}
     renderCaption={parseMention}
+    labels={{
+      share: t('feedShare'),
+      delete: t('feedDelete'),
+      like: t('feedLike'),
+      comments: t('feedComments'),
+      playPreview: t('feedPlayPreview'),
+      stopPreview: t('feedStopPreview'),
+      noComments: t('feedNoComments'),
+      commentPlaceholder: t('feedCommentPlaceholder'),
+      postComment: t('feedPostComment'),
+    }}
     onOpenUser={(user) => { setViewingUser(user); setActiveTab('other_profile'); }}
     onOpenOwnProfile={() => setActiveTab('profile')}
     onShareVibe={handleShareVibe}
@@ -5298,6 +5375,9 @@ const renderFeedCard = (s: Song) => (
         playingSong={playingSong}
         cancelLabel={t('cancel')}
         postLabel={t('postVibe')}
+        captionPlaceholder={t('songPostCaptionPlaceholder')}
+        overrideConfirmLabel={t('songPostOverrideConfirm')}
+        overwriteLabel={t('songPostOverwrite')}
         onCancelDraft={cancelDraft}
         onCaptionChange={setDraftCaption}
         onPost={checkAndPost}
@@ -6816,14 +6896,14 @@ const renderFeedCard = (s: Song) => (
                   </div>
                 )) : (
                   <div className="w-full rounded-2xl border border-zinc-900 bg-[#1c1c1e]/60 px-4 py-5 text-xs text-zinc-500">
-                    曲を記録すると、好みに近いおすすめがここに届きます。
+                    {t('feedRecommendationEmpty')}
                   </div>
                 )}
               </div>
             </section>}
             {showPostSuccessCard && (
               <div className="mb-6 rounded-2xl border border-[#1DB954]/20 bg-[#1DB954]/10 px-4 py-4">
-                <p className="text-sm font-bold text-white">記録できました。似た音楽が好きな人を見つけに行こう</p>
+                <p className="text-sm font-bold text-white">{t('feedPostSuccessTitle')}</p>
                 <button
                   type="button"
                   onClick={() => {
@@ -6833,15 +6913,15 @@ const renderFeedCard = (s: Song) => (
                   }}
                   className="mt-3 px-4 py-2 rounded-full bg-[#1DB954] text-black text-[11px] font-bold"
                 >
-                  近い人を探す
+                  {t('feedPostSuccessAction')}
                 </button>
               </div>
             )}
             <div className="flex flex-col gap-6">
               {allFeedVibes.length === 0 && !isLoadingVibes ? (
                 <div className="text-center text-zinc-500 py-20">
-                  <p className="text-sm font-bold text-zinc-300">まずは今聴いている1曲を記録しよう</p>
-                  <p className="text-xs mt-2">曲名・アーティスト名で検索して、今日のVibeを残せます。</p>
+                  <p className="text-sm font-bold text-zinc-300">{t('feedEmptyTitle')}</p>
+                  <p className="text-xs mt-2">{t('feedEmptyBody')}</p>
                 </div>
               ) : (
                 allFeedVibes.map(renderFeedCard)
@@ -6852,7 +6932,7 @@ const renderFeedCard = (s: Song) => (
                 </div>
               )}
               {!hasMoreVibes && allFeedVibes.length > 0 && (
-                <p className="text-center text-zinc-500 py-10 text-xs font-bold">すべての投稿を読み込みました</p>
+                <p className="text-center text-zinc-500 py-10 text-xs font-bold">{t('feedAllPostsLoaded')}</p>
               )}
             </div>
           </div>
@@ -7187,14 +7267,14 @@ const renderFeedCard = (s: Song) => (
                         <p className="font-bold text-sm text-white truncate">{recSong.trackName}</p>
                         <p className="text-[10px] text-zinc-400 truncate mt-0.5">{recSong.artistName}</p>
                       </div>
-                      <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDraftSong(recSong); }} className="w-8 h-8 rounded-full bg-zinc-800 text-[#1DB954] flex items-center justify-center pointer-events-auto hover:scale-110 transition-transform" aria-label={`${recSong.trackName}を記録する`}>
+                      <button type="button" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setDraftSong(recSong); }} className="w-8 h-8 rounded-full bg-zinc-800 text-[#1DB954] flex items-center justify-center pointer-events-auto hover:scale-110 transition-transform" aria-label={t('songPostRecordAria').replace('{title}', recSong.trackName)}>
                         <IconPlus />
                       </button>
                     </div>
                   )) : isAiRecommendationsLoading ? (
                     <div className="py-6 text-center text-zinc-500 text-xs font-bold animate-pulse">{t('aiAnalyzing')}</div>
                   ) : (
-                    <div className="py-6 text-center text-zinc-500 text-xs font-bold">もう少し曲を記録すると、あなたに合う曲を提案できます。</div>
+                    <div className="py-6 text-center text-zinc-500 text-xs font-bold">{t('aiRecommendationsEmpty')}</div>
                   )}
                 </div>
               </div>
