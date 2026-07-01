@@ -289,6 +289,14 @@ Object.assign(localI18n["日本語"], {
   OperationFailed: "処理に失敗しました",
   ReportConfirm: "この内容を通報しますか？",
   DeleteConfirm: "本当に削除しますか？",
+  adminDashboardDescriptionLine1: "3回以上通報され、非表示状態になっているコミュニティのリストです。",
+  adminDashboardDescriptionLine2: "問題がなければ復旧、悪質な場合は削除してください。",
+  adminReportCount: "通報 {count}件",
+  adminParticipantsCount: "参与者: {count}人",
+  adminDeletePermanently: "完全削除",
+  adminRestoreSafe: "復旧 (安全)",
+  adminNoReportedCommunities: "現在、通報されたコミュニティはありません",
+  adminPeacefulState: "平和な状態です。",
   matchFilterArtistPlaceholder: "例: Tele, Vaundy",
   matchFilterTagLiveLabel: "ハッシュタグ / ライブ",
   matchFilterTagLivePlaceholder: "例: 邦ロック, VIVA LA ROCK",
@@ -755,6 +763,14 @@ Object.assign(localI18n["English"], {
   OperationFailed: "Operation failed",
   ReportConfirm: "Report this content?",
   DeleteConfirm: "Delete this item?",
+  adminDashboardDescriptionLine1: "Communities reported 3 or more times and currently hidden are listed here.",
+  adminDashboardDescriptionLine2: "Restore them if there is no issue, or delete them if malicious.",
+  adminReportCount: "{count} reports",
+  adminParticipantsCount: "Participants: {count}",
+  adminDeletePermanently: "Delete permanently",
+  adminRestoreSafe: "Restore (safe)",
+  adminNoReportedCommunities: "No reported communities right now",
+  adminPeacefulState: "Everything is peaceful.",
   matchFilterArtistPlaceholder: "Example: Tele, Vaundy",
   matchFilterTagLiveLabel: "Hashtag / Live",
   matchFilterTagLivePlaceholder: "Example: J-rock, VIVA LA ROCK",
@@ -1222,6 +1238,14 @@ Object.assign(localI18n["中文"], {
   OperationFailed: "操作失败",
   ReportConfirm: "要举报此内容吗？",
   DeleteConfirm: "确定要删除吗？",
+  adminDashboardDescriptionLine1: "这里列出被举报3次以上并已隐藏的社区。",
+  adminDashboardDescriptionLine2: "如无问题可恢复，恶意内容请删除。",
+  adminReportCount: "举报 {count}件",
+  adminParticipantsCount: "参加者: {count}人",
+  adminDeletePermanently: "彻底删除",
+  adminRestoreSafe: "恢复（安全）",
+  adminNoReportedCommunities: "当前没有被举报的社区",
+  adminPeacefulState: "目前状态平稳。",
   matchFilterArtistPlaceholder: "例: Tele, Vaundy",
   matchFilterTagLiveLabel: "标签 / 现场",
   matchFilterTagLivePlaceholder: "例: 日摇, VIVA LA ROCK",
@@ -7274,7 +7298,7 @@ const renderFeedCard = (s: Song) => (
             <h2 className="text-red-500 font-bold text-lg mx-auto pr-8 flex items-center gap-2"><IconWarning /> {t('adminDashboard')}</h2>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
-            <p className="text-xs text-zinc-400 mb-6 leading-relaxed">3回以上通報され、非表示状態になっているコミュニティのリストです。<br />問題がなければ復旧、悪質な場合は削除してください。</p>
+            <p className="text-xs text-zinc-400 mb-6 leading-relaxed">{t('adminDashboardDescriptionLine1')}<br />{t('adminDashboardDescriptionLine2')}</p>
             <div className="flex flex-col gap-4 pb-12">
               {realCommunities.filter(c => (c.reportedBy?.length || 0) >= 3).map(c => (
                 <div key={c.id} className="bg-[#1c1c1e] border border-red-500/30 rounded-2xl p-5 shadow-lg">
@@ -7283,20 +7307,20 @@ const renderFeedCard = (s: Song) => (
                       <h3 className="font-bold text-base text-white">{c.name}</h3>
                       <p className="text-xs text-[#1DB954] mt-1">{c.date}</p>
                     </div>
-                    <span className="bg-red-500/20 text-red-500 text-[10px] font-bold px-3 py-1 rounded-full border border-red-500/30">通報 {c.reportedBy?.length}件</span>
+                    <span className="bg-red-500/20 text-red-500 text-[10px] font-bold px-3 py-1 rounded-full border border-red-500/30">{t('adminReportCount').replace('{count}', String(c.reportedBy?.length || 0))}</span>
                   </div>
-                  <p className="text-[10px] text-zinc-500 mb-5">参加者: {c.memberCount}人 | ID: {c.id}</p>
+                  <p className="text-[10px] text-zinc-500 mb-5">{t('adminParticipantsCount').replace('{count}', String(c.memberCount))} | ID: {c.id}</p>
                   <div className="flex gap-3">
-                    <button onClick={() => handleDeleteCommunity(c.id)} className="flex-1 py-3 bg-red-500 text-white rounded-xl text-xs font-bold transition-transform active:scale-95 shadow-md">完全削除</button>
-                    <button onClick={() => handleRestoreCommunity(c.id)} className="flex-1 py-3 border border-zinc-600 text-white rounded-xl text-xs font-bold transition-transform active:scale-95 hover:bg-zinc-800">復旧 (安全)</button>
+                    <button onClick={() => handleDeleteCommunity(c.id)} className="flex-1 py-3 bg-red-500 text-white rounded-xl text-xs font-bold transition-transform active:scale-95 shadow-md">{t('adminDeletePermanently')}</button>
+                    <button onClick={() => handleRestoreCommunity(c.id)} className="flex-1 py-3 border border-zinc-600 text-white rounded-xl text-xs font-bold transition-transform active:scale-95 hover:bg-zinc-800">{t('adminRestoreSafe')}</button>
                   </div>
                 </div>
               ))}
               {realCommunities.filter(c => (c.reportedBy?.length || 0) >= 3).length === 0 && (
                 <div className="text-center py-20">
                   <div className="w-16 h-16 bg-zinc-900 rounded-full flex items-center justify-center mx-auto mb-4 text-[#1DB954]"><IconCheck /></div>
-                  <p className="font-bold text-zinc-400">現在、通報されたコミュニティはありません</p>
-                  <p className="text-[10px] text-zinc-600 mt-2">平和な状態です。</p>
+                  <p className="font-bold text-zinc-400">{t('adminNoReportedCommunities')}</p>
+                  <p className="text-[10px] text-zinc-600 mt-2">{t('adminPeacefulState')}</p>
                 </div>
               )}
             </div>
