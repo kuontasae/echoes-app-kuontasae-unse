@@ -566,6 +566,9 @@ Object.assign(localI18n["日本語"], {
   favoriteGenres: "好きなジャンル",
   favoriteArtist: "好きなアーティスト",
   artistSearchPlaceholder: "アーティストを検索",
+  artistDetailBackLabel: "アーティストページを戻る",
+  artistTracksLoading: "曲を読み込んでいます...",
+  viewArtistDetail: "アーティスト詳細を見る",
   favoriteArtistSearchLabel: "好きなアーティスト検索",
   searchingCandidates: "候補を検索しています",
   customHashtagPlaceholder: "自分でハッシュタグを追加",
@@ -1048,6 +1051,9 @@ Object.assign(localI18n["English"], {
   favoriteGenres: "Favorite genres",
   favoriteArtist: "Favorite artist",
   artistSearchPlaceholder: "Search artists",
+  artistDetailBackLabel: "Back from artist page",
+  artistTracksLoading: "Loading tracks...",
+  viewArtistDetail: "View artist details",
   favoriteArtistSearchLabel: "Favorite artist search",
   searchingCandidates: "Searching suggestions",
   customHashtagPlaceholder: "Add your own hashtag",
@@ -1530,6 +1536,9 @@ Object.assign(localI18n["中文"], {
   favoriteGenres: "喜欢的类型",
   favoriteArtist: "喜欢的艺人",
   artistSearchPlaceholder: "搜索艺人",
+  artistDetailBackLabel: "返回艺人页面",
+  artistTracksLoading: "正在加载歌曲...",
+  viewArtistDetail: "查看艺人详情",
   favoriteArtistSearchLabel: "喜欢的艺人搜索",
   searchingCandidates: "正在搜索候选",
   customHashtagPlaceholder: "添加自定义标签",
@@ -6076,7 +6085,7 @@ const renderFeedCard = (s: Song) => (
             <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/60 to-black"></div>
           </div>
           <div className="flex items-center p-4 sticky top-0 z-20">
-            <button aria-label="アーティストページを戻る" onClick={() => { setPlayingSong(null); handleGoBack(); }} className="text-white bg-black/40 backdrop-blur p-2 rounded-full"><IconChevronLeft /></button>
+            <button aria-label={t('artistDetailBackLabel')} onClick={() => { setPlayingSong(null); handleGoBack(); }} className="text-white bg-black/40 backdrop-blur p-2 rounded-full"><IconChevronLeft /></button>
           </div>
           <div className="px-6 relative z-10 mt-[15vh] mb-8">
             <h1 className="text-5xl font-black tracking-tighter mb-2 break-all leading-tight drop-shadow-lg flex items-center flex-wrap gap-4">
@@ -6129,7 +6138,7 @@ const renderFeedCard = (s: Song) => (
             )}
           </div>
           <div className="px-4 pb-24 relative z-10 bg-black min-h-[50vh]">
-            {isArtistLoading ? <p className="text-center text-zinc-500 py-12">Loading tracks...</p> : (
+            {isArtistLoading ? <p className="text-center text-zinc-500 py-12">{t('artistTracksLoading')}</p> : (
               <>
                 {latestReleaseSong && (
                   <div className="mb-10">
@@ -6203,7 +6212,7 @@ const renderFeedCard = (s: Song) => (
             <p className="text-sm text-zinc-400 mb-6">{activeAlbumProfile.artistName}</p>
           </div>
           <div className="px-4 pb-24">
-            {isAlbumLoading ? <p className="text-center text-zinc-500 py-12">Loading tracks...</p> : (
+            {isAlbumLoading ? <p className="text-center text-zinc-500 py-12">{t('artistTracksLoading')}</p> : (
               <div className="flex flex-col gap-2">
                 {albumSongs.map((tItem, i) => (
                   <div key={i} onClick={() => { if ((activeTab === 'chat' && activeChatUserId) || (activeTab === 'other_profile' && viewingUser)) { if (activeTab === 'other_profile' && viewingUser) setActiveChatUserId(viewingUser.id); setSelectedChatSong(tItem); setShowChatMusicSelector(true); } else { setDraftSong(tItem); } }} className="flex items-center gap-4 py-3 px-2 hover:bg-zinc-800/50 rounded-xl cursor-pointer border-b border-zinc-900/50 last:border-0 group">
@@ -6331,7 +6340,7 @@ const renderFeedCard = (s: Song) => (
             <h2 className="text-xl font-bold text-center mb-1">{selectedCalendarPopupVibe.title}</h2>
             <p onClick={(e) => handleArtistClick(e, selectedCalendarPopupVibe.artistId, selectedCalendarPopupVibe.artist, selectedCalendarPopupVibe.imgUrl)} className="text-sm text-[#1DB954] font-bold mb-8 cursor-pointer hover:underline">{selectedCalendarPopupVibe.artist}</p>
             <button onClick={(e) => handleArtistClick(e, selectedCalendarPopupVibe.artistId, selectedCalendarPopupVibe.artist, selectedCalendarPopupVibe.imgUrl)} className="w-full py-4 bg-white text-black rounded-xl font-bold flex justify-center items-center gap-2 hover:bg-gray-200 transition-colors">
-              アーティスト詳細を見る <IconChevronRight />
+              {t('viewArtistDetail')} <IconChevronRight />
             </button>
           </div>
         </div>
