@@ -282,6 +282,13 @@ Object.assign(localI18n["日本語"], {
   Uploading: "アップロードしています...",
   AudioSizeLimitExceeded: "音声ファイルが大きすぎます",
   VoiceSendFailed: "音声の送信に失敗しました",
+  UserSearchFailed: "ユーザー検索に失敗しました",
+  ArtistInfoFetchFailed: "アーティスト情報の取得に失敗しました",
+  AlbumInfoFetchFailed: "アルバム情報の取得に失敗しました",
+  MicrophonePermissionRequired: "マイクへのアクセスを許可してください",
+  OperationFailed: "処理に失敗しました",
+  ReportConfirm: "この内容を通報しますか？",
+  DeleteConfirm: "本当に削除しますか？",
   feedShare: "シェア",
   feedDelete: "削除",
   feedLike: "いいね",
@@ -726,6 +733,13 @@ Object.assign(localI18n["English"], {
   Uploading: "Uploading...",
   AudioSizeLimitExceeded: "Audio file is too large",
   VoiceSendFailed: "Could not send voice message",
+  UserSearchFailed: "User search failed",
+  ArtistInfoFetchFailed: "Could not load artist info",
+  AlbumInfoFetchFailed: "Could not load album info",
+  MicrophonePermissionRequired: "Please allow microphone access",
+  OperationFailed: "Operation failed",
+  ReportConfirm: "Report this content?",
+  DeleteConfirm: "Delete this item?",
   feedShare: "Share",
   feedDelete: "Delete",
   feedLike: "Like",
@@ -1171,6 +1185,13 @@ Object.assign(localI18n["中文"], {
   Uploading: "上传中...",
   AudioSizeLimitExceeded: "音频文件过大",
   VoiceSendFailed: "语音发送失败",
+  UserSearchFailed: "用户搜索失败",
+  ArtistInfoFetchFailed: "艺人信息获取失败",
+  AlbumInfoFetchFailed: "专辑信息获取失败",
+  MicrophonePermissionRequired: "请允许麦克风访问",
+  OperationFailed: "操作失败",
+  ReportConfirm: "要举报此内容吗？",
+  DeleteConfirm: "确定要删除吗？",
   feedShare: "分享",
   feedDelete: "删除",
   feedLike: "点赞",
@@ -3880,7 +3901,7 @@ const handleSaveDraft = () => {
       setRealUserSearchResults(userData as User[]);
     }
     if (userError) {
-      showToast("ユーザー検索に失敗しました", "error");
+      showToast(t("UserSearchFailed"), "error");
       setRealUserSearchResults([]);
     }
   }, [cleanUserQuery, userData, userError]);
@@ -3995,7 +4016,7 @@ const handleSaveDraft = () => {
       }
     }
     if (artistError) {
-      showToast("アーティスト情報の取得に失敗しました", "error");
+      showToast(t("ArtistInfoFetchFailed"), "error");
       setArtistSongs([]);
     }
     setIsArtistLoading(false);
@@ -4014,7 +4035,7 @@ const handleSaveDraft = () => {
       setAlbumSongs(albumData.results.filter((i: any) => i.wrapperType === 'track'));
     }
     if (albumError) {
-      showToast("アルバム情報の取得に失敗しました", "error");
+      showToast(t("AlbumInfoFetchFailed"), "error");
       setAlbumSongs([]);
     }
     setIsAlbumLoading(false);
@@ -4689,7 +4710,7 @@ const handleSaveDraft = () => {
   };
   const joinCommunity = async (c: LiveCommunity) => {
     if (!currentUser) {
-      showToast("ログインが必要です", "error");
+      showToast(t("Unauthorized"), "error");
       return;
     }
     const wasJoined = chatCommunities.some(x => x.id === c.id) || c.isJoined;
@@ -4827,7 +4848,7 @@ const handleSaveDraft = () => {
     return;
   }
 
-  if (window.confirm("ReportConfirm")) {
+  if (window.confirm(t("ReportConfirm"))) {
     setRealCommunities(prev => prev.map(c =>
       c.id === id ? { ...c, reportedBy: [...(c.reportedBy || []), currentUser.id] } : c
     ));
@@ -4863,7 +4884,7 @@ const handleRestoreCommunity = async (id: string) => {
 };
 
 const handleDeleteCommunity = async (id: string) => {
-  if (window.confirm("DeleteConfirm")) {
+  if (window.confirm(t("DeleteConfirm"))) {
     setRealCommunities(prev => prev.filter(c => c.id !== id));
     
     try {
@@ -5002,7 +5023,7 @@ const handleDeleteCommunity = async (id: string) => {
         setRecordingSeconds(prev => prev + 1);
       }, 1000);
     } catch (err) {
-      showToast("マイクへのアクセスを許可してください", "error");
+      showToast(t("MicrophonePermissionRequired"), "error");
     }
   };
   const stopVoiceRecording = () => {
@@ -5128,7 +5149,7 @@ const handleDeleteCommunity = async (id: string) => {
           return prev.filter(f => !(f.follower_id === currentUser.id && f.following_id === targetUserId));
         }
       });
-      showToast("処理に失敗しました", "error");
+      showToast(t("OperationFailed"), "error");
     }
   };
   const handleBlockUser = async (userId: string) => {
@@ -5222,7 +5243,7 @@ const handleDeleteCommunity = async (id: string) => {
   };
   const handleShareVibe = (s: Song) => {
     if (navigator.share) { navigator.share({ title: `Echoes - ${s.title}`, text: `${s.user.name}のVibeをチェック！`, url: 'https://echo.es' }).catch(() => { }); }
-    else { showToast("URLをクリップボードにコピーしました。"); }
+    else { showToast(t("CopiedUrl")); }
   };
   const handleShareApp = () => {
     if (navigator.share) { navigator.share({ title: 'Echoes', url: 'https://echo.es' }).catch(() => { }); }
@@ -7807,7 +7828,7 @@ const renderFeedCard = (s: Song) => (
               if (navigator.share) {
                 navigator.share({ title: `Echoes - ${article.title}`, text: `${article.author.name}の記事をチェック！`, url: 'https://echo.es' }).catch(() => { });
               } else {
-                showToast("URLをクリップボードにコピーしました。");
+                showToast(t("CopiedUrl"));
               }
             }}
           />
