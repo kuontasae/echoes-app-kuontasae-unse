@@ -446,6 +446,55 @@ Object.assign(localI18n["日本語"], {
   instagramUrlExample: "例: https://instagram.com/username",
   paidCoin: "有償",
   freeCoin: "無償",
+  creatorTools: "クリエイターツール",
+  revenueDashboard: "収益ダッシュボード",
+  availableRevenue: "引き出し可能な売上金",
+  payoutEligiblePaidCoins: "換金対象: 有償 {coins} C (レート: 1C = 0.5円)",
+  payoutSettings: "換金設定",
+  payoutLastFailure: "前回の振込に失敗しました: {reason}",
+  payoutDefaultFailureReason: "振込先情報を確認してください。",
+  stripePayoutsReady: "Stripeの本人確認と振込先登録が完了しています。",
+  stripePayoutsIncomplete: "Stripeの本人確認または振込先登録が未完了です。",
+  stripePayoutsRequired: "換金にはStripeで本人確認と振込先登録が必要です。",
+  stripeConnecting: "接続中...",
+  payoutSetupContinue: "換金設定を続ける",
+  payoutSetupStart: "換金設定を開始する",
+  payoutRequesting: "申請中...",
+  payoutRequestButton: "振込申請をする",
+  payoutMinimum: "1,000円以上で引き出し可能",
+  totalEarnedCoins: "累計獲得コイン (無償分含む)",
+  revenueArticle: "記事",
+  revenueGift: "ギフト",
+  transactionHistory: "取引履歴",
+  userFallback: "ユーザー",
+  revenueGiftReceived: "サポートを受け取りました",
+  revenueArticlePurchased: "記事が購入されました",
+  coinUnit: "コイン",
+  noRevenueData: "まだ収益データがありません",
+  noRevenueDataDescription: "有料記事を公開するか、\nサポートを受けるとここに履歴が表示されます。",
+  paymentSuccessToast: "決済が完了し、コインがチャージされました！ 🎉",
+  paymentCanceledToast: "決済をキャンセルしました",
+  stripeConnectReturnToast: "換金設定を確認しています",
+  stripeConnectRefreshToast: "換金設定をもう一度開始してください",
+  invalidCoinAmount: "コイン数が不正です",
+  paymentInitFailed: "決済を開始できませんでした",
+  stripeConnectStartFailed: "換金設定を開始できませんでした",
+  payoutRequestSuccess: "¥{amount} の振込申請を受け付けました",
+  payoutRequestFailed: "振込申請に失敗しました",
+  invalidArticleInfo: "記事の情報が不正です",
+  cannotPurchaseOwnArticle: "自分の記事は購入できません",
+  insufficientCoins: "コインが不足しています",
+  articlePurchaseSuccess: "記事を購入しました！",
+  insufficientCoinsCharge: "コインが不足しています。チャージしてください。",
+  articleGiftConfirm: "{amount}C を贈りますか？",
+  creatorSupportSuccess: "クリエイターをサポートしました！",
+  coinChargeTitle: "コインチャージ",
+  paymentConfirmationTitle: "決済の確認",
+  ownedCoins: "保有",
+  coinPlanBonus: "{count}コインお得！",
+  paymentAmount: "決済金額: ¥{amount}",
+  stripeSecureNotice: "安全な決済システム（Stripe）へ移動します。クレジットカード情報は暗号化され、当アプリには一切保存されません。",
+  goToCheckout: "決済画面へ進む",
   dayStreak: "{count}日連続記録中",
   mutualFriendsCount: "{count}人の共通の友達",
   vibeMatchDescription: "あなたと{name}さんの音楽の好みの分析結果です。",
@@ -826,6 +875,55 @@ Object.assign(localI18n["English"], {
   instagramUrlExample: "Example: https://instagram.com/username",
   paidCoin: "Paid",
   freeCoin: "Free",
+  creatorTools: "Creator tools",
+  revenueDashboard: "Revenue dashboard",
+  availableRevenue: "Available earnings",
+  payoutEligiblePaidCoins: "Eligible paid coins: {coins} C (rate: 1 C = ¥0.5)",
+  payoutSettings: "Payout setup",
+  payoutLastFailure: "Previous payout failed: {reason}",
+  payoutDefaultFailureReason: "Please check your payout information.",
+  stripePayoutsReady: "Stripe identity verification and payout details are complete.",
+  stripePayoutsIncomplete: "Stripe identity verification or payout details are incomplete.",
+  stripePayoutsRequired: "Stripe identity verification and payout details are required for payouts.",
+  stripeConnecting: "Connecting...",
+  payoutSetupContinue: "Continue payout setup",
+  payoutSetupStart: "Start payout setup",
+  payoutRequesting: "Requesting...",
+  payoutRequestButton: "Request payout",
+  payoutMinimum: "Available from ¥1,000",
+  totalEarnedCoins: "Total earned coins (including free coins)",
+  revenueArticle: "Articles",
+  revenueGift: "Gifts",
+  transactionHistory: "Transaction history",
+  userFallback: "User",
+  revenueGiftReceived: "Support received",
+  revenueArticlePurchased: "Article purchased",
+  coinUnit: "Coins",
+  noRevenueData: "No revenue data yet",
+  noRevenueDataDescription: "Publish a paid article or receive support,\nand your history will appear here.",
+  paymentSuccessToast: "Payment complete. Coins have been charged! 🎉",
+  paymentCanceledToast: "Payment canceled",
+  stripeConnectReturnToast: "Checking payout setup",
+  stripeConnectRefreshToast: "Please restart payout setup",
+  invalidCoinAmount: "Invalid coin amount",
+  paymentInitFailed: "Could not start payment",
+  stripeConnectStartFailed: "Could not start payout setup",
+  payoutRequestSuccess: "Payout request for ¥{amount} has been received",
+  payoutRequestFailed: "Payout request failed",
+  invalidArticleInfo: "Invalid article information",
+  cannotPurchaseOwnArticle: "You cannot purchase your own article",
+  insufficientCoins: "Not enough coins",
+  articlePurchaseSuccess: "Article purchased!",
+  insufficientCoinsCharge: "Not enough coins. Please charge coins.",
+  articleGiftConfirm: "Send {amount}C?",
+  creatorSupportSuccess: "Creator supported!",
+  coinChargeTitle: "Charge coins",
+  paymentConfirmationTitle: "Payment confirmation",
+  ownedCoins: "Owned",
+  coinPlanBonus: "{count} bonus coins!",
+  paymentAmount: "Payment amount: ¥{amount}",
+  stripeSecureNotice: "You will be redirected to Stripe's secure payment system. Credit card information is encrypted and is never stored in this app.",
+  goToCheckout: "Go to checkout",
   dayStreak: "{count}-day streak",
   mutualFriendsCount: "{count} mutual friends",
   vibeMatchDescription: "This is an analysis of your music taste match with {name}.",
@@ -1206,6 +1304,55 @@ Object.assign(localI18n["中文"], {
   instagramUrlExample: "例：https://instagram.com/username",
   paidCoin: "付费",
   freeCoin: "免费",
+  creatorTools: "创作者工具",
+  revenueDashboard: "收益仪表盘",
+  availableRevenue: "可提现收益",
+  payoutEligiblePaidCoins: "可提现对象: 付费 {coins} C (汇率: 1C = 0.5日元)",
+  payoutSettings: "提现设置",
+  payoutLastFailure: "上次打款失败: {reason}",
+  payoutDefaultFailureReason: "请确认收款信息。",
+  stripePayoutsReady: "Stripe 身份验证和收款账户已完成登记。",
+  stripePayoutsIncomplete: "Stripe 身份验证或收款账户登记尚未完成。",
+  stripePayoutsRequired: "提现需要在 Stripe 完成身份验证和收款账户登记。",
+  stripeConnecting: "连接中...",
+  payoutSetupContinue: "继续提现设置",
+  payoutSetupStart: "开始提现设置",
+  payoutRequesting: "申请中...",
+  payoutRequestButton: "申请打款",
+  payoutMinimum: "满1,000日元即可提现",
+  totalEarnedCoins: "累计获得金币（含免费部分）",
+  revenueArticle: "文章",
+  revenueGift: "礼物",
+  transactionHistory: "交易记录",
+  userFallback: "用户",
+  revenueGiftReceived: "收到了支持",
+  revenueArticlePurchased: "文章被购买",
+  coinUnit: "金币",
+  noRevenueData: "暂无收益数据",
+  noRevenueDataDescription: "发布付费文章或收到支持后，\n记录会显示在这里。",
+  paymentSuccessToast: "支付完成，金币已充值！🎉",
+  paymentCanceledToast: "支付已取消",
+  stripeConnectReturnToast: "正在确认提现设置",
+  stripeConnectRefreshToast: "请重新开始提现设置",
+  invalidCoinAmount: "金币数量无效",
+  paymentInitFailed: "无法开始支付",
+  stripeConnectStartFailed: "无法开始提现设置",
+  payoutRequestSuccess: "已受理 ¥{amount} 的打款申请",
+  payoutRequestFailed: "打款申请失败",
+  invalidArticleInfo: "文章信息无效",
+  cannotPurchaseOwnArticle: "不能购买自己的文章",
+  insufficientCoins: "金币不足",
+  articlePurchaseSuccess: "文章已购买！",
+  insufficientCoinsCharge: "金币不足。请充值。",
+  articleGiftConfirm: "要赠送 {amount}C 吗？",
+  creatorSupportSuccess: "已支持创作者！",
+  coinChargeTitle: "充值金币",
+  paymentConfirmationTitle: "确认支付",
+  ownedCoins: "持有",
+  coinPlanBonus: "优惠 {count} 金币！",
+  paymentAmount: "支付金额: ¥{amount}",
+  stripeSecureNotice: "将跳转到安全支付系统（Stripe）。信用卡信息会被加密，本应用不会保存。",
+  goToCheckout: "前往支付页面",
   dayStreak: "连续记录{count}天",
   mutualFriendsCount: "{count}位共同好友",
   vibeMatchDescription: "这是你和{name}的音乐喜好分析结果。",
@@ -1335,6 +1482,7 @@ function MainApp() {
 
   const [timeZone, setTimeZone] = useState("Asia/Tokyo");
   const [language, setLanguage] = useState("日本語");
+  const [isLanguageRestored, setIsLanguageRestored] = useState(false);
   const t = (k: string) => localI18n[language]?.[k] || localI18n["日本語"][k];
   useEffect(() => {
     try {
@@ -1342,6 +1490,8 @@ function MainApp() {
       if (savedLanguage && localI18n[savedLanguage]) setLanguage(savedLanguage);
     } catch (e) {
       console.warn("Language preference restore failed", e);
+    } finally {
+      setIsLanguageRestored(true);
     }
   }, []);
   const handleLanguageChange = (nextLanguage: string) => {
@@ -1770,31 +1920,32 @@ function MainApp() {
   const [isCharging, setIsCharging] = useState(false);
   const [selectedChargePlan, setSelectedChargePlan] = useState<CoinChargePlan | null>(null);
   useEffect(() => {
+    if (!isLanguageRestored) return;
     if (typeof window !== 'undefined') {
       const urlParams = new URLSearchParams(window.location.search);
       const paymentStatus = urlParams.get('payment');
       if (paymentStatus === 'success') {
-        showToast("決済が完了し、コインがチャージされました！ 🎉", "success");
+        showToast(t("paymentSuccessToast"), "success");
         window.history.replaceState(null, '', window.location.pathname);
       } else if (paymentStatus === 'cancel') {
-        showToast("決済をキャンセルしました", "error");
+        showToast(t("paymentCanceledToast"), "error");
         window.history.replaceState(null, '', window.location.pathname);
       }
       const stripeConnectStatus = urlParams.get('stripe_connect');
       if (stripeConnectStatus === 'return') {
-        showToast("換金設定を確認しています", "success");
+        showToast(t("stripeConnectReturnToast"), "success");
         window.history.replaceState(null, '', window.location.pathname);
       } else if (stripeConnectStatus === 'refresh') {
-        showToast("換金設定をもう一度開始してください", "error");
+        showToast(t("stripeConnectRefreshToast"), "error");
         window.history.replaceState(null, '', window.location.pathname);
       }
     }
-  }, []);
+  }, [isLanguageRestored, language]);
   const [cardInfo, setCardInfo] = useState({ number: "", expiry: "", cvc: "", name: "" });
   const handleChargeCoins = async () => {
   if (!currentUser) return;
   if (!selectedChargePlan) {
-    showToast("InvalidCoinAmount", "error");
+    showToast(t("invalidCoinAmount"), "error");
     return;
   }
   setIsCharging(true);
@@ -1824,7 +1975,7 @@ function MainApp() {
       throw new Error("InvalidResponse");
     }
   } catch (err) {
-    showToast("PaymentInitFailed", "error");
+    showToast(t("paymentInitFailed"), "error");
     setIsCharging(false);
   }
 };
@@ -2180,19 +2331,19 @@ const handleSaveDraft = () => {
         showToast("ArticleDeleteServerFailed", "error");
       }
     }
-  };
+  };
   const handlePurchaseArticle = async (article: any) => {
     if (!currentUser || !article || !article.id) {
-      showToast("記事の情報が不正です", "error");
+      showToast(t("invalidArticleInfo"), "error");
       return;
     }
     if (article.author && article.author.id === currentUser.id) {
-      showToast("自分の記事は購入できません", "error");
+      showToast(t("cannotPurchaseOwnArticle"), "error");
       return;
     }
     const articlePrice = Math.floor(Number(article.price));
     if (isNaN(articlePrice) || articlePrice <= 0) {
-      showToast("価格が不正です", "error");
+      showToast(t("ArticleInvalidPrice"), "error");
       return;
     }
 
@@ -2209,7 +2360,7 @@ const handleSaveDraft = () => {
 
       if (error) {
         if (error.message.includes('Insufficient')) {
-          showToast("コインが不足しています", "error");
+          showToast(t("insufficientCoins"), "error");
         } else {
           throw error; // その他の予期せぬエラー
         }
@@ -2223,35 +2374,35 @@ const handleSaveDraft = () => {
 	        paid_coin: data.new_paid_coin 
 	      } as any));
 
-	      showToast("記事を購入しました！", "success");
+	      showToast(t("articlePurchaseSuccess"), "success");
 	      mutatePurchase(true); // 記事のロックを解除
 	      void handleOpenArticle(article);
 
 	    } catch (err) {
-	      showToast("通信エラーが発生しました", "error");
+	      showToast(t("NetworkError"), "error");
 	    }
 	  };
   const handleUnlockArticle = (article: any) => {
     const currentBalance = getAvailableCoins(myProfile as User & CoinFields);
     if (currentBalance < article.price) {
       setShowCoinChargeModal(true);
-      showToast("コインが不足しています。チャージしてください。", "error");
+      showToast(t("insufficientCoinsCharge"), "error");
     } else {
       handlePurchaseArticle(article);
     }
   };
   const handleSendArticleGift = async (amount: number) => {
     if (!currentUser || !viewingArticle) {
-      showToast("ログインが必要です", "error");
+      showToast(t("Unauthorized"), "error");
       return;
     }
     const currentBalance = getAvailableCoins(myProfile as User & CoinFields);
     if (currentBalance < amount) {
       setShowCoinChargeModal(true);
-      showToast("コインが不足しています。チャージしてください。", "error");
+      showToast(t("insufficientCoinsCharge"), "error");
       return;
     }
-    if (!window.confirm(`${amount}C を贈りますか？`)) return;
+    if (!window.confirm(t("articleGiftConfirm").replace("{amount}", amount.toLocaleString()))) return;
     try {
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
       const accessToken = sessionData.session?.access_token;
@@ -2276,9 +2427,9 @@ const handleSaveDraft = () => {
         free_coin: data.free_coin,
         paid_coin: data.paid_coin,
       } as User & CoinFields));
-      showToast("クリエイターをサポートしました！", "success");
+      showToast(t("creatorSupportSuccess"), "success");
     } catch (e) {
-      showToast("エラーが発生しました", "error");
+      showToast(t("SystemError"), "error");
     }
   };
   const [searchQuery, setSearchQuery] = useState("");
@@ -2908,10 +3059,10 @@ const handleSaveDraft = () => {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
       const data = await response.json();
-      if (!response.ok || !data.onboardingUrl) throw new Error(data.error || "ConnectOnboardingFailed");
+    if (!response.ok || !data.onboardingUrl) throw new Error(data.error || "ConnectOnboardingFailed");
       window.location.href = data.onboardingUrl;
     } catch (err) {
-      showToast("換金設定を開始できませんでした", "error");
+      showToast(t("stripeConnectStartFailed"), "error");
       setIsStartingStripeConnect(false);
     }
   };
@@ -2926,10 +3077,10 @@ const handleSaveDraft = () => {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "PayoutRequestFailed");
-      showToast(`¥${Number(data.amountJpy).toLocaleString()} の振込申請を受け付けました`, "success");
+      showToast(t("payoutRequestSuccess").replace("{amount}", Number(data.amountJpy).toLocaleString()), "success");
       await loadRevenueDashboard();
     } catch (err) {
-      showToast("振込申請に失敗しました", "error");
+      showToast(t("payoutRequestFailed"), "error");
     } finally {
       setIsRequestingPayout(false);
     }
@@ -6780,10 +6931,10 @@ const renderFeedCard = (s: Song) => (
           <div className="flex items-center px-4 py-4 border-b border-zinc-900 sticky top-0 bg-black/90 backdrop-blur-md z-10"><button onClick={() => setShowSettingsMenu(false)}><IconChevronLeft /></button><h2 className="text-white font-bold text-lg mx-auto pr-8">{t('settings')}</h2></div>
           <div className="px-4 py-6">
             <div className="bg-[#1c1c1e] rounded-[22px] p-4 flex items-center justify-between mb-8 cursor-pointer" onClick={() => { setShowSettingsMenu(false); openEditProfile(); }}><div className="flex items-center gap-4"><img src={myProfile.avatar} className="w-12 h-12 rounded-full object-cover border border-zinc-800" /><div><p className="font-bold text-lg">{myProfile.name}</p><p className="text-sm text-zinc-500">@{myProfile.handle}</p></div></div><IconChevronRight /></div>
-            <p className="text-xs font-bold text-zinc-500 mb-2 px-2">クリエイターツール</p>
+            <p className="text-xs font-bold text-zinc-500 mb-2 px-2">{t('creatorTools')}</p>
             <div className="bg-[#1c1c1e] rounded-2xl mb-8 flex flex-col">
 	              <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-zinc-800/50 transition-colors" onClick={loadRevenueDashboard}>
-                <div className="flex items-center gap-3 text-yellow-500"><IconYen /><p className="font-bold text-sm text-white">収益ダッシュボード</p></div>
+                <div className="flex items-center gap-3 text-yellow-500"><IconYen /><p className="font-bold text-sm text-white">{t('revenueDashboard')}</p></div>
                 <IconChevronRight />
               </div>
             </div>
@@ -6824,7 +6975,7 @@ const renderFeedCard = (s: Song) => (
         <div className="fixed inset-0 bg-black/95 z-[1500] flex flex-col animate-fade-in" onClick={(e) => e.stopPropagation()}>
           <div className="flex items-center p-4 border-b border-zinc-900 sticky top-0 bg-black/90 backdrop-blur-md z-10">
             <button onClick={() => setShowRevenueDashboard(false)} className="p-2 -ml-2 text-white hover:opacity-80 transition-opacity"><IconChevronLeft /></button>
-            <h2 className="text-white font-bold text-lg mx-auto pr-8">収益ダッシュボード</h2>
+            <h2 className="text-white font-bold text-lg mx-auto pr-8">{t('revenueDashboard')}</h2>
           </div>
           <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 scrollbar-hide">
             {(() => {
@@ -6837,18 +6988,18 @@ const renderFeedCard = (s: Song) => (
                 <>
                   <div className="bg-gradient-to-br from-[#1DB954]/20 to-[#1DB954]/5 border border-[#1DB954]/30 rounded-[32px] p-8 mb-4 flex flex-col items-center text-center shadow-[0_0_40px_rgba(29,185,84,0.15)] relative overflow-hidden">
                     <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-transparent via-[#1DB954] to-transparent opacity-50"></div>
-                    <p className="text-[#1DB954] text-[10px] font-black uppercase tracking-widest mb-3">引き出し可能な売上金</p>
+                    <p className="text-[#1DB954] text-[10px] font-black uppercase tracking-widest mb-3">{t('availableRevenue')}</p>
                     <div className="flex items-end gap-1 mb-3">
                       <span className="text-2xl font-bold text-white mb-1">¥</span>
                       <span className="text-5xl font-black text-white tracking-tighter">{jpyRevenue.toLocaleString()}</span>
                     </div>
                     <p className="text-[10px] text-zinc-400 font-bold bg-black/40 px-3 py-1 rounded-full border border-zinc-800 mb-6">
-                      換金対象: 有償 {paidTotal.toLocaleString()} C (レート: 1C = 0.5円)
+                      {t('payoutEligiblePaidCoins').replace('{coins}', paidTotal.toLocaleString())}
                     </p>
 	                    <div className="w-full bg-black/35 border border-zinc-800 rounded-2xl p-3 mb-3 text-left">
-	                      <p className="text-[10px] font-bold text-zinc-500 mb-1">換金設定</p>
+	                      <p className="text-[10px] font-bold text-zinc-500 mb-1">{t('payoutSettings')}</p>
 	                      <p className="text-xs text-zinc-300 leading-relaxed">
-	                        {stripeConnectStatus.lastPayoutFailure ? `前回の振込に失敗しました: ${stripeConnectStatus.lastPayoutFailure.message || stripeConnectStatus.lastPayoutFailure.code || '振込先情報を確認してください。'}` : stripeConnectStatus.payoutsEnabled ? 'Stripeの本人確認と振込先登録が完了しています。' : stripeConnectStatus.connected ? 'Stripeの本人確認または振込先登録が未完了です。' : '換金にはStripeで本人確認と振込先登録が必要です。'}
+	                        {stripeConnectStatus.lastPayoutFailure ? t('payoutLastFailure').replace('{reason}', stripeConnectStatus.lastPayoutFailure.message || stripeConnectStatus.lastPayoutFailure.code || t('payoutDefaultFailureReason')) : stripeConnectStatus.payoutsEnabled ? t('stripePayoutsReady') : stripeConnectStatus.connected ? t('stripePayoutsIncomplete') : t('stripePayoutsRequired')}
 	                      </p>
 	                    </div>
 	                    {!stripeConnectStatus.payoutsEnabled ? (
@@ -6857,7 +7008,7 @@ const renderFeedCard = (s: Song) => (
 	                        disabled={isStartingStripeConnect}
 	                        className="w-full py-3.5 rounded-full font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 bg-white text-black hover:bg-zinc-200 active:scale-95 disabled:opacity-50"
 	                      >
-	                        {isStartingStripeConnect ? '接続中...' : stripeConnectStatus.connected ? '換金設定を続ける' : '換金設定を開始する'}
+	                        {isStartingStripeConnect ? t('stripeConnecting') : stripeConnectStatus.connected ? t('payoutSetupContinue') : t('payoutSetupStart')}
 	                      </button>
 	                    ) : (
 	                      <button 
@@ -6865,13 +7016,13 @@ const renderFeedCard = (s: Song) => (
 	                        onClick={requestCreatorPayout}
 	                        className={`w-full py-3.5 rounded-full font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 ${canWithdraw ? 'bg-white text-black hover:bg-zinc-200 active:scale-95' : 'bg-black/50 text-zinc-500 border border-zinc-700 cursor-not-allowed'}`}
 	                      >
-	                        {isRequestingPayout ? '申請中...' : canWithdraw ? '振込申請をする' : '1,000円以上で引き出し可能'}
+	                        {isRequestingPayout ? t('payoutRequesting') : canWithdraw ? t('payoutRequestButton') : t('payoutMinimum')}
 	                      </button>
 	                    )}
                   </div>
                   <div className="bg-[#1c1c1e] border border-zinc-800 rounded-3xl p-5 mb-6 flex items-center justify-between shadow-inner">
                     <div className="flex flex-col">
-                      <span className="text-zinc-400 text-[10px] font-bold mb-1">累計獲得コイン (無償分含む)</span>
+                      <span className="text-zinc-400 text-[10px] font-bold mb-1">{t('totalEarnedCoins')}</span>
                       <div className="flex items-center gap-2">
                         <div className="w-5 h-5 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full flex items-center justify-center text-black shadow-md">
                           <span className="text-[12px] font-black mt-[1px]">C</span>
@@ -6880,11 +7031,11 @@ const renderFeedCard = (s: Song) => (
                       </div>
                     </div>
                     <div className="flex gap-4 text-[10px] font-bold text-zinc-500 text-right">
-                      <div className="flex flex-col"><span className="mb-0.5">記事</span><span className="text-white">{revenueData.article.toLocaleString()}</span></div>
-                      <div className="flex flex-col"><span className="mb-0.5">ギフト</span><span className="text-white">{revenueData.gift.toLocaleString()}</span></div>
+                      <div className="flex flex-col"><span className="mb-0.5">{t('revenueArticle')}</span><span className="text-white">{revenueData.article.toLocaleString()}</span></div>
+                      <div className="flex flex-col"><span className="mb-0.5">{t('revenueGift')}</span><span className="text-white">{revenueData.gift.toLocaleString()}</span></div>
                     </div>
                   </div>
-                  <h3 className="font-bold text-xs text-zinc-500 mb-4 px-2 uppercase tracking-widest flex items-center gap-2"><IconList /> 取引履歴</h3>
+                  <h3 className="font-bold text-xs text-zinc-500 mb-4 px-2 uppercase tracking-widest flex items-center gap-2"><IconList /> {t('transactionHistory')}</h3>
                   <div className="flex flex-col gap-3">
                     {validHistory.length > 0 ? validHistory.map((tx: any) => {
                       const isGift = tx.transaction_type?.startsWith('gift');
@@ -6896,14 +7047,14 @@ const renderFeedCard = (s: Song) => (
                           <div className="flex items-center gap-3 pl-1">
                             <img src={sender?.avatar || '/default-avatar.png'} className="w-10 h-10 rounded-full object-cover border border-zinc-700 shrink-0" />
                             <div className="flex flex-col justify-center">
-                              <p className="font-bold text-sm text-white leading-tight mb-1.5">{sender?.name || 'ユーザー'}</p>
+                              <p className="font-bold text-sm text-white leading-tight mb-1.5">{sender?.name || t('userFallback')}</p>
                               <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 mb-0.5">
                                 <div className="w-3 h-3 flex items-center justify-center opacity-80">
                                   {isGift ? <IconSparkles /> : <IconArticle />}
                                 </div>
-                                <span>{isGift ? 'サポートを受け取りました' : '記事が購入されました'}</span>
+                                <span>{isGift ? t('revenueGiftReceived') : t('revenueArticlePurchased')}</span>
                                 <span className={isPaid ? 'text-[#1DB954] font-bold ml-1' : 'text-zinc-500 ml-1'}>
-                                  ({isPaid ? '有償' : '無償'})
+                                  ({isPaid ? t('paidCoin') : t('freeCoin')})
                                 </span>
                               </div>
                               <p className="text-[9px] text-zinc-600">{new Date(tx.created_at).toLocaleDateString('ja-JP')} {new Date(tx.created_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</p>
@@ -6911,15 +7062,15 @@ const renderFeedCard = (s: Song) => (
                           </div>
                           <div className="text-right shrink-0">
                             <p className={`font-black text-lg ${isPaid ? 'text-[#1DB954]' : 'text-yellow-500'}`}>+{tx.amount.toLocaleString()}</p>
-                            <p className="text-[9px] text-zinc-500">コイン</p>
+                            <p className="text-[9px] text-zinc-500">{t('coinUnit')}</p>
                           </div>
                         </div>
                       )
                     }) : (
                       <div className="text-center py-16 bg-[#1c1c1e] rounded-3xl border border-zinc-800 border-dashed">
                         <div className="w-12 h-12 bg-zinc-900 rounded-full flex items-center justify-center text-zinc-600 mx-auto mb-3"><IconYen /></div>
-                        <p className="text-zinc-400 text-sm font-bold">まだ収益データがありません</p>
-                        <p className="text-[10px] text-zinc-500 mt-2 px-6">有料記事を公開するか、<br/>サポートを受けるとここに履歴が表示されます。</p>
+                        <p className="text-zinc-400 text-sm font-bold">{t('noRevenueData')}</p>
+                        <p className="text-[10px] text-zinc-500 mt-2 px-6">{t('noRevenueDataDescription').split('\n').map((line: string, index: number) => <React.Fragment key={line}>{index > 0 && <br />}{line}</React.Fragment>)}</p>
                       </div>
                     )}
                   </div>
@@ -8061,7 +8212,7 @@ const renderFeedCard = (s: Song) => (
                   </button>
                 )}
               </div>
-              <h3 className="font-bold text-[15px] text-white tracking-wide">{selectedChargePlan ? '決済の確認' : 'コインチャージ'}</h3>
+              <h3 className="font-bold text-[15px] text-white tracking-wide">{selectedChargePlan ? t('paymentConfirmationTitle') : t('coinChargeTitle')}</h3>
               <div className="w-10"></div>
             </div>
             <div className="flex-1 overflow-y-auto scrollbar-hide flex flex-col bg-[#121212]">
@@ -8070,15 +8221,15 @@ const renderFeedCard = (s: Song) => (
                   {/* 保有コイン表示 */}
                   <div className="flex flex-col items-center justify-center py-4 bg-[#1c1c1e] border-b border-zinc-800 shrink-0 w-full gap-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-zinc-400 text-sm font-bold">保有</span>
+                      <span className="text-zinc-400 text-sm font-bold">{t('ownedCoins')}</span>
                       <div className="w-5 h-5 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full flex items-center justify-center text-black shadow-sm">
                         <span className="text-[12px] font-black leading-none mt-[1px]">C</span>
                       </div>
                       <span className="text-xl font-black text-white">{(Number((myProfile as any).free_coin) || 0) + (Number((myProfile as any).paid_coin) || 0)}</span>
                     </div>
                     <div className="flex items-center gap-3 text-[10px] font-bold text-zinc-500">
-                      <span>有償 {Number((myProfile as any).paid_coin) || 0} C</span>
-                      <span>無償 {Number((myProfile as any).free_coin) || 0} C</span>
+                      <span>{t('paidCoin')} {Number((myProfile as any).paid_coin) || 0} C</span>
+                      <span>{t('freeCoin')} {Number((myProfile as any).free_coin) || 0} C</span>
                     </div>
                   </div>
                   {/* リスト表示 */}
@@ -8095,9 +8246,9 @@ const renderFeedCard = (s: Song) => (
                             </div>
                             <span className="font-bold text-[17px] text-white tracking-wide">{plan.coins.toLocaleString()}</span>
                           </div>
-                          {plan.bonus && (
-                            <span className="text-zinc-400 text-[11px] font-medium mt-1 ml-[30px] tracking-wide">{plan.bonus}</span>
-                          )}
+                          {plan.bonusCoins && (
+                            <span className="text-zinc-400 text-[11px] font-medium mt-1 ml-[30px] tracking-wide">{t('coinPlanBonus').replace('{count}', plan.bonusCoins.toLocaleString())}</span>
+                          )}
                         </div>
                         <button
                           onClick={() => setSelectedChargePlan(plan)}
@@ -8116,13 +8267,13 @@ const renderFeedCard = (s: Song) => (
                       <span className="text-3xl font-black leading-none mt-[2px]">C</span>
                     </div>
                     <h4 className="text-white font-black text-[32px] mb-2 tracking-tighter">{selectedChargePlan.coins.toLocaleString()}</h4>
-                    <p className="text-zinc-400 text-sm font-bold">決済金額: ¥{selectedChargePlan.price.toLocaleString()}</p>
+                    <p className="text-zinc-400 text-sm font-bold">{t('paymentAmount').replace('{amount}', selectedChargePlan.price.toLocaleString())}</p>
                   </div>
                   <div className="bg-[#1c1c1e] border border-zinc-800 rounded-2xl p-5 mb-auto shadow-inner">
                     <div className="flex items-start gap-3">
                       <div className="text-zinc-500 mt-0.5"><IconLock /></div>
                       <p className="text-[11px] text-zinc-400 leading-relaxed text-left">
-                        安全な決済システム（Stripe）へ移動します。クレジットカード情報は暗号化され、当アプリには一切保存されません。
+                        {t('stripeSecureNotice')}
                       </p>
                     </div>
                   </div>
@@ -8132,10 +8283,10 @@ const renderFeedCard = (s: Song) => (
                     className="w-full py-4 mt-8 bg-white text-black rounded-full text-[15px] font-black shadow-xl hover:bg-zinc-200 transition-colors disabled:opacity-50 flex justify-center items-center gap-2 active:scale-95"
                   >
                     {isCharging ? (
-                      <span className="flex items-center gap-2"><div className="w-5 h-5 border-[3px] border-black border-t-transparent rounded-full animate-spin"></div>接続中...</span>
-                    ) : (
-                      <>決済画面へ進む <IconChevronRight /></>
-                    )}
+                      <span className="flex items-center gap-2"><div className="w-5 h-5 border-[3px] border-black border-t-transparent rounded-full animate-spin"></div>{t('stripeConnecting')}</span>
+                    ) : (
+                      <>{t('goToCheckout')} <IconChevronRight /></>
+                    )}
                   </button>
                 </div>
               )}
