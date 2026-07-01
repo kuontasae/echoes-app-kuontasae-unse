@@ -65,7 +65,7 @@ echo "Running production build..."
 npm run build
 
 echo
-echo "Committing and pushing..."
+echo "Committing and pushing task branch..."
 git add -A
 
 if git diff --cached --quiet; then
@@ -77,8 +77,21 @@ git commit -m "$MESSAGE"
 git push -u origin "$BRANCH"
 
 echo
+echo "Merging task branch into main..."
+git switch main
+git pull --ff-only
+git merge --no-edit "$BRANCH"
+
+echo
+echo "Pushing main..."
+git push origin main
+
+echo
 echo "Done."
-echo "Pushed branch: $BRANCH"
+echo "Task branch pushed and merged into main: $BRANCH"
+echo
+echo "Current status:"
+git status
 echo
 echo "Next message to ChatGPT:"
 echo "done $BRANCH"
