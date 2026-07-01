@@ -1777,7 +1777,7 @@ function MainApp() {
     if (!file || !currentUser) return;
     e.target.value = '';
     setIsArticleUploading(true);
-    showToast("ArticleImageUploading");
+    showToast(t("ArticleImageUploading"));
     try {
       const compressedFile = await compressImage(file);
       const fileName = `article-cover-${currentUser.id}-${Date.now()}.jpeg`;
@@ -1786,9 +1786,9 @@ function MainApp() {
       if (uploadError) throw uploadError;
       const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
       setNewArticleCover(data.publicUrl);
-      showToast("ArticleImageUploadSuccess", "success");
+      showToast(t("ArticleImageUploadSuccess"), "success");
     } catch (err) {
-          showToast("ArticleImageUploadFailed", "error");
+          showToast(t("ArticleImageUploadFailed"), "error");
         } finally {
           setIsArticleUploading(false);
         }
@@ -1797,7 +1797,7 @@ function MainApp() {
         const file = e.target.files?.[0];
         if (!file || !currentUser) return;
         e.target.value = '';
-        showToast("ArticleImageInserting");
+        showToast(t("ArticleImageInserting"));
         try {
           const compressedFile = await compressImage(file);
           const fileName = `article-body-${currentUser.id}-${Date.now()}.jpeg`;
@@ -1809,17 +1809,17 @@ function MainApp() {
             document.execCommand('insertImage', false, data.publicUrl);
             setNewArticleContent(articleTextareaRef.current.innerHTML);
           }
-          showToast("ArticleImageInsertSuccess", "success");
+          showToast(t("ArticleImageInsertSuccess"), "success");
           setShowElementMenu(false);
         } catch (err) {
-          showToast("ArticleImageInsertFailed", "error");
+          showToast(t("ArticleImageInsertFailed"), "error");
         }
       };
       const handleArticleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !currentUser) return;
         e.target.value = '';
-        showToast("ArticleAudioUploading");
+        showToast(t("ArticleAudioUploading"));
         try {
           const fileExt = file.name.split('.').pop() || "mp3";
           const fileName = `article-audio-${currentUser.id}-${Date.now()}.${fileExt}`;
@@ -1832,10 +1832,10 @@ function MainApp() {
             document.execCommand('insertHTML', false, audioHtml);
             setNewArticleContent(articleTextareaRef.current.innerHTML);
           }
-          showToast("ArticleAudioInsertSuccess", "success");
+          showToast(t("ArticleAudioInsertSuccess"), "success");
           setShowElementMenu(false);
         } catch (err) {
-          showToast("ArticleAudioInsertFailed", "error");
+          showToast(t("ArticleAudioInsertFailed"), "error");
         }
       };
       const handleEmbedLink = () => {
@@ -1864,13 +1864,13 @@ function MainApp() {
       setNewArticleContent(articleTextareaRef.current.innerHTML);
     }
   } catch (err) {
-    showToast("ArticleInvalidUrl", "error");
+    showToast(t("ArticleInvalidUrl"), "error");
   }
   setShowElementMenu(false);
 };
       const insertEditorVoice = async () => {
         if (!draftVoice || !currentUser) return;
-        showToast("ArticleVoiceInserting");
+        showToast(t("ArticleVoiceInserting"));
         const tempVoice = draftVoice;
         cancelVoiceRecording();
         setShowEditorVoiceMenu(false);
@@ -1885,16 +1885,16 @@ function MainApp() {
             document.execCommand('insertHTML', false, audioHtml);
             setNewArticleContent(articleTextareaRef.current.innerHTML);
           }
-          showToast("ArticleVoiceInsertSuccess", "success");
+          showToast(t("ArticleVoiceInsertSuccess"), "success");
         } catch (err) {
-          showToast("ArticleAudioInsertFailed", "error");
+          showToast(t("ArticleAudioInsertFailed"), "error");
         }
       };
       const handleArticleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file || !currentUser) return;
         e.target.value = '';
-        showToast("ArticleFileUploading");
+        showToast(t("ArticleFileUploading"));
         try {
           const fileExt = file.name.split('.').pop() || "file";
           const fileName = `article-file-${currentUser.id}-${Date.now()}.${fileExt}`;
@@ -1907,10 +1907,10 @@ function MainApp() {
             document.execCommand('insertHTML', false, fileHtml);
             setNewArticleContent(articleTextareaRef.current.innerHTML);
           }
-          showToast("ArticleFileInsertSuccess", "success");
+          showToast(t("ArticleFileInsertSuccess"), "success");
           setShowElementMenu(false);
         } catch (err) {
-          showToast("ArticleFileInsertFailed", "error");
+          showToast(t("ArticleFileInsertFailed"), "error");
         }
       };
   const [isArticlePremium, setIsArticlePremium] = useState(false);
@@ -1984,11 +1984,11 @@ function MainApp() {
   const trimmedTitle = newArticleTitle.trim();
   const rawContent = newArticleContent.trim();
   if (!trimmedTitle || !rawContent) {
-    showToast("ValidationError", "error");
+    showToast(t("ValidationError"), "error");
     return;
   }
   if (trimmedTitle.length > 100) {
-    showToast("ArticleTitleTooLong", "error");
+    showToast(t("ArticleTitleTooLong"), "error");
     return;
   }
   const sanitizeHtml = (html: string) => {
@@ -2003,12 +2003,12 @@ function MainApp() {
   if (isArticlePremium) {
     const paywallRegex = /(?:<br\s*\/?>\s*)*(?:<div[^>]*>\s*)?<hr[^>]*>[\s\S]*?ここから先は有料エリアです[\s\S]*?<\/p>(?:\s*<\/div>)?(?:<br\s*\/?>\s*)*/i;
     if (!paywallRegex.test(trimmedContent)) {
-      showToast("ArticleMissingPaywallSeparator", "error");
+      showToast(t("ArticleMissingPaywallSeparator"), "error");
       return;
     }
     const parsedPrice = Math.floor(Number(articlePriceInput));
     if (isNaN(parsedPrice) || parsedPrice < 1) {
-      showToast("ArticleInvalidPrice", "error");
+      showToast(t("ArticleInvalidPrice"), "error");
       return;
     }
     const parts = trimmedContent.split(paywallRegex);
@@ -2068,10 +2068,10 @@ function MainApp() {
     setNewArticleContent("");
     setNewArticleCover(null);
     setEditingArticleId(null);
-    showToast("Success", "success");
+    showToast(t("Success"), "success");
   } catch (err) {
     setArticles(previousArticles);
-    showToast("ArticleDatabaseError", "error");
+    showToast(t("ArticleDatabaseError"), "error");
   }
 };
 	  const buildEditableArticleContent = (article: any) => {
@@ -2126,7 +2126,7 @@ const handleCloseModal = () => {
       try {
         localStorage.setItem('echoes_drafts_v2', JSON.stringify(updated));
       } catch (e) {
-        showToast("ArticleStorageQuotaExceeded", "error");
+        showToast(t("ArticleStorageQuotaExceeded"), "error");
       }
       return updated;
     });
@@ -2139,7 +2139,7 @@ const handleSaveDraft = () => {
   const plainText = safeHtml.replace(/<[^>]*>/g, '').trim();
   const safeTitle = newArticleTitle.trim().replace(/[<&>]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c));
   if (!safeTitle && !plainText && !newArticleCover) {
-    showToast("ArticleEmptyDraft", "error");
+    showToast(t("ArticleEmptyDraft"), "error");
     return;
   }
   const d = new Date();
@@ -2152,12 +2152,12 @@ const handleSaveDraft = () => {
     try {
       localStorage.setItem('echoes_drafts_v2', JSON.stringify(updated));
     } catch {
-      showToast("ArticleStorageQuotaExceeded", "error");
+      showToast(t("ArticleStorageQuotaExceeded"), "error");
     }
     return updated;
   });
   resetEditorState();
-  showToast("Success", "success");
+  showToast(t("Success"), "success");
 };
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -2253,7 +2253,7 @@ const handleSaveDraft = () => {
   } catch (err) {
     setArticles(prev => prev.map(rollbackFn));
     setViewingArticle((prev: any) => prev && prev.id === id ? rollbackFn(prev) : prev);
-    showToast("UpdateFailed", "error");
+    showToast(t("UpdateFailed"), "error");
   }
 };
   const submitArticleComment = async (e?: React.FormEvent) => {
@@ -2279,7 +2279,7 @@ const handleSaveDraft = () => {
       .select()
       .single();
     if (error) {
-      showToast("InsertFailed", "error");
+      showToast(t("InsertFailed"), "error");
       return;
     }
     const newComment = {
@@ -2290,7 +2290,7 @@ const handleSaveDraft = () => {
     const updateFn = (a: any) => a.id === viewingArticle.id ? { ...a, comments: [...a.comments, newComment] } : a;
     setArticles(prev => prev.map(updateFn));
     setViewingArticle((prev: any) => prev && prev.id === viewingArticle.id ? updateFn(prev) : prev);
-    showToast("Success", "success");
+    showToast(t("Success"), "success");
     const targetAuthorId = viewingArticle.author?.id;
     if (targetAuthorId && targetAuthorId !== currentUser.id && targetAuthorId !== 'ai_system') {
       await supabase.from('notifications').insert([{
@@ -2301,14 +2301,14 @@ const handleSaveDraft = () => {
       }]);
     }
   } catch (err) {
-    showToast("SystemError", "error");
+    showToast(t("SystemError"), "error");
   }
 };
   const deleteArticle = async (id: string) => {
     if (!currentUser) return;
     const targetArticle = articles.find(a => a.id === id);
     if (!targetArticle || targetArticle.author.id !== currentUser.id) {
-      showToast("ArticleDeletePermissionDenied", "error");
+      showToast(t("ArticleDeletePermissionDenied"), "error");
       return;
     }
     if (window.confirm(t("ArticleDeleteConfirm"))) {
@@ -2324,11 +2324,11 @@ const handleSaveDraft = () => {
           .eq('id', id)
           .eq('author_id', currentUser.id);
         if (error) throw error;
-        showToast("ArticleDeleteSuccess", "success");
+        showToast(t("ArticleDeleteSuccess"), "success");
       } catch (err) {
         console.warn("削除エラー:", err);
         setArticles(originalArticles);
-        showToast("ArticleDeleteServerFailed", "error");
+        showToast(t("ArticleDeleteServerFailed"), "error");
       }
     }
   };
@@ -3370,7 +3370,7 @@ const handleSaveDraft = () => {
           return next;
         });
       }
-      if (shouldShowInitialOnboarding) showToast("OnboardingPrompt", "success");
+      if (shouldShowInitialOnboarding) showToast(t("OnboardingPrompt"), "success");
     };
     const checkSession = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -3784,7 +3784,7 @@ const handleSaveDraft = () => {
 	    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${currentUser.id}` }, (payload) => {
 	      const newNotif = { id: payload.new.id, type: payload.new.type, text: payload.new.text, time: "Now", read: payload.new.is_read };
 	      setNotifications(prev => [newNotif as any, ...prev]);
-	      showToast("Success", "success");
+	      showToast(t("Success"), "success");
 	    })
 	    .subscribe();
 
@@ -4105,7 +4105,7 @@ const handleSaveDraft = () => {
         .eq('id', existingPost.id)
         .eq('user_id', currentUser.id);
       if (deleteError) {
-        showToast("DeleteFailed", "error");
+        showToast(t("DeleteFailed"), "error");
         return;
       }
     }
@@ -4123,7 +4123,7 @@ const handleSaveDraft = () => {
     };
     const { error: insertError } = await supabase.from('vibes').insert([newVibeData]);
     if (insertError) {
-      showToast("InsertFailed", "error");
+      showToast(t("InsertFailed"), "error");
       return;
     }
     const postedAt = new Date(newVibeData.created_at);
@@ -4160,9 +4160,9 @@ const handleSaveDraft = () => {
     setAlbumSongs([]);
     setShowPostSuccessCard(true);
     setActiveTab('home');
-    showToast("Success", "success");
+    showToast(t("Success"), "success");
   } catch (err) {
-    showToast("SystemError", "error");
+    showToast(t("SystemError"), "error");
   } finally {
     setIsPosting(false);
   }
@@ -4212,7 +4212,7 @@ const handleSaveDraft = () => {
   } catch (err) {
     setVibes(prev => prev.map(rollbackFn));
     setCommunityVibes(prev => prev.map(rollbackFn));
-    showToast("UpdateFailed", "error");
+    showToast(t("UpdateFailed"), "error");
   }
 };
   // 💡 DBと連動する「コメント」機能 (通知送信付き)
@@ -4237,7 +4237,7 @@ const handleSaveDraft = () => {
       .select()
       .single();
     if (error) {
-      showToast("InsertFailed", "error");
+      showToast(t("InsertFailed"), "error");
       return;
     }
     const newComment = { id: newDbComment.id, user: myProfile, text: sanitizedText };
@@ -4251,7 +4251,7 @@ const handleSaveDraft = () => {
     });
     setVibes(updateStateFn);
     setCommunityVibes(updateStateFn);
-    showToast("Success", "success");
+    showToast(t("Success"), "success");
     if (targetUserId && targetUserId !== currentUser.id) {
       await supabase.from('notifications').insert([{
         user_id: targetUserId,
@@ -4261,18 +4261,18 @@ const handleSaveDraft = () => {
       }]);
     }
   } catch (err) {
-    showToast("SystemError", "error");
+    showToast(t("SystemError"), "error");
   }
 };
   const deleteVibe = async (id: string) => {
   if (!currentUser) {
-    showToast("Unauthorized", "error");
+    showToast(t("Unauthorized"), "error");
     return;
   }
   if (window.confirm(t("feedDeleteConfirm"))) {
     const targetVibe = vibes.find(v => v.id === id) || communityVibes.find(v => v.id === id);
     if (targetVibe && targetVibe.user.id !== currentUser.id) {
-      showToast("PermissionDenied", "error");
+      showToast(t("PermissionDenied"), "error");
       return;
     }
     try {
@@ -4282,21 +4282,21 @@ const handleSaveDraft = () => {
         .eq('id', id)
         .eq('user_id', currentUser.id);
       if (error) {
-        showToast("DeleteFailed", "error");
+        showToast(t("DeleteFailed"), "error");
         return;
       }
       setVibes(prev => prev.filter(v => v.id !== id));
       setCommunityVibes(prev => prev.filter(v => v.id !== id));
-      showToast("Success", "success");
+      showToast(t("Success"), "success");
     } catch (err) {
-      showToast("SystemError", "error");
+      showToast(t("SystemError"), "error");
     }
   }
 };
 	 const submitChatMessage = async (targetId: string) => {
 	  if (!currentUser) return;
 	  if (!canAccessChatTarget(targetId)) {
-	    showToast("Unauthorized", "error");
+	    showToast(t("Unauthorized"), "error");
 	    return;
 	  }
 	  const textToSend = chatMessageInput.trim();
@@ -4381,7 +4381,7 @@ const handleSaveDraft = () => {
           });
         }
       } catch (err) {
-        showToast("UploadFailed", "error");
+        showToast(t("UploadFailed"), "error");
         setChatHistory(prev => ({ ...prev, [targetId]: (prev[targetId] || []).filter(m => m.id !== tempFileId) }));
       }
     }
@@ -4445,9 +4445,9 @@ const handleSaveDraft = () => {
     setActiveChatUserId(groupId);
     setChatTabMode('groups');
     setActiveTab('chat');
-    showToast("Success", "success");
+    showToast(t("Success"), "success");
   } catch (err) {
-    showToast("SystemError", "error");
+    showToast(t("SystemError"), "error");
   }
 };
   const logCommunityJoinError = (stage: string, err: any, communityId: string, context?: Record<string, unknown>) => {
@@ -4656,10 +4656,10 @@ const handleSaveDraft = () => {
       if (!wasJoined) setCommunityRecentMemberCounts(prev => ({ ...prev, [persistedCommunity.id]: (prev[persistedCommunity.id] || 0) + 1 }));
       openCommunityChat(persistedCommunity);
       void mutateActiveCommunityMemberIds?.((ids = []) => Array.from(new Set([...(ids as string[]), currentUser.id])), { revalidate: true });
-      showToast("CommunityJoined", "success");
+      showToast(t("CommunityJoined"), "success");
     } catch (err) {
       logCommunityJoinError("joinCommunity", err, c.id);
-      showToast("JoinFailed", "error");
+      showToast(t("JoinFailed"), "error");
     }
   };
   const leaveActiveChat = async () => {
@@ -4695,20 +4695,20 @@ const handleSaveDraft = () => {
       setActiveChatUserId(null);
       setChatTabMode('groups');
       setActiveTab('chat');
-      showToast("CommunityLeft", "success");
+      showToast(t("CommunityLeft"), "success");
     } catch (err) {
       console.warn("Chat leave failed", { chatId: leavingChatId, error: err });
-      showToast("LeaveFailed", "error");
+      showToast(t("LeaveFailed"), "error");
     }
   };
   const handleCreateCommunity = async () => {
   if (!currentUser) {
-    showToast("Unauthorized", "error");
+    showToast(t("Unauthorized"), "error");
     return;
   }
   const tName = newCommName.trim();
   if (!tName || tName.length > 50) {
-    showToast("InvalidNameLength", "error");
+    showToast(t("InvalidNameLength"), "error");
     return;
   }
   const y = parseInt(newCommYear, 10);
@@ -4765,9 +4765,9 @@ const handleSaveDraft = () => {
     setChatTabMode('groups');
     setActiveTab('chat');
     setActiveChatUserId(commId);
-    showToast("Success", "success");
+    showToast(t("Success"), "success");
   } catch (err) {
-    showToast("SystemError", "error");
+    showToast(t("SystemError"), "error");
   }
 };
   const handleReportCommunity = async (id: string) => {
@@ -4791,9 +4791,9 @@ const handleSaveDraft = () => {
         .insert([{ reporter_id: currentUser.id, reported_id: id, type: 'community' }]);
         
       if (error) throw error;
-      showToast("Success", "success");
+      showToast(t("Success"), "success");
     } catch (err) {
-      showToast("SystemError", "error");
+      showToast(t("SystemError"), "error");
     }
   }
 };
@@ -4808,9 +4808,9 @@ const handleRestoreCommunity = async (id: string) => {
       .eq('reported_id', id)
       .eq('type', 'community');
       
-    showToast("Success", "success");
+    showToast(t("Success"), "success");
   } catch (err) {
-    showToast("SystemError", "error");
+    showToast(t("SystemError"), "error");
   }
 };
 
@@ -4832,9 +4832,9 @@ const handleDeleteCommunity = async (id: string) => {
         .eq('reported_id', id)
         .eq('type', 'community');
         
-      showToast("Success", "success");
+      showToast(t("Success"), "success");
     } catch (err) {
-      showToast("SystemError", "error");
+      showToast(t("SystemError"), "error");
     }
   }
 };
@@ -4884,16 +4884,16 @@ const handleDeleteCommunity = async (id: string) => {
     const fileName = `avatar_${currentUser.id}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}.jpeg`;
     const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, uploadFile);
     if (uploadError) {
-      showToast("UploadFailed", "error");
+      showToast(t("UploadFailed"), "error");
       return;
     }
     const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
     if (data && data.publicUrl) {
       setEditAvatar(data.publicUrl);
-      showToast("Success", "success");
+      showToast(t("Success"), "success");
     }
   } catch (err) {
-    showToast("SystemError", "error");
+    showToast(t("SystemError"), "error");
   } finally {
     e.target.value = "";
   }
@@ -4903,7 +4903,7 @@ const handleDeleteCommunity = async (id: string) => {
 	    let file = e.target.files?.[0];
 	    if (!file || !currentUser || !activeChatUserId) return;
 	    if (!canAccessChatTarget(activeChatUserId)) {
-	      showToast("Unauthorized", "error");
+	      showToast(t("Unauthorized"), "error");
 	      e.target.value = "";
 	      return;
 	    }
@@ -4987,7 +4987,7 @@ const handleDeleteCommunity = async (id: string) => {
 	    return;
 	  }
 	  if (!canAccessChatTarget(activeChatUserId)) {
-	    showToast("Unauthorized", "error");
+	    showToast(t("Unauthorized"), "error");
 	    return;
 	  }
 	  const MAX_AUDIO_SIZE = 15 * 1024 * 1024;
@@ -5097,7 +5097,7 @@ const handleDeleteCommunity = async (id: string) => {
           .from('blocks')
           .insert([{ blocker_id: currentUser.id, blocked_id: userId }]);
         if (error) throw error;
-        showToast("UserBlocked", "success");
+        showToast(t("UserBlocked"), "success");
       } catch (err) {
         console.error(err);
         setBlockedUsers(prev => {
@@ -5105,7 +5105,7 @@ const handleDeleteCommunity = async (id: string) => {
           next.delete(userId);
           return next;
         });
-        showToast("BlockFailed", "error");
+        showToast(t("BlockFailed"), "error");
       }
     }
   };
@@ -5125,7 +5125,7 @@ const handleDeleteCommunity = async (id: string) => {
         .eq('blocker_id', currentUser.id)
         .eq('blocked_id', userId);
       if (error) throw error;
-      showToast("UserUnblocked", "success");
+      showToast(t("UserUnblocked"), "success");
     } catch (err) {
       console.warn(err);
       setBlockedUsers(prev => {
@@ -5133,7 +5133,7 @@ const handleDeleteCommunity = async (id: string) => {
         next.add(userId);
         return next;
       });
-      showToast("NetworkError", "error");
+      showToast(t("NetworkError"), "error");
     }
   };
   useEffect(() => {
@@ -5161,16 +5161,16 @@ const handleDeleteCommunity = async (id: string) => {
           .from('reports')
           .insert([{ reporter_id: currentUser.id, reported_id: userId, type: 'user' }]);
         if (error) throw error;
-        showToast("UserReported", "success");
+        showToast(t("UserReported"), "success");
       } catch (err: any) {
         console.error("通報エラー:", err);
-        showToast("ReportFailed", "error");
+        showToast(t("ReportFailed"), "error");
       }
     }
   };
   const saveProfile = () => {
     setMyProfile({ ...myProfile, name: editName, handle: editHandle.replace('@', ''), bio: editBio, isPrivate: editIsPrivate, avatar: editAvatar, hashtags: (editHashtags || "").split(',').map(s => s.trim()).filter(s => s), liveHistory: (editLiveHistory || "").split(',').map(s => s.trim()).filter(s => s) });
-    setIsEditingProfile(false); showToast("ProfileSaved");
+    setIsEditingProfile(false); showToast(t("ProfileSaved"));
   };
   const handleShareVibe = (s: Song) => {
     if (navigator.share) { navigator.share({ title: `Echoes - ${s.title}`, text: `${s.user.name}のVibeをチェック！`, url: 'https://echo.es' }).catch(() => { }); }
@@ -5178,30 +5178,30 @@ const handleDeleteCommunity = async (id: string) => {
   };
   const handleShareApp = () => {
     if (navigator.share) { navigator.share({ title: 'Echoes', url: 'https://echo.es' }).catch(() => { }); }
-    else { showToast("CopiedUrl"); }
+    else { showToast(t("CopiedUrl")); }
   };
   const handleLogin = async () => {
   if (!email || !password) {
-    showToast("ValidationError", "error");
+    showToast(t("ValidationError"), "error");
     return;
   }
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    showToast("InvalidEmailFormat", "error");
+    showToast(t("InvalidEmailFormat"), "error");
     return;
   }
   setIsAuthLoading(true);
   try {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      showToast("AuthFailed", "error");
+      showToast(t("AuthFailed"), "error");
     } else if (data.user) {
       setCurrentUser(data.user);
       setIsLoggedIn(true);
-      showToast("Success", "success");
+      showToast(t("Success"), "success");
     }
   } catch (err) {
-    showToast("SystemError", "error");
+    showToast(t("SystemError"), "error");
   } finally {
     setIsAuthLoading(false);
   }
@@ -5239,15 +5239,15 @@ const handleDeleteCommunity = async (id: string) => {
   const tHandle = editHandle.trim().replace(/^@/, '');
   const tBio = editBio.trim();
   if (!tName || tName.length > 50) {
-    showToast("InvalidNameLength", "error");
+    showToast(t("InvalidNameLength"), "error");
     return;
   }
   if (!/^[A-Za-z0-9_]{3,20}$/.test(tHandle)) {
-    showToast("InvalidHandleFormat", "error");
+    showToast(t("InvalidHandleFormat"), "error");
     return;
   }
   if (tBio.length > 160) {
-    showToast("BioTooLong", "error");
+    showToast(t("BioTooLong"), "error");
     return;
   }
   const escapeHtml = (str: string) => {
@@ -5287,15 +5287,15 @@ const handleDeleteCommunity = async (id: string) => {
       .update(dbUpdateData)
       .eq('id', currentUser.id);
     if (error) {
-      showToast("UpdateFailed", "error");
+      showToast(t("UpdateFailed"), "error");
       return;
     }
     setMyProfile(prev => ({ ...prev, ...dbUpdateData } as any));
     setAllProfiles(prev => prev.map(p => p.id === currentUser.id ? { ...p, ...dbUpdateData } as any : p));
     setIsEditingProfile(false);
-    showToast("Success", "success");
+    showToast(t("Success"), "success");
   } catch (err) {
-    showToast("SystemError", "error");
+    showToast(t("SystemError"), "error");
   }
 };
   const addOnboardingTag = (
@@ -5332,11 +5332,11 @@ const handleDeleteCommunity = async (id: string) => {
     const tName = editName.trim();
     const tHandle = editHandle.trim().replace(/^@/, '');
     if (!tName || tName.length > 50) {
-      showToast("InvalidNameLength", "error");
+      showToast(t("InvalidNameLength"), "error");
       return;
     }
     if (!/^[A-Za-z0-9_]{3,20}$/.test(tHandle)) {
-      showToast("InvalidHandleFormat", "error");
+      showToast(t("InvalidHandleFormat"), "error");
       return;
     }
     const newHashtags = [
@@ -5357,7 +5357,7 @@ const handleDeleteCommunity = async (id: string) => {
       .filter((item, index, arr) => arr.findIndex(x => x.toLowerCase() === item.toLowerCase()) === index);
 
     if (newHashtags.length === 0 && newLiveHistory.length === 0) {
-      showToast("MusicProfileRequired", "error");
+      showToast(t("MusicProfileRequired"), "error");
       return;
     }
 
@@ -5375,7 +5375,7 @@ const handleDeleteCommunity = async (id: string) => {
         .update(dbUpdateData)
         .eq('id', currentUser.id);
       if (error) {
-        showToast("UpdateFailed", "error");
+        showToast(t("UpdateFailed"), "error");
         return;
       }
       setMyProfile(prev => ({ ...prev, ...dbUpdateData } as any));
@@ -5388,35 +5388,35 @@ const handleDeleteCommunity = async (id: string) => {
       setHistoryStack([]);
       setViewingUser(null);
       setActiveTab('search');
-      showToast("MusicProfileSaved", "success");
+      showToast(t("MusicProfileSaved"), "success");
     } catch (err) {
-      showToast("SystemError", "error");
+      showToast(t("SystemError"), "error");
     }
   };
   const handleSignUp = async () => {
   if (!email || !password) {
-    showToast("ValidationError", "error");
+    showToast(t("ValidationError"), "error");
     return;
   }
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
-    showToast("InvalidEmailFormat", "error");
+    showToast(t("InvalidEmailFormat"), "error");
     return;
   }
   const pwRegex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
   if (!pwRegex.test(password)) {
-    showToast("WeakPassword", "error");
+    showToast(t("WeakPassword"), "error");
     return;
   }
   setIsAuthLoading(true);
   try {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) {
-      showToast("SignupFailed", "error");
+      showToast(t("SignupFailed"), "error");
       return;
     }
     if (data.user && data.user.identities && data.user.identities.length === 0) {
-      showToast("EmailAlreadyInUse", "error");
+      showToast(t("EmailAlreadyInUse"), "error");
       return;
     }
     if (data.user) {
@@ -5429,37 +5429,37 @@ const handleDeleteCommunity = async (id: string) => {
         bio: "Hello"
       }]);
       if (profileError) {
-        showToast("ProfileCreationError", "error");
+        showToast(t("ProfileCreationError"), "error");
         return;
       }
       setSignupSuccess(true);
     }
   } catch (err) {
-    showToast("SystemError", "error");
+    showToast(t("SystemError"), "error");
   } finally {
     setIsAuthLoading(false);
   }
 };
   // 💡 ステップ8: ログアウト・退会機能の完全実装
   const handleLogout = async () => {
-    showToast("LoggingOut");
+    showToast(t("LoggingOut"));
     await supabase.auth.signOut();
     // キャッシュやReactの状態を完全にリセットしてトップへ戻す
     window.location.href = '/';
   };
   const handleDeleteAccount = async () => {
   if (!currentUser) return;
-  showToast("DeletingAccount", "success");
+  showToast(t("DeletingAccount"), "success");
   try {
     const { error: rpcError } = await supabase.rpc('delete_user', { target_id: currentUser.id });
     if (rpcError) {
-      showToast("DeleteFailed", "error");
+      showToast(t("DeleteFailed"), "error");
       return;
     }
     await supabase.auth.signOut();
     window.location.href = '/';
   } catch (err) {
-    showToast("SystemError", "error");
+    showToast(t("SystemError"), "error");
   }
 };
   const DrumrollPickerModal = () => {
@@ -5841,7 +5841,7 @@ const renderFeedCard = (s: Song) => (
                   onClick={() => {
                     const cb = document.getElementById('terms-checkbox') as HTMLInputElement;
                     if (cb && !cb.checked) {
-                      showToast("TermsAgreementRequired", "error");
+                      showToast(t("TermsAgreementRequired"), "error");
                       return;
                     }
                     handleSignUp();
@@ -6346,7 +6346,7 @@ const renderFeedCard = (s: Song) => (
 	                    const handleSendMusicShare = async () => {
 	  if (!activeChatUserId || !currentUser || !selectedChatSong) return;
 	  if (!canAccessChatTarget(activeChatUserId)) {
-	    showToast("Unauthorized", "error");
+	    showToast(t("Unauthorized"), "error");
 	    return;
 	  }
 
