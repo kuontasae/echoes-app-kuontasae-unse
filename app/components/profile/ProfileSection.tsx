@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { FavoriteArtist, Song, User } from "../../types";
+import { FavoriteArtist, User } from "../../types";
 import { IconChevronLeft, IconFlame, IconMessagePlus, IconMusicSmall } from "../../Icons";
 
 const IconSettings = () => <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>;
@@ -15,8 +15,16 @@ type VibeMatchData = {
   sharedArtists: string[];
 };
 
+type ProfileUser = User & {
+  twitterUrl?: string;
+  instagramUrl?: string;
+  free_coin?: number | string | null;
+  paid_coin?: number | string | null;
+};
+
 type ProfileLabels = {
   following: string;
+  followers: string;
   follow: string;
   block: string;
   report: string;
@@ -24,6 +32,15 @@ type ProfileLabels = {
   editProfileFull: string;
   myEchoes: string;
   likedPosts: string;
+  paidCoin: string;
+  freeCoin: string;
+  dayStreak: string;
+  mutualFriendsCount: string;
+  vibeMatchDescription: string;
+  topSharedArtists: string;
+  sharedGenres: string;
+  sharedArtistsDescription: string;
+  sendVibeMatchMessage: string;
 };
 
 type ProfileSectionProps = {
@@ -60,6 +77,9 @@ type ProfileSectionProps = {
 };
 
 const displayMusicTag = (value: string) => value.replace(/^(genre|artist|tag):/, "");
+const formatLabel = (template: string, values: Record<string, string | number>) => (
+  Object.entries(values).reduce((result, [key, value]) => result.replace(`{${key}}`, String(value)), template)
+);
 
 export function ProfileSection({
   activeTab,
@@ -94,10 +114,14 @@ export function ProfileSection({
   onProfileTabChange,
 }: ProfileSectionProps) {
   const isOwnProfile = activeTab === "profile";
-  const profile = isOwnProfile ? myProfile : viewingUser;
-  const twitterUrl = isOwnProfile ? (myProfile as any).twitterUrl : (viewingUser as any)?.twitterUrl;
-  const instagramUrl = isOwnProfile ? (myProfile as any).instagramUrl : (viewingUser as any)?.instagramUrl;
-  const coinTotal = (Number((myProfile as any).free_coin) || 0) + (Number((myProfile as any).paid_coin) || 0);
+  const ownProfile = myProfile as ProfileUser;
+  const viewedProfile = viewingUser as ProfileUser | null;
+  const profile = isOwnProfile ? ownProfile : viewedProfile;
+  const twitterUrl = isOwnProfile ? ownProfile.twitterUrl : viewedProfile?.twitterUrl;
+  const instagramUrl = isOwnProfile ? ownProfile.instagramUrl : viewedProfile?.instagramUrl;
+  const paidCoin = Number(ownProfile.paid_coin) || 0;
+  const freeCoin = Number(ownProfile.free_coin) || 0;
+  const coinTotal = freeCoin + paidCoin;
 
   return (
     <div className="mt-4 flex flex-col items-center animate-fade-in px-4">
@@ -120,8 +144,8 @@ export function ProfileSection({
                 <span className="text-sm font-bold text-white whitespace-nowrap">{coinTotal}</span>
               </div>
               <div className="flex items-center gap-1.5 text-[9px] font-bold text-zinc-500 mt-0.5">
-                <span>有償 {Number((myProfile as any).paid_coin) || 0}</span>
-                <span>無償 {Number((myProfile as any).free_coin) || 0}</span>
+                <span>{labels.paidCoin} {paidCoin}</span>
+                <span>{labels.freeCoin} {freeCoin}</span>
               </div>
             </button>
             <button onClick={onShowSettings} className="w-9 h-9 bg-[#1c1c1e] border border-zinc-800 rounded-full flex items-center justify-center text-zinc-400 hover:text-white hover:bg-zinc-800 transition-all shadow-sm active:scale-95 flex-shrink-0">
@@ -130,17 +154,17 @@ export function ProfileSection({
           </div>
         )}
       </div>
-      <div className="relative"><img src={profile?.avatar} className="w-[100px] h-[100px] rounded-full object-cover mb-4 shadow-xl border border-zinc-800" /></div>
+      <div className="relative"><img src={profile?.avatar} alt="" className="w-[100px] h-[100px] rounded-full object-cover mb-4 shadow-xl border border-zinc-800" /></div>
       <h2 className="text-[22px] font-bold flex items-center">{profile?.name}</h2>
       <p className="text-sm text-zinc-500 font-bold mt-1">@{profile?.handle}</p>
-      {isOwnProfile && myStreak > 0 && (<div className="mt-3 flex items-center bg-[#1c1c1e] border border-orange-500/30 px-3 py-1.5 rounded-full shadow-sm"><IconFlame /><span className="text-[11px] font-bold text-orange-400">{myStreak}日連続記録中</span></div>)}
-      <div className="flex gap-4 mt-5 text-sm font-bold"><span className="cursor-pointer" onClick={() => onShowUserList('FOLLOWING')}>{formatCount(isOwnProfile ? followedUsers.size : viewingUserStats.following)} {labels.following}</span><span className="text-zinc-600">•</span><span className="cursor-pointer" onClick={() => onShowUserList('FOLLOWERS')}>{formatCount(isOwnProfile ? myFollowersCount : viewingUserStats.followers)} フォロワー</span></div>
+      {isOwnProfile && myStreak > 0 && (<div className="mt-3 flex items-center bg-[#1c1c1e] border border-orange-500/30 px-3 py-1.5 rounded-full shadow-sm"><IconFlame /><span className="text-[11px] font-bold text-orange-400">{formatLabel(labels.dayStreak, { count: myStreak })}</span></div>)}
+      <div className="flex gap-4 mt-5 text-sm font-bold"><span className="cursor-pointer" onClick={() => onShowUserList('FOLLOWING')}>{formatCount(isOwnProfile ? followedUsers.size : viewingUserStats.following)} {labels.following}</span><span className="text-zinc-600">•</span><span className="cursor-pointer" onClick={() => onShowUserList('FOLLOWERS')}>{formatCount(isOwnProfile ? myFollowersCount : viewingUserStats.followers)} {labels.followers}</span></div>
       {!isOwnProfile && mutualFriendsList.length > 0 && (
         <div className="flex items-center justify-center gap-2 mt-3 cursor-pointer hover:opacity-80 transition-opacity" onClick={onShowMutualFriends}>
           <div className="flex -space-x-2">
-            {mutualFriendsList.slice(0, 3).map(m => <img key={m.id} src={m.avatar} className="w-6 h-6 rounded-full border-2 border-black object-cover" />)}
+            {mutualFriendsList.slice(0, 3).map(m => <img key={m.id} src={m.avatar} alt="" className="w-6 h-6 rounded-full border-2 border-black object-cover" />)}
           </div>
-          <span className="text-xs font-bold text-zinc-400">{mutualFriendsList.length}人の共通の友達</span>
+          <span className="text-xs font-bold text-zinc-400">{formatLabel(labels.mutualFriendsCount, { count: mutualFriendsList.length })}</span>
         </div>
       )}
       <p className="text-zinc-300 text-sm mt-4 text-center max-w-xs">{profile?.bio}</p>
@@ -163,7 +187,7 @@ export function ProfileSection({
           <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-2">
             {favoriteArtists.map((artist, i) => (
               <div key={i} onClick={(e) => onArtistClick(e, artist.artistId, artist.artistName, artist.artworkUrl)} className="flex flex-col items-center flex-shrink-0 w-16 cursor-pointer group">
-                <img src={artist.artworkUrl} className="w-16 h-16 rounded-full object-cover border border-zinc-800 shadow-md group-hover:scale-105 transition-transform" />
+                <img src={artist.artworkUrl} alt="" className="w-16 h-16 rounded-full object-cover border border-zinc-800 shadow-md group-hover:scale-105 transition-transform" />
                 <p className="text-[10px] font-bold text-zinc-400 mt-2 truncate w-full text-center group-hover:text-white transition-colors">{artist.artistName}</p>
               </div>
             ))}
@@ -181,10 +205,10 @@ export function ProfileSection({
           <div className="bg-[#1c1c1e] rounded-t-[32px] p-8 w-full shadow-2xl relative flex flex-col items-center" onClick={e => e.stopPropagation()}>
             <div className="w-12 h-1.5 bg-zinc-800 rounded-full mb-6 cursor-pointer" onClick={onCloseVibeMatchDetails}></div>
             <h3 className="text-2xl font-black mb-2">{vibeMatchData.score}% Match</h3>
-            <p className="text-xs text-zinc-400 mb-8 text-center px-4">あなたと{viewingUser.name}さんの音楽の好みの分析結果です。</p>
+            <p className="text-xs text-zinc-400 mb-8 text-center px-4">{formatLabel(labels.vibeMatchDescription, { name: viewingUser.name })}</p>
             <div className="w-full mb-6">
-              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3">Top Shared Artists</p>
-              <p className="text-sm font-bold text-white mb-4">お互いにこれらのアーティストをよく聴いています！</p>
+              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3">{labels.topSharedArtists}</p>
+              <p className="text-sm font-bold text-white mb-4">{labels.sharedArtistsDescription}</p>
               <div className="flex gap-3">
                 {vibeMatchData.sharedArtists.map((a, i) => (
                   <div key={i} className="px-3 py-1.5 bg-[#1DB954]/10 text-[#1DB954] rounded-full text-xs font-bold flex items-center"><IconMusicSmall /> {a}</div>
@@ -192,7 +216,7 @@ export function ProfileSection({
               </div>
             </div>
             <div className="w-full mb-8">
-              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3">Shared Genres</p>
+              <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3">{labels.sharedGenres}</p>
               <div className="flex flex-col gap-4">
                 <div>
                   <div className="flex justify-between w-full mb-1"><span className="text-xs font-bold text-white">{vibeMatchData.genre1}</span><span className="text-xs font-bold text-[#1DB954]">{vibeMatchData.genre1Score}%</span></div>
@@ -205,7 +229,7 @@ export function ProfileSection({
               </div>
             </div>
             <button onClick={() => { onCloseVibeMatchDetails(); onOpenChat(viewingUser.id); }} className="w-full py-4 bg-[#1DB954] text-black rounded-xl font-bold flex justify-center items-center gap-2 hover:scale-105 transition-transform">
-              <IconMessagePlus /> 音楽の趣味が合うね！とメッセージを送る
+              <IconMessagePlus /> {labels.sendVibeMatchMessage}
             </button>
           </div>
         </div>

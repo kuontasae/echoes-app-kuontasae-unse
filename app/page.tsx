@@ -302,7 +302,47 @@ Object.assign(localI18n["日本語"], {
   ArticleDeleteConfirm: "本当にこの記事を削除しますか？\n（この操作は取り消せません）",
   ArticleDeleteSuccess: "記事を削除しました！",
   ArticleDeleteServerFailed: "サーバーでの削除に失敗しました",
-  ArticleDraftDeleteConfirm: "この下書きを削除しますか？"
+  ArticleDraftDeleteConfirm: "この下書きを削除しますか？",
+  save: "保存",
+  name: "名前",
+  handle: "ユーザーID",
+  bio: "自己紹介",
+  hashtagsCommaSeparated: "ハッシュタグ (カンマ区切り)",
+  liveHistoryCommaSeparated: "ライブ参戦履歴 (カンマ区切り)",
+  hashtagExample: "例: 邦ロック, Vaundy",
+  liveHistoryExample: "例: Tele 2026ツアー, VIVA LA ROCK",
+  twitterLink: "X (旧Twitter) のリンク",
+  instagramLink: "Instagram のリンク",
+  urlExample: "例: https://x.com/username",
+  instagramUrlExample: "例: https://instagram.com/username",
+  paidCoin: "有償",
+  freeCoin: "無償",
+  dayStreak: "{count}日連続記録中",
+  mutualFriendsCount: "{count}人の共通の友達",
+  vibeMatchDescription: "あなたと{name}さんの音楽の好みの分析結果です。",
+  sharedArtistsDescription: "お互いにこれらのアーティストをよく聴いています！",
+  sendVibeMatchMessage: "音楽の趣味が合うね！とメッセージを送る",
+  searchUsers: "ユーザーを検索...",
+  blockedUsers: "ブロックしたユーザー",
+  noBlockedUsers: "ブロックしているユーザーはいません",
+  unblock: "解除",
+  mutualFriends: "共通の友達",
+  close: "閉じる",
+  onboardingTitle: "プロフィールを作りましょう",
+  onboardingDescription: "名前と好きな音楽を登録すると、プロフィールとDiscoverのマッチングに反映されます。",
+  profileSection: "プロフィール",
+  musicTaste: "音楽の好み",
+  favoriteGenres: "好きなジャンル",
+  favoriteArtist: "好きなアーティスト",
+  artistSearchPlaceholder: "アーティストを検索",
+  favoriteArtistSearchLabel: "好きなアーティスト検索",
+  searchingCandidates: "候補を検索しています",
+  customHashtagPlaceholder: "自分でハッシュタグを追加",
+  customLiveHistoryPlaceholder: "自分でライブ参戦歴を追加",
+  add: "追加",
+  later: "あとで",
+  saveAndStart: "保存して始める",
+  likedPostsEmpty: "まだ{label}はありません"
 });
 
 Object.assign(localI18n["English"], {
@@ -428,7 +468,47 @@ Object.assign(localI18n["English"], {
   ArticleDeleteConfirm: "Delete this article?\n(This cannot be undone.)",
   ArticleDeleteSuccess: "Article deleted!",
   ArticleDeleteServerFailed: "Failed to delete on the server",
-  ArticleDraftDeleteConfirm: "Delete this draft?"
+  ArticleDraftDeleteConfirm: "Delete this draft?",
+  save: "Save",
+  name: "Name",
+  handle: "User ID",
+  bio: "Bio",
+  hashtagsCommaSeparated: "Hashtags (comma separated)",
+  liveHistoryCommaSeparated: "Live history (comma separated)",
+  hashtagExample: "Example: J-rock, Vaundy",
+  liveHistoryExample: "Example: Tele 2026 Tour, VIVA LA ROCK",
+  twitterLink: "X (formerly Twitter) link",
+  instagramLink: "Instagram link",
+  urlExample: "Example: https://x.com/username",
+  instagramUrlExample: "Example: https://instagram.com/username",
+  paidCoin: "Paid",
+  freeCoin: "Free",
+  dayStreak: "{count}-day streak",
+  mutualFriendsCount: "{count} mutual friends",
+  vibeMatchDescription: "This is an analysis of your music taste match with {name}.",
+  sharedArtistsDescription: "You both listen to these artists often.",
+  sendVibeMatchMessage: "Send a message about your shared music taste",
+  searchUsers: "Search users...",
+  blockedUsers: "Blocked users",
+  noBlockedUsers: "No blocked users",
+  unblock: "Unblock",
+  mutualFriends: "Mutual friends",
+  close: "Close",
+  onboardingTitle: "Create your profile",
+  onboardingDescription: "Add your name and favorite music to improve your profile and Discover matches.",
+  profileSection: "Profile",
+  musicTaste: "Music taste",
+  favoriteGenres: "Favorite genres",
+  favoriteArtist: "Favorite artist",
+  artistSearchPlaceholder: "Search artists",
+  favoriteArtistSearchLabel: "Favorite artist search",
+  searchingCandidates: "Searching suggestions",
+  customHashtagPlaceholder: "Add your own hashtag",
+  customLiveHistoryPlaceholder: "Add your own live history",
+  add: "Add",
+  later: "Later",
+  saveAndStart: "Save and start",
+  likedPostsEmpty: "No {label} yet"
 });
 
 Object.assign(localI18n["中文"], {
@@ -554,7 +634,47 @@ Object.assign(localI18n["中文"], {
   ArticleDeleteConfirm: "确定要删除这篇文章吗？\n（此操作无法撤销）",
   ArticleDeleteSuccess: "文章已删除！",
   ArticleDeleteServerFailed: "服务器删除失败",
-  ArticleDraftDeleteConfirm: "要删除这个草稿吗？"
+  ArticleDraftDeleteConfirm: "要删除这个草稿吗？",
+  save: "保存",
+  name: "名称",
+  handle: "用户ID",
+  bio: "个人简介",
+  hashtagsCommaSeparated: "标签（用逗号分隔）",
+  liveHistoryCommaSeparated: "现场参战记录（用逗号分隔）",
+  hashtagExample: "例：日摇, Vaundy",
+  liveHistoryExample: "例：Tele 2026巡演, VIVA LA ROCK",
+  twitterLink: "X（原 Twitter）链接",
+  instagramLink: "Instagram 链接",
+  urlExample: "例：https://x.com/username",
+  instagramUrlExample: "例：https://instagram.com/username",
+  paidCoin: "付费",
+  freeCoin: "免费",
+  dayStreak: "连续记录{count}天",
+  mutualFriendsCount: "{count}位共同好友",
+  vibeMatchDescription: "这是你和{name}的音乐喜好分析结果。",
+  sharedArtistsDescription: "你们都经常听这些艺人。",
+  sendVibeMatchMessage: "发送关于共同音乐喜好的消息",
+  searchUsers: "搜索用户...",
+  blockedUsers: "已拉黑用户",
+  noBlockedUsers: "暂无已拉黑用户",
+  unblock: "解除",
+  mutualFriends: "共同好友",
+  close: "关闭",
+  onboardingTitle: "创建个人资料",
+  onboardingDescription: "填写名称和喜欢的音乐后，会反映到个人资料和 Discover 匹配中。",
+  profileSection: "个人资料",
+  musicTaste: "音乐喜好",
+  favoriteGenres: "喜欢的类型",
+  favoriteArtist: "喜欢的艺人",
+  artistSearchPlaceholder: "搜索艺人",
+  favoriteArtistSearchLabel: "喜欢的艺人搜索",
+  searchingCandidates: "正在搜索候选",
+  customHashtagPlaceholder: "添加自定义标签",
+  customLiveHistoryPlaceholder: "添加自定义现场记录",
+  add: "添加",
+  later: "稍后",
+  saveAndStart: "保存并开始",
+  likedPostsEmpty: "暂无{label}"
 });
 function MainApp() {
   const searchParams = useSearchParams();
@@ -4834,7 +4954,7 @@ const renderFeedCard = (s: Song) => (
         onClick={() => addOnboardingTag(value, setValue, items, setItems)}
         className="px-4 bg-white text-black rounded-xl text-xs font-bold shrink-0"
       >
-        追加
+        {t('add')}
       </button>
     </div>
   );
@@ -5979,7 +6099,7 @@ const renderFeedCard = (s: Song) => (
               <div className="flex items-center justify-between p-4 border-b border-zinc-800/50"><div className="flex items-center gap-3"><IconLockSetting /><p className="font-bold text-sm">{t('privateAcc')}</p></div><button onClick={() => { setEditIsPrivate(!myProfile.isPrivate); setMyProfile({ ...myProfile, isPrivate: !myProfile.isPrivate }); }} className={`w-12 h-6 rounded-full p-1 transition-colors ${myProfile.isPrivate ? 'bg-white' : 'bg-zinc-700'}`}><div className={`w-4 h-4 rounded-full shadow-md transform transition-transform ${myProfile.isPrivate ? 'translate-x-6 bg-black' : 'translate-x-0 bg-white'}`}></div></button></div>
               <div className="relative flex items-center justify-between p-4 border-b border-zinc-800/50 cursor-pointer"><div className="flex items-center gap-3"><IconClock /><p className="font-bold text-sm">{t('timezone')}: {timeZone.split('/').pop()?.replace('_', ' ')}</p></div><IconChevronRight /><select value={timeZone} onChange={(e) => setTimeZone(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"><optgroup label="Asia"><option value="Asia/Tokyo">Tokyo (JST)</option><option value="Asia/Seoul">Seoul (KST)</option><option value="Asia/Shanghai">Shanghai (CST)</option></optgroup><optgroup label="America"><option value="America/New_York">New York (EST/EDT)</option><option value="America/Los_Angeles">Los Angeles (PST/PDT)</option></optgroup><optgroup label="Europe"><option value="Europe/London">London (GMT/BST)</option><option value="Europe/Paris">Paris (CET/CEST)</option></optgroup></select></div>
               <div className="relative flex items-center justify-between p-4 cursor-pointer"><div className="flex items-center gap-3"><IconGlobe /><p className="font-bold text-sm">{t('language')}: {language}</p></div><IconChevronRight /><select value={language} onChange={(e) => handleLanguageChange(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"><option value="日本語">日本語</option><option value="English">English</option><option value="中文">中文</option></select></div>
-              <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-zinc-800/50 transition-colors" onClick={() => { setShowSettingsMenu(false); setShowBlockedUsersModal(true); }}><div className="flex items-center gap-3"><IconLock /><p className="font-bold text-sm">ブロックしたユーザー</p></div><IconChevronRight /></div>
+              <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-zinc-800/50 transition-colors" onClick={() => { setShowSettingsMenu(false); setShowBlockedUsersModal(true); }}><div className="flex items-center gap-3"><IconLock /><p className="font-bold text-sm">{t('blockedUsers')}</p></div><IconChevronRight /></div>
             </div>
             <p className="text-xs font-bold text-zinc-500 mb-2 px-2">{t('appInfo')}</p>
             <div className="bg-[#1c1c1e] rounded-2xl mb-8 flex flex-col">
@@ -6118,13 +6238,13 @@ const renderFeedCard = (s: Song) => (
         <div className="fixed inset-0 bg-black/95 z-[900] flex flex-col animate-fade-in">
           <div className="flex items-center p-4 border-b border-zinc-900 sticky top-0 bg-black/90 backdrop-blur-md z-10">
             <button onClick={() => setShowBlockedUsersModal(false)}><IconChevronLeft /></button>
-            <h2 className="text-white font-bold text-lg mx-auto pr-8">ブロックしたユーザー</h2>
+            <h2 className="text-white font-bold text-lg mx-auto pr-8">{t('blockedUsers')}</h2>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
             {displayBlockedUsers.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-20 text-zinc-500">
                 <IconLock />
-                <p className="mt-4 text-sm font-bold">ブロックしているユーザーはいません</p>
+                <p className="mt-4 text-sm font-bold">{t('noBlockedUsers')}</p>
               </div>
             ) : (
               <div className="flex flex-col gap-4">
@@ -6138,7 +6258,7 @@ const renderFeedCard = (s: Song) => (
                       </div>
                     </div>
                     <button onClick={() => handleUnblockUser(u.id)} className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-full text-xs font-bold text-white transition-colors">
-                      解除
+                      {t('unblock')}
                     </button>
                   </div>
                 ))}
@@ -6152,7 +6272,7 @@ const renderFeedCard = (s: Song) => (
         <div className="fixed inset-0 bg-black/95 z-[900] flex flex-col animate-fade-in">
           <div className="flex items-center p-4 border-b border-zinc-900 sticky top-0 bg-black/90 backdrop-blur-md z-10">
             <button onClick={() => setShowMutualFriendsModal(false)}><IconChevronLeft /></button>
-            <h2 className="text-white font-bold text-lg mx-auto pr-8">共通の友達</h2>
+            <h2 className="text-white font-bold text-lg mx-auto pr-8">{t('mutualFriends')}</h2>
           </div>
           <div className="flex-1 overflow-y-auto p-4">
             <div className="flex flex-col gap-4">
@@ -6226,6 +6346,18 @@ const renderFeedCard = (s: Song) => (
         isOpen={isEditingProfile}
         title={t('editProfile')}
         cancelLabel={t('cancel')}
+        saveLabel={t('save')}
+        namePlaceholder={t('name')}
+        handlePlaceholder={t('handle')}
+        bioPlaceholder={t('bio')}
+        hashtagsLabel={t('hashtagsCommaSeparated')}
+        hashtagsPlaceholder={t('hashtagExample')}
+        liveHistoryLabel={t('liveHistoryCommaSeparated')}
+        liveHistoryPlaceholder={t('liveHistoryExample')}
+        twitterLabel={t('twitterLink')}
+        twitterPlaceholder={t('urlExample')}
+        instagramLabel={t('instagramLink')}
+        instagramPlaceholder={t('instagramUrlExample')}
         editAvatar={editAvatar}
         editName={editName}
         editHandle={editHandle}
@@ -6252,46 +6384,46 @@ const renderFeedCard = (s: Song) => (
               <div className="w-12 h-12 rounded-full bg-[#1DB954]/20 text-[#1DB954] flex items-center justify-center mb-4">
                 <IconHeadphones />
               </div>
-              <h3 className="font-bold text-xl mb-2">プロフィールを作りましょう</h3>
+              <h3 className="font-bold text-xl mb-2">{t('onboardingTitle')}</h3>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                名前と好きな音楽を登録すると、プロフィールとDiscoverのマッチングに反映されます。
+                {t('onboardingDescription')}
               </p>
             </div>
 
             <div className="space-y-3">
-              <p className="text-[11px] font-bold text-white">プロフィール</p>
+              <p className="text-[11px] font-bold text-white">{t('profileSection')}</p>
               <div className="flex items-center gap-4">
                 <div className="relative w-20 h-20 shrink-0 group cursor-pointer">
                   <img src={editAvatar} alt="" className="w-full h-full rounded-full object-cover opacity-80 group-hover:opacity-60" />
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><IconCamera /></div>
-                  <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" aria-label="プロフィール画像" />
+                  <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" aria-label={t('profileSection')} />
                 </div>
                 <div className="min-w-0 flex-1 space-y-2">
-                  <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="名前" className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-zinc-500" />
+                  <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder={t('name')} className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-zinc-500" />
                   <div className="flex items-center bg-black border border-zinc-800 rounded-xl overflow-hidden focus-within:border-zinc-500">
                     <span className="pl-3 text-zinc-500 font-bold">@</span>
-                    <input type="text" value={editHandle} onChange={(e) => setEditHandle(e.target.value)} placeholder="ユーザーID" className="min-w-0 w-full bg-transparent p-3 text-sm text-white focus:outline-none" />
+                    <input type="text" value={editHandle} onChange={(e) => setEditHandle(e.target.value)} placeholder={t('handle')} className="min-w-0 w-full bg-transparent p-3 text-sm text-white focus:outline-none" />
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="space-y-4">
-              <p className="text-[11px] font-bold text-white">音楽の好み</p>
+              <p className="text-[11px] font-bold text-white">{t('musicTaste')}</p>
               {renderOnboardingChipPicker(
-                "好きなジャンル",
+                t('favoriteGenres'),
                 onboardingGenreCandidates,
                 onboardingGenres,
                 setOnboardingGenres
               )}
               <div>
-                <label className="text-[10px] text-zinc-500 ml-1 mb-2 block font-bold">好きなアーティスト</label>
+                <label className="text-[10px] text-zinc-500 ml-1 mb-2 block font-bold">{t('favoriteArtist')}</label>
                 <input
                   type="text"
                   value={onboardingArtistInput}
                   onChange={(e) => setOnboardingArtistInput(e.target.value)}
-                  placeholder="アーティストを検索"
-                  aria-label="好きなアーティスト検索"
+                  placeholder={t('artistSearchPlaceholder')}
+                  aria-label={t('favoriteArtistSearchLabel')}
                   className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-zinc-500"
                 />
                 {onboardingArtists.length > 0 && (
@@ -6324,33 +6456,33 @@ const renderFeedCard = (s: Song) => (
                         <span className="font-bold truncate">{artist.artistName}</span>
                       </button>
                     )) : (
-                      <p className="p-3 text-[11px] text-zinc-500">候補を検索しています</p>
+                      <p className="p-3 text-[11px] text-zinc-500">{t('searchingCandidates')}</p>
                     )}
                   </div>
                 )}
               </div>
               {renderOnboardingChipPicker(
-                "ハッシュタグ",
+                t('hashtags'),
                 onboardingHashtagCandidates,
                 onboardingHashtags,
                 setOnboardingHashtags,
                 "#"
               )}
               {renderOnboardingTextAdd(
-                "自分でハッシュタグを追加",
+                t('customHashtagPlaceholder'),
                 onboardingHashtagInput,
                 setOnboardingHashtagInput,
                 onboardingHashtags,
                 setOnboardingHashtags
               )}
               {renderOnboardingChipPicker(
-                "ライブ参戦歴",
+                t('liveHistory'),
                 onboardingLiveCandidates,
                 onboardingLiveHistory,
                 setOnboardingLiveHistory
               )}
               {renderOnboardingTextAdd(
-                "自分でライブ参戦歴を追加",
+                t('customLiveHistoryPlaceholder'),
                 onboardingLiveInput,
                 setOnboardingLiveInput,
                 onboardingLiveHistory,
@@ -6367,14 +6499,14 @@ const renderFeedCard = (s: Song) => (
                 }}
                 className="flex-1 py-3.5 border border-zinc-800 rounded-xl text-xs font-bold text-zinc-300 hover:bg-zinc-800 transition-colors"
               >
-                あとで
+                {t('later')}
               </button>
               <button
                 type="button"
                 onClick={saveInitialOnboarding}
                 className="flex-1 py-3.5 bg-[#1DB954] text-black rounded-xl text-xs font-bold hover:brightness-110 transition-colors"
               >
-                保存して始める
+                {t('saveAndStart')}
               </button>
             </div>
           </div>
@@ -6386,15 +6518,18 @@ const renderFeedCard = (s: Song) => (
             <div className="mx-auto w-12 h-12 bg-black rounded-full flex items-center justify-center mb-4 text-white"><IconInfo /></div>
             <h3 className="font-bold text-lg mb-2">{showAppInfoModal.title}</h3>
             <p className="text-sm text-zinc-400 leading-relaxed mb-8 whitespace-pre-line">{showAppInfoModal.content}</p>
-            <button onClick={() => setShowAppInfoModal(null)} className="w-full py-3 bg-white text-black rounded-xl text-xs font-bold uppercase">閉じる</button>
+            <button onClick={() => setShowAppInfoModal(null)} className="w-full py-3 bg-white text-black rounded-xl text-xs font-bold uppercase">{t('close')}</button>
           </div>
         </div>
       )}
       <UserListModal
-        title={showUserListModal}
+        title={showUserListModal ? t(showUserListModal === 'FOLLOWING' ? 'following' : 'followers') : null}
         users={displayModalUsers}
         searchQuery={modalSearchQuery}
         followedUsers={followedUsers}
+        searchPlaceholder={t('searchUsers')}
+        followLabel={t('follow')}
+        followingLabel={t('following')}
         onClose={() => { setShowUserListModal(null); setModalSearchQuery(""); }}
         onSearchChange={setModalSearchQuery}
         onOpenUser={(u) => { setViewingUser(u); setActiveTab('other_profile'); setShowUserListModal(null); }}
@@ -6859,6 +6994,7 @@ const renderFeedCard = (s: Song) => (
             profileTabMode={profileTabMode}
             labels={{
               following: t('following'),
+              followers: t('followers'),
               follow: t('follow'),
               block: t('block'),
               report: t('report'),
@@ -6866,8 +7002,17 @@ const renderFeedCard = (s: Song) => (
               editProfileFull: t('editProfileFull'),
               myEchoes: t('myEchoes'),
               likedPosts: t('likedPosts'),
+              paidCoin: t('paidCoin'),
+              freeCoin: t('freeCoin'),
+              dayStreak: t('dayStreak'),
+              mutualFriendsCount: t('mutualFriendsCount'),
+              vibeMatchDescription: t('vibeMatchDescription'),
+              topSharedArtists: t('topSharedArtists'),
+              sharedGenres: t('sharedGenres'),
+              sharedArtistsDescription: t('sharedArtistsDescription'),
+              sendVibeMatchMessage: t('sendVibeMatchMessage'),
             }}
-            likedPostsContent={likedVibes.length === 0 ? <p className="text-center text-zinc-500 py-10 text-xs">まだ{t('likedPosts')}はありません</p> : likedVibes.map(renderFeedCard)}
+            likedPostsContent={likedVibes.length === 0 ? <p className="text-center text-zinc-500 py-10 text-xs">{t('likedPostsEmpty').replace('{label}', t('likedPosts'))}</p> : likedVibes.map(renderFeedCard)}
             calendarContent={renderCalendar()}
             formatCount={formatCount}
             onGoBack={handleGoBack}

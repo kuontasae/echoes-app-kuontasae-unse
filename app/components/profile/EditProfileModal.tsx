@@ -7,6 +7,18 @@ type EditProfileModalProps = {
   isOpen: boolean;
   title: string;
   cancelLabel: string;
+  saveLabel: string;
+  namePlaceholder: string;
+  handlePlaceholder: string;
+  bioPlaceholder: string;
+  hashtagsLabel: string;
+  hashtagsPlaceholder: string;
+  liveHistoryLabel: string;
+  liveHistoryPlaceholder: string;
+  twitterLabel: string;
+  twitterPlaceholder: string;
+  instagramLabel: string;
+  instagramPlaceholder: string;
   editAvatar: string;
   editName: string;
   editHandle: string;
@@ -31,6 +43,18 @@ export function EditProfileModal({
   isOpen,
   title,
   cancelLabel,
+  saveLabel,
+  namePlaceholder,
+  handlePlaceholder,
+  bioPlaceholder,
+  hashtagsLabel,
+  hashtagsPlaceholder,
+  liveHistoryLabel,
+  liveHistoryPlaceholder,
+  twitterLabel,
+  twitterPlaceholder,
+  instagramLabel,
+  instagramPlaceholder,
   editAvatar,
   editName,
   editHandle,
@@ -58,26 +82,26 @@ export function EditProfileModal({
         <h3 className="text-center font-bold text-lg mb-2">{title}</h3>
         <div className="flex flex-col items-center mb-2">
           <div className="relative w-20 h-20 mb-3 group cursor-pointer mx-auto">
-            <img src={editAvatar} className="w-full h-full rounded-full object-cover opacity-70 group-hover:opacity-50" />
+            <img src={editAvatar} alt="" className="w-full h-full rounded-full object-cover opacity-70 group-hover:opacity-50" />
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><IconCamera /></div>
             <input type="file" accept="image/*" onChange={onImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
           </div>
         </div>
         <div className="space-y-3">
-          <input type="text" value={editName} onChange={(e) => onNameChange(e.target.value)} placeholder="名前" className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none" />
+          <input type="text" value={editName} onChange={(e) => onNameChange(e.target.value)} placeholder={namePlaceholder} className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none" />
           <div className="flex items-center bg-black border border-zinc-800 rounded-xl overflow-hidden focus-within:border-zinc-500">
             <span className="pl-3.5 text-zinc-500 font-bold">@</span>
-            <input type="text" value={editHandle} onChange={(e) => onHandleChange(e.target.value)} placeholder="ユーザーID" className="w-full bg-transparent p-3.5 text-sm text-white focus:outline-none" />
+            <input type="text" value={editHandle} onChange={(e) => onHandleChange(e.target.value)} placeholder={handlePlaceholder} className="w-full bg-transparent p-3.5 text-sm text-white focus:outline-none" />
           </div>
-          <textarea value={editBio} onChange={(e) => onBioChange(e.target.value)} placeholder="自己紹介" className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none min-h-[60px]" />
-          <div><label className="text-[10px] text-zinc-500 ml-1 mb-1 block">ハッシュタグ (カンマ区切り)</label><input type="text" value={editHashtags} onChange={(e) => onHashtagsChange(e.target.value)} placeholder="例: 邦ロック, Vaundy" className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none" /></div>
-          <div><label className="text-[10px] text-zinc-500 ml-1 mb-1 block">ライブ参戦履歴 (カンマ区切り)</label><input type="text" value={editLiveHistory} onChange={(e) => onLiveHistoryChange(e.target.value)} placeholder="例: Tele 2026ツアー, VIVA LA ROCK" className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none" /></div>
-          <div><label className="text-[10px] text-zinc-500 ml-1 mb-1 block">X (旧Twitter) のリンク</label><input type="text" value={editTwitter} onChange={(e) => onTwitterChange(e.target.value)} placeholder="例: https://x.com/username" className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none" /></div>
-          <div><label className="text-[10px] text-zinc-500 ml-1 mb-1 block">Instagram のリンク</label><input type="text" value={editInstagram} onChange={(e) => onInstagramChange(e.target.value)} placeholder="例: https://instagram.com/username" className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none" /></div>
+          <textarea value={editBio} onChange={(e) => onBioChange(e.target.value)} placeholder={bioPlaceholder} className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none min-h-[60px]" />
+          <div><label className="text-[10px] text-zinc-500 ml-1 mb-1 block">{hashtagsLabel}</label><input type="text" value={editHashtags} onChange={(e) => onHashtagsChange(e.target.value)} placeholder={hashtagsPlaceholder} className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none" /></div>
+          <div><label className="text-[10px] text-zinc-500 ml-1 mb-1 block">{liveHistoryLabel}</label><input type="text" value={editLiveHistory} onChange={(e) => onLiveHistoryChange(e.target.value)} placeholder={liveHistoryPlaceholder} className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none" /></div>
+          <div><label className="text-[10px] text-zinc-500 ml-1 mb-1 block">{twitterLabel}</label><input type="text" value={editTwitter} onChange={(e) => onTwitterChange(e.target.value)} placeholder={twitterPlaceholder} className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none" /></div>
+          <div><label className="text-[10px] text-zinc-500 ml-1 mb-1 block">{instagramLabel}</label><input type="text" value={editInstagram} onChange={(e) => onInstagramChange(e.target.value)} placeholder={instagramPlaceholder} className="w-full bg-black border border-zinc-800 rounded-xl p-3.5 text-sm text-white focus:outline-none" /></div>
         </div>
         <div className="flex gap-3 mt-4 sticky bottom-0 bg-[#1c1c1e] pt-2">
           <button onClick={onClose} className="flex-1 py-3.5 border border-zinc-800 rounded-xl text-xs font-bold uppercase hover:bg-zinc-800 transition-colors">{cancelLabel}</button>
-          <button onClick={onSave} className="flex-1 py-3.5 bg-white text-black rounded-xl text-xs font-bold uppercase hover:bg-gray-200 transition-colors">保存</button>
+          <button onClick={onSave} className="flex-1 py-3.5 bg-white text-black rounded-xl text-xs font-bold uppercase hover:bg-gray-200 transition-colors">{saveLabel}</button>
         </div>
       </div>
     </div>
