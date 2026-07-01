@@ -325,6 +325,8 @@ Object.assign(localI18n["日本語"], {
   feedAllPostsLoaded: "すべての投稿を読み込みました",
   feedEmptyTitle: "まずは今聴いている1曲を記録しよう",
   feedEmptyBody: "曲名・アーティスト名で検索して、今日のVibeを残せます。",
+  todayRecommendedSongs: "本日のおすすめ曲",
+  similarSongReason: "記録に近い曲",
   feedRecommendationEmpty: "曲を記録すると、好みに近いおすすめがここに届きます。",
   feedPostSuccessTitle: "記録できました。似た音楽が好きな人を見つけに行こう",
   feedPostSuccessAction: "近い人を探す",
@@ -335,6 +337,9 @@ Object.assign(localI18n["日本語"], {
   aiRecommendationsEmpty: "もう少し曲を記録すると、あなたに合う曲を提案できます。",
   popularSongsInJapan: "日本の人気曲",
   recommendedSongs: "おすすめ曲",
+  matchPercentSuffix: "% マッチ",
+  topArtists: "トップアーティスト",
+  noUsersFound: "該当するユーザーはいません",
   artistFavoriteCountPrefix: "お気に入り ",
   artistFavoriteCountSuffix: "人",
   FavoriteSaved: "お気に入りに追加しました",
@@ -799,6 +804,8 @@ Object.assign(localI18n["English"], {
   feedAllPostsLoaded: "All posts loaded",
   feedEmptyTitle: "Record the song you are listening to now",
   feedEmptyBody: "Search by song or artist and save today's Vibe.",
+  todayRecommendedSongs: "Recommended Today",
+  similarSongReason: "Close to your records",
   feedRecommendationEmpty: "Record songs to see recommendations close to your taste here.",
   feedPostSuccessTitle: "Recorded. Find people who like similar music.",
   feedPostSuccessAction: "Find similar people",
@@ -809,6 +816,9 @@ Object.assign(localI18n["English"], {
   aiRecommendationsEmpty: "Record a few more songs to get recommendations for you.",
   popularSongsInJapan: "Popular Songs in Japan",
   recommendedSongs: "Recommended Songs",
+  matchPercentSuffix: "% match",
+  topArtists: "Top artists",
+  noUsersFound: "No users found",
   artistFavoriteCountPrefix: "",
   artistFavoriteCountSuffix: " Favorites",
   FavoriteSaved: "Added to favorites",
@@ -1274,6 +1284,8 @@ Object.assign(localI18n["中文"], {
   feedAllPostsLoaded: "已加载全部投稿",
   feedEmptyTitle: "先记录一首正在听的歌吧",
   feedEmptyBody: "搜索歌曲名或艺人名，留下今天的 Vibe。",
+  todayRecommendedSongs: "今日推荐歌曲",
+  similarSongReason: "接近你的记录",
   feedRecommendationEmpty: "记录歌曲后，与你喜好相近的推荐会显示在这里。",
   feedPostSuccessTitle: "已记录。去发现喜欢相似音乐的人吧",
   feedPostSuccessAction: "寻找相近的人",
@@ -1284,6 +1296,9 @@ Object.assign(localI18n["中文"], {
   aiRecommendationsEmpty: "再记录几首歌后，就能为你推荐合适的歌曲。",
   popularSongsInJapan: "日本热门歌曲",
   recommendedSongs: "推荐歌曲",
+  matchPercentSuffix: "% 匹配",
+  topArtists: "热门艺人",
+  noUsersFound: "未找到用户",
   artistFavoriteCountPrefix: "",
   artistFavoriteCountSuffix: "人收藏",
   FavoriteSaved: "已加入收藏",
@@ -7553,7 +7568,7 @@ const renderFeedCard = (s: Song) => (
             {!isSearchFocused && <section className="mb-6" data-testid="today-recommended-songs">
               <div className="flex items-center justify-between mb-3 px-1">
                 <h2 className="text-xs font-bold text-zinc-500 uppercase tracking-widest flex items-center gap-2">
-                  <IconSparkles /> 今日のおすすめ曲
+                  <IconSparkles /> {t('todayRecommendedSongs')}
                 </h2>
               </div>
               <div className="flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -7577,7 +7592,7 @@ const renderFeedCard = (s: Song) => (
                     <div className="min-w-0 flex-1">
                       <p className="font-bold text-sm text-white truncate">{song.trackName}</p>
                       <p className="text-[10px] text-zinc-400 truncate mt-0.5">{song.artistName}</p>
-                      <p className="text-[10px] text-[#1DB954] mt-2 line-clamp-2">{song.reason || "あなたの記録に近い曲"}</p>
+                      <p className="text-[10px] text-[#1DB954] mt-2 line-clamp-2">{song.reason || t('similarSongReason')}</p>
                     </div>
                   </div>
                 )) : (
@@ -7822,26 +7837,26 @@ const renderFeedCard = (s: Song) => (
                     style={{ transform: `translateX(${swipeOffset}px) rotate(${swipeOffset * 0.05}deg)`, transition: isDragging ? 'none' : 'transform 0.3s ease-out' }}
                     onTouchStart={handleDragStart} onTouchMove={handleDragMove} onTouchEnd={handleDragEnd} onMouseDown={handleDragStart} onMouseMove={handleDragMove} onMouseUp={handleDragEnd} onMouseLeave={handleDragEnd}
                   >
-                    {swipeOffset > 20 && <div className="absolute top-10 left-6 z-50 border-4 border-[#1DB954] text-[#1DB954] font-black text-3xl px-4 py-1 rounded-xl transform -rotate-12 uppercase tracking-widest opacity-80">FOLLOW</div>}
-                    {swipeOffset < -20 && <div className="absolute top-10 right-6 z-50 border-4 border-zinc-500 text-zinc-500 font-black text-3xl px-4 py-1 rounded-xl transform rotate-12 uppercase tracking-widest opacity-80">PASS</div>}
+                    {swipeOffset > 20 && <div className="absolute top-10 left-6 z-50 border-4 border-[#1DB954] text-[#1DB954] font-black text-3xl px-4 py-1 rounded-xl transform -rotate-12 uppercase tracking-widest opacity-80">{t('follow')}</div>}
+                    {swipeOffset < -20 && <div className="absolute top-10 right-6 z-50 border-4 border-zinc-500 text-zinc-500 font-black text-3xl px-4 py-1 rounded-xl transform rotate-12 uppercase tracking-widest opacity-80">{t('pass')}</div>}
                     <div className="relative h-64 w-full flex-shrink-0 cursor-pointer" onClick={() => { setViewingUser(filteredMatchUsers[matchIndex]); setActiveTab('other_profile'); }}>
                       <img src={filteredMatchUsers[matchIndex].avatar} className="w-full h-full object-cover pointer-events-none" />
                       <div className="absolute inset-0 bg-gradient-to-t from-[#1c1c1e] via-transparent to-transparent pointer-events-none"></div>
-                      <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md rounded-full px-3 py-1 flex items-center gap-1.5 border border-white/10"><IconSparkles /><span className="text-xs font-bold text-white">{getVibeMatchScore(myProfile.id, filteredMatchUsers[matchIndex].id)}% Match</span></div>
+                      <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md rounded-full px-3 py-1 flex items-center gap-1.5 border border-white/10"><IconSparkles /><span className="text-xs font-bold text-white">{getVibeMatchScore(myProfile.id, filteredMatchUsers[matchIndex].id)}{t('matchPercentSuffix')}</span></div>
                       <div className="absolute bottom-4 left-4 right-4"><h3 className="text-2xl font-black text-white flex items-center gap-2">{filteredMatchUsers[matchIndex].name} <span className="text-xs font-bold text-zinc-400 bg-black/50 px-2 py-0.5 rounded-full">{filteredMatchUsers[matchIndex].age || ''}</span></h3><p className="text-sm text-zinc-300">@{filteredMatchUsers[matchIndex].handle}</p></div>
                     </div>
                     <div className="flex-1 overflow-y-auto p-6 pb-28 scrollbar-hide pointer-events-none">
                       <p className="text-sm text-white mb-4 leading-relaxed">{filteredMatchUsers[matchIndex].bio}</p>
                       <div className="flex flex-wrap gap-2 mb-4">{(filteredMatchUsers[matchIndex].hashtags || []).map((h, i) => (<span key={`h-${i}`} className="px-2 py-1 bg-zinc-900 border border-zinc-800 text-zinc-300 rounded text-[10px]">#{getMusicTagLabel(h)}</span>))}</div>
-                      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3 flex items-center gap-1">Top Artists</p>
+                      <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-3 flex items-center gap-1">{t('topArtists')}</p>
                       <div className="flex flex-wrap gap-2 mb-4">{(filteredMatchUsers[matchIndex].topArtists || []).map((a, i) => (<span key={i} className="px-3 py-1.5 bg-[#1DB954]/10 text-[#1DB954] rounded-full text-xs font-bold flex items-center"><IconMusicSmall /> {a}</span>))}</div>
                     </div>
                     <div className="absolute bottom-6 left-0 w-full flex justify-center gap-4 px-6 bg-gradient-to-t from-[#1c1c1e] pt-6 z-40">
                       <button onClick={() => setMatchIndex(prev => prev + 1)} className="w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center text-zinc-400 hover:bg-zinc-700 transition-colors shadow-lg flex-shrink-0"><IconCross /></button>
-                      <button onClick={() => handleSwipeFollow(filteredMatchUsers[matchIndex].id, filteredMatchUsers[matchIndex].name)} className="flex-1 h-14 bg-[#1DB954] text-black rounded-full flex items-center justify-center font-bold text-sm hover:scale-105 transition-transform shadow-lg gap-2"><IconUserPlus /> フォロー</button>
+                      <button onClick={() => handleSwipeFollow(filteredMatchUsers[matchIndex].id, filteredMatchUsers[matchIndex].name)} className="flex-1 h-14 bg-[#1DB954] text-black rounded-full flex items-center justify-center font-bold text-sm hover:scale-105 transition-transform shadow-lg gap-2"><IconUserPlus /> {t('follow')}</button>
                     </div>
                   </div>
-                ) : <div className="text-center mt-20"><IconSearch /><p className="font-bold mt-4">ユーザーが見つかりません</p></div>}
+                ) : <div className="text-center mt-20"><IconSearch /><p className="font-bold mt-4">{t('noUsersFound')}</p></div>}
               </div>
             )}
           </div>
