@@ -202,10 +202,53 @@ Object.assign(localI18n["日本語"], {
   articleListEdit: "編集",
   articleListDelete: "削除",
   artistCommunities: "アーティストコミュニティ",
+  searchUser: "ユーザーを検索...",
+  searchLive: "ライブやコミュニティを検索...",
+  searchFromCalendar: "カレンダーから探す",
+  popularLiveCommunity: "人気のライブコミュニティ",
+  createLiveIfNotFound: "見つからないライブを作成",
   communityMembersCount: "参加者 {count}人",
   communityRecentMembersCount: "今週 {count}人参加",
   communityRecentPostsCount: "今週 {count}投稿",
   communityJoinedCount: "{count}人が参加中",
+  communityScheduledCount: "{count}人が参加予定",
+  communityDatePerformances: "{date} の公演",
+  communityDetailTitle: "コミュニティ詳細",
+  artistCommunityName: "{artist} ファンコミュニティ",
+  artistCommunityDescription: "{artist}が好きな人たちが集まる場所です",
+  permanentFanCommunity: "常設ファンコミュニティ",
+  viewCommunity: "コミュニティを見る",
+  joinCommunityAction: "参加する",
+  reportFalseLiveInfo: "このライブ情報を嘘として通報する",
+  createLiveTitle: "新しくライブを作成",
+  createLiveDescription: "探しているライブが見つからない場合、自分で作成して同行者や仲間を募集できます。",
+  liveName: "ライブ名",
+  liveNamePlaceholder: "例: Vaundy ARENA tour 2026",
+  dateLabel: "日付",
+  dateTbd: "日程未定",
+  createAndJoinLive: "ライブを作成して参加する",
+  officialLiveFetchFailed: "公式ライブの取得に失敗しました。標準データを表示します",
+  customLiveFetchFailed: "ユーザー作成ライブの取得に失敗しました",
+  findLive: "ライブを探す",
+  selectYearMonth: "年月を選択",
+  set: "決定",
+  yearSuffix: "{year}年",
+  monthSuffix: "{month}月",
+  weekdaysShort: "日,月,火,水,木,金,土",
+  eventCount: "{count}件",
+  tapDateToViewLives: "日付をタップしてライブを確認",
+  showAllDates: "すべての日程を表示",
+  peopleFilterNotice: "好きな音楽・ライブ履歴が近い人を表示中",
+  commonLiveReason: "共通ライブ: {label}",
+  commonMusicReason: "共通: {label}",
+  followUserPrompt: "プロフィールを見てフォローしてみよう",
+  totalPostCount: "総投稿数: {count}件",
+  suggestedFriendsEmptyFiltered: "選択したタグに合う友達候補がまだいません。",
+  suggestedFriendsEmpty: "友達をフォローして、タイムラインを充実させましょう！",
+  similarPeopleEmptyFiltered: "選択したタグに合う音楽仲間がまだいません。",
+  similarPeopleEmpty: "音楽を記録して、好みの合う人を探しましょう！",
+  popularAccountsEmptyFiltered: "選択したタグに合う人気アカウントがまだありません。",
+  popularAccountsEmpty: "投稿が活発な公式ユーザーがここに表示されます。",
   clear: "クリア",
   Success: "成功しました",
   UpdateFailed: "保存に失敗しました",
@@ -539,10 +582,53 @@ Object.assign(localI18n["English"], {
   articleListEdit: "Edit",
   articleListDelete: "Delete",
   artistCommunities: "Artist Communities",
+  searchUser: "Search users...",
+  searchLive: "Search lives or communities...",
+  searchFromCalendar: "Search from calendar",
+  popularLiveCommunity: "Popular Live Communities",
+  createLiveIfNotFound: "Create a live if you cannot find it",
   communityMembersCount: "{count} members",
   communityRecentMembersCount: "{count} joined this week",
   communityRecentPostsCount: "{count} posts this week",
   communityJoinedCount: "{count} members joined",
+  communityScheduledCount: "{count} planning to join",
+  communityDatePerformances: "{date} performances",
+  communityDetailTitle: "Community Detail",
+  artistCommunityName: "{artist} Fan Community",
+  artistCommunityDescription: "A place for people who love {artist}.",
+  permanentFanCommunity: "Permanent fan community",
+  viewCommunity: "View community",
+  joinCommunityAction: "Join",
+  reportFalseLiveInfo: "Report this live information as false",
+  createLiveTitle: "Create a new live",
+  createLiveDescription: "If you cannot find the live you are looking for, create it yourself to find companions and other fans.",
+  liveName: "Live name",
+  liveNamePlaceholder: "Example: Vaundy ARENA tour 2026",
+  dateLabel: "Date",
+  dateTbd: "Date TBD",
+  createAndJoinLive: "Create live and join",
+  officialLiveFetchFailed: "Could not load official lives. Showing default data.",
+  customLiveFetchFailed: "Could not load user-created lives",
+  findLive: "Find a live",
+  selectYearMonth: "Select year and month",
+  set: "Set",
+  yearSuffix: "{year}",
+  monthSuffix: "{month}",
+  weekdaysShort: "Sun,Mon,Tue,Wed,Thu,Fri,Sat",
+  eventCount: "{count}",
+  tapDateToViewLives: "Tap a date to view lives",
+  showAllDates: "Show all dates",
+  peopleFilterNotice: "Showing people with similar music and live history",
+  commonLiveReason: "Shared live: {label}",
+  commonMusicReason: "Shared: {label}",
+  followUserPrompt: "View their profile and follow them",
+  totalPostCount: "Total posts: {count}",
+  suggestedFriendsEmptyFiltered: "No friend suggestions match the selected tags yet.",
+  suggestedFriendsEmpty: "Follow friends to make your timeline better.",
+  similarPeopleEmptyFiltered: "No music friends match the selected tags yet.",
+  similarPeopleEmpty: "Record music to find people with similar taste.",
+  popularAccountsEmptyFiltered: "No popular accounts match the selected tags yet.",
+  popularAccountsEmpty: "Active official users will appear here.",
   clear: "Clear",
   Success: "Success",
   UpdateFailed: "Failed to save",
@@ -876,10 +962,53 @@ Object.assign(localI18n["中文"], {
   articleListEdit: "编辑",
   articleListDelete: "删除",
   artistCommunities: "艺人社区",
+  searchUser: "搜索用户...",
+  searchLive: "搜索现场或社区...",
+  searchFromCalendar: "从日历搜索",
+  popularLiveCommunity: "热门现场社区",
+  createLiveIfNotFound: "创建找不到的现场",
   communityMembersCount: "{count}人参加",
   communityRecentMembersCount: "本周 {count}人加入",
   communityRecentPostsCount: "本周 {count}条投稿",
   communityJoinedCount: "{count}人参加中",
+  communityScheduledCount: "{count}人计划参加",
+  communityDatePerformances: "{date} 的演出",
+  communityDetailTitle: "社区详情",
+  artistCommunityName: "{artist} 粉丝社区",
+  artistCommunityDescription: "这里聚集了喜欢 {artist} 的人。",
+  permanentFanCommunity: "常设粉丝社区",
+  viewCommunity: "查看社区",
+  joinCommunityAction: "参加",
+  reportFalseLiveInfo: "举报此现场信息为虚假",
+  createLiveTitle: "创建新的现场",
+  createLiveDescription: "如果找不到想找的现场，可以自己创建并募集同行者或伙伴。",
+  liveName: "现场名称",
+  liveNamePlaceholder: "例: Vaundy ARENA tour 2026",
+  dateLabel: "日期",
+  dateTbd: "日期未定",
+  createAndJoinLive: "创建现场并参加",
+  officialLiveFetchFailed: "官方现场获取失败。将显示默认数据",
+  customLiveFetchFailed: "用户创建的现场获取失败",
+  findLive: "搜索现场",
+  selectYearMonth: "选择年月",
+  set: "确定",
+  yearSuffix: "{year}年",
+  monthSuffix: "{month}月",
+  weekdaysShort: "日,一,二,三,四,五,六",
+  eventCount: "{count}条",
+  tapDateToViewLives: "点击日期查看现场",
+  showAllDates: "显示所有日期",
+  peopleFilterNotice: "正在显示音乐喜好和现场记录相近的人",
+  commonLiveReason: "共同现场: {label}",
+  commonMusicReason: "共同: {label}",
+  followUserPrompt: "查看个人资料并关注吧",
+  totalPostCount: "总投稿数: {count}",
+  suggestedFriendsEmptyFiltered: "还没有符合所选标签的好友推荐。",
+  suggestedFriendsEmpty: "关注好友，让时间线更丰富吧！",
+  similarPeopleEmptyFiltered: "还没有符合所选标签的音乐伙伴。",
+  similarPeopleEmpty: "记录音乐，寻找喜好相近的人吧！",
+  popularAccountsEmptyFiltered: "还没有符合所选标签的热门账号。",
+  popularAccountsEmpty: "活跃的官方用户会显示在这里。",
   clear: "清除",
   Success: "成功",
   UpdateFailed: "保存失败",
@@ -2250,7 +2379,7 @@ const handleSaveDraft = () => {
           apiLives = fallbackLives;
         }
       } catch (error) {
-        showToast("公式ライブの取得に失敗しました。標準データを表示します", "error");
+        showToast(t('officialLiveFetchFailed'), "error");
         apiLives = fallbackLives;
       }
       let customLives: LiveCommunity[] = [];
@@ -2276,7 +2405,7 @@ const handleSaveDraft = () => {
           }));
         }
       } catch (dbErr) {
-        showToast("ユーザー作成ライブの取得に失敗しました", "error");
+        showToast(t('customLiveFetchFailed'), "error");
       }
       setRealCommunities([...apiLives, ...customLives]);
     };
@@ -2609,8 +2738,21 @@ const handleSaveDraft = () => {
     const q = communitySearchQuery.trim().toLowerCase();
     return artistCommunities.filter(c => !q || c.name.toLowerCase().includes(q) || (c.artistName || "").toLowerCase().includes(q));
   }, [artistCommunities, communitySearchQuery]);
-  const formatCountTemplate = (key: string, count: number) => String(t(key) || "").replace("{count}", String(count));
+  const formatTemplate = (key: string, values: Record<string, string | number>) =>
+    Object.entries(values).reduce((text, [name, value]) => text.replace(`{${name}}`, String(value)), String(t(key) || ""));
+  const formatCountTemplate = (key: string, count: number) => formatTemplate(key, { count });
   const formatArtistCommunityStats = (community: LiveCommunity) => formatCountTemplate('communityJoinedCount', community.memberCount || 0);
+  const formatArtistCommunityDisplayName = (community: LiveCommunity) =>
+    community.communityType === 'artist' && community.artistName
+      ? formatTemplate('artistCommunityName', { artist: community.artistName })
+      : community.name;
+  const formatCommunityDescription = (community: LiveCommunity) =>
+    community.communityType === 'artist' && community.artistName
+      ? formatTemplate('artistCommunityDescription', { artist: community.artistName })
+      : community.description;
+  const formatCommunityDate = (date: string) => date === "日程未定" ? t('dateTbd') : date;
+  const formatDatePerformances = (date: string) => formatTemplate('communityDatePerformances', { date: date.replace(/-/g, '/') });
+  const weekdayLabels = String(t('weekdaysShort') || "").split(",");
   const fetchArtistImage = async (artist: { artistId?: string | number; artistName?: string; fallbackArtworkUrl?: string }) => {
     const artistName = (artist.artistName || "").trim();
     if (!artistName) return null;
@@ -2963,8 +3105,9 @@ const handleSaveDraft = () => {
         const sharedLives = myLiveLabels.filter(l => theirLiveKeys.has(l.toLowerCase()));
         const shared = [...sharedArtists, ...sharedTags, ...sharedLives];
         const topShared = sharedArtists[0] || sharedTags[0] || sharedLives[0];
-        const sharedReason = sharedLives[0] && !sharedArtists[0] && !sharedTags[0] ? `共通ライブ: ${sharedLives[0]}` : `共通: ${topShared}`;
-        return { user: u, sharedCount: shared.length, topShared, sharedReason };
+        const sharedReasonKey = sharedLives[0] && !sharedArtists[0] && !sharedTags[0] ? 'commonLiveReason' : 'commonMusicReason';
+        const sharedReasonLabel = sharedLives[0] && !sharedArtists[0] && !sharedTags[0] ? sharedLives[0] : topShared;
+        return { user: u, sharedCount: shared.length, topShared, sharedReasonKey, sharedReasonLabel };
       })
       .filter(item => item.sharedCount > 0)
       .sort((a, b) => b.sharedCount - a.sharedCount)
@@ -5662,15 +5805,15 @@ const renderFeedCard = (s: Song) => (
                     ) : <div className="w-full h-full flex items-center justify-center text-zinc-500"><IconUsers /></div>}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-black text-white truncate">{activeArtistCommunity.name}</p>
-                    <p className="text-xs text-zinc-300 leading-relaxed mt-1">{activeArtistCommunity.description}</p>
-                    <p className="text-[11px] text-zinc-500 font-bold mt-2">{activeArtistCommunity.memberCount}人が参加中</p>
+                    <p className="text-base font-black text-white truncate">{formatArtistCommunityDisplayName(activeArtistCommunity)}</p>
+                    <p className="text-xs text-zinc-300 leading-relaxed mt-1">{formatCommunityDescription(activeArtistCommunity)}</p>
+                    <p className="text-[11px] text-zinc-500 font-bold mt-2">{formatCountTemplate('communityJoinedCount', activeArtistCommunity.memberCount)}</p>
                   </div>
                 </div>
                 {activeArtistCommunity.isJoined || chatCommunities.some(c => c.id === activeArtistCommunity.id) ? (
-                  <button onClick={() => openCommunityChat(activeArtistCommunity)} className="w-full mt-4 py-3 bg-[#1DB954] text-black rounded-xl text-xs font-bold">コミュニティを見る</button>
+                  <button onClick={() => openCommunityChat(activeArtistCommunity)} className="w-full mt-4 py-3 bg-[#1DB954] text-black rounded-xl text-xs font-bold">{t('viewCommunity')}</button>
                 ) : (
-                  <button onClick={() => joinCommunity(activeArtistCommunity)} className="w-full mt-4 py-3 bg-white text-black rounded-xl text-xs font-bold">参加する</button>
+                  <button onClick={() => joinCommunity(activeArtistCommunity)} className="w-full mt-4 py-3 bg-white text-black rounded-xl text-xs font-bold">{t('joinCommunityAction')}</button>
                 )}
               </div>
             )}
@@ -5780,9 +5923,9 @@ const renderFeedCard = (s: Song) => (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[1000] flex flex-col justify-end animate-fade-in" onClick={() => setShowCommDrumroll(false)}>
           <div className="bg-[#1c1c1e] rounded-t-3xl border-t border-zinc-800 p-8 w-full shadow-2xl relative" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-8">
-              <button onClick={() => setShowCommDrumroll(false)} className="text-zinc-500 text-xs font-bold uppercase tracking-widest">Cancel</button>
-              <h4 className="font-bold text-sm">年月を選択</h4>
-              <button onClick={() => setShowCommDrumroll(false)} className="text-white text-xs font-bold uppercase tracking-widest bg-zinc-800 px-6 py-2 rounded-full">Set</button>
+              <button onClick={() => setShowCommDrumroll(false)} className="text-zinc-500 text-xs font-bold uppercase tracking-widest">{t('cancel')}</button>
+              <h4 className="font-bold text-sm">{t('selectYearMonth')}</h4>
+              <button onClick={() => setShowCommDrumroll(false)} className="text-white text-xs font-bold uppercase tracking-widest bg-zinc-800 px-6 py-2 rounded-full">{t('set')}</button>
             </div>
             <div className="relative h-[200px] w-full flex gap-4 justify-center items-center overflow-hidden">
               {/* 💡 選択枠をピッタリ中央に配置 */}
@@ -5790,13 +5933,13 @@ const renderFeedCard = (s: Song) => (
               {/* 💡 左側：年選択（上下に75pxの余白を追加してズレを解消） */}
               <div className="relative flex-1 h-full overflow-y-auto scrollbar-hide snap-y snap-mandatory py-[75px] z-20" onScroll={e => { const st = e.currentTarget.scrollTop; const y = 2024 + Math.round(st / 50); if (y >= 2024 && y <= 2028) setCommCalDate(new Date(y, commCalDate.getMonth(), 1)); }}>
                 {[2024, 2025, 2026, 2027, 2028].map(y => (
-                  <div key={y} className={`h-[50px] flex justify-center items-center snap-center ${commCalDate.getFullYear() === y ? 'text-white font-bold text-lg' : 'text-zinc-500'}`}>{y}年</div>
+                  <div key={y} className={`h-[50px] flex justify-center items-center snap-center ${commCalDate.getFullYear() === y ? 'text-white font-bold text-lg' : 'text-zinc-500'}`}>{formatTemplate('yearSuffix', { year: y })}</div>
                 ))}
               </div>
               {/* 💡 右側：月選択（上下に75pxの余白を追加してズレを解消） */}
               <div className="relative flex-1 h-full overflow-y-auto scrollbar-hide snap-y snap-mandatory py-[75px] z-20" onScroll={e => { const st = e.currentTarget.scrollTop; const m = Math.round(st / 50) + 1; if (m >= 1 && m <= 12) setCommCalDate(new Date(commCalDate.getFullYear(), m - 1, 1)); }}>
                 {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                  <div key={m} className={`h-[50px] flex justify-center items-center snap-center ${commCalDate.getMonth() + 1 === m ? 'text-white font-bold text-lg' : 'text-zinc-500'}`}>{m.toString().padStart(2, '0')}月</div>
+                  <div key={m} className={`h-[50px] flex justify-center items-center snap-center ${commCalDate.getMonth() + 1 === m ? 'text-white font-bold text-lg' : 'text-zinc-500'}`}>{formatTemplate('monthSuffix', { month: m.toString().padStart(2, '0') })}</div>
                 ))}
               </div>
             </div>
@@ -5808,7 +5951,7 @@ const renderFeedCard = (s: Song) => (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[950] flex justify-center items-end md:items-center animate-fade-in" onClick={() => { setShowCommCalendar(false); setSelectedModalDate(null); }}>
           <div className="bg-[#1c1c1e] w-full md:max-w-[420px] h-[85vh] md:max-h-[80vh] rounded-t-[32px] md:rounded-[32px] p-6 shadow-2xl relative flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6 shrink-0">
-              <h3 className="font-bold text-lg">ライブを探す</h3>
+              <h3 className="font-bold text-lg">{t('findLive')}</h3>
               <button onClick={() => { setShowCommCalendar(false); setSelectedModalDate(null); }} className="text-zinc-500 hover:text-white"><IconCross /></button>
             </div>
             <div className="flex justify-between items-center mb-6 px-2 shrink-0">
@@ -5823,7 +5966,7 @@ const renderFeedCard = (s: Song) => (
               <button onClick={() => setCommCalDate(new Date(commCalDate.getFullYear(), commCalDate.getMonth() + 1, 1))} className="p-2 text-zinc-400 hover:text-white bg-black rounded-full"><IconChevronRight /></button>
             </div>
             <div className="grid grid-cols-7 gap-2 mb-4 shrink-0">
-              {['日', '月', '火', '水', '木', '金', '土'].map(d => <div key={d} className="text-center text-[10px] text-zinc-500 font-bold mb-2">{d}</div>)}
+              {weekdayLabels.map(d => <div key={d} className="text-center text-[10px] text-zinc-500 font-bold mb-2">{d}</div>)}
               {Array.from({ length: new Date(commCalDate.getFullYear(), commCalDate.getMonth(), 1).getDay() }).map((_, i) => <div key={`empty-${i}`} />)}
              　{Array.from({ length: new Date(commCalDate.getFullYear(), commCalDate.getMonth() + 1, 0).getDate() }).map((_, i) => {
                 const day = i + 1;
@@ -5838,7 +5981,7 @@ const renderFeedCard = (s: Song) => (
                   >
                     <span className={`text-sm ${isSelected ? 'font-black' : 'font-medium'}`}>{day}</span>
                     {eventsToday.length > 0 && (
-                      <span className={`text-[9px] font-bold mt-0.5 ${isSelected ? 'text-black' : 'text-[#1DB954]'}`}>{eventsToday.length}件</span>
+                      <span className={`text-[9px] font-bold mt-0.5 ${isSelected ? 'text-black' : 'text-[#1DB954]'}`}>{formatCountTemplate('eventCount', eventsToday.length)}</span>
                     )}
                   </div>
                 );
@@ -5847,12 +5990,12 @@ const renderFeedCard = (s: Song) => (
             <div className="flex-1 overflow-y-auto scrollbar-hide mt-4 border-t border-zinc-800 pt-4">
               {selectedModalDate ? (
                 <div className="flex flex-col gap-3 animate-fade-in">
-                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">{selectedModalDate.replace(/-/g, '/')} の公演</p>
+                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">{formatDatePerformances(selectedModalDate)}</p>
                   {realCommunities.filter(c => c.date === selectedModalDate && (c.memberCount >= 10 || c.isJoined)).map(c => (
                     <div key={c.id} onClick={() => { setActiveCommunityDetail(c); setShowCommCalendar(false); setSelectedModalDate(null); }} className="bg-black p-4 rounded-xl flex items-center justify-between cursor-pointer hover:bg-zinc-800 border border-zinc-800 transition-colors">
                       <div className="flex items-center gap-3 overflow-hidden">
                         <div className="w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center text-[#1DB954] flex-shrink-0"><IconTicket /></div>
-                        <div className="flex-1 overflow-hidden"><p className="font-bold text-sm text-white truncate">{c.name}</p><p className="text-[10px] text-zinc-500">{c.memberCount}人が参加予定</p></div>
+                        <div className="flex-1 overflow-hidden"><p className="font-bold text-sm text-white truncate">{formatArtistCommunityDisplayName(c)}</p><p className="text-[10px] text-zinc-500">{formatCountTemplate('communityScheduledCount', c.memberCount)}</p></div>
                       </div>
                       <IconChevronRight />
                     </div>
@@ -5860,12 +6003,12 @@ const renderFeedCard = (s: Song) => (
                 </div>
               ) : (
                 <div className="h-full flex items-center justify-center">
-                  <p className="text-sm text-zinc-500 font-bold">日付をタップしてライブを確認</p>
+                  <p className="text-sm text-zinc-500 font-bold">{t('tapDateToViewLives')}</p>
                 </div>
               )}
             </div>
             <button onClick={() => { setCommunityDateFilter(""); setShowCommCalendar(false); setSelectedModalDate(null); }} className="w-full mt-4 py-4 bg-zinc-800 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-zinc-700 transition-colors shrink-0">
-              すべての日程を表示
+              {t('showAllDates')}
             </button>
           </div>
         </div>
@@ -5887,7 +6030,7 @@ const renderFeedCard = (s: Song) => (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[950] flex items-center justify-center p-6 animate-fade-in" onClick={() => setActiveCommunityDetail(null)}>
           <div className="bg-[#1c1c1e] border border-zinc-800 p-8 rounded-[32px] w-full max-w-sm relative flex flex-col" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-lg">Community Detail</h3>
+              <h3 className="font-bold text-lg">{t('communityDetailTitle')}</h3>
               <button onClick={() => setActiveCommunityDetail(null)} className="text-zinc-500 hover:text-white"><IconCross /></button>
             </div>
             <div className="flex flex-col items-center mb-8">
@@ -5905,11 +6048,11 @@ const renderFeedCard = (s: Song) => (
               </div>
               {/* 💡 公式マークを表示 */}
               <h2 className="text-2xl font-black text-center mb-2 flex items-center justify-center gap-2">
-                {activeCommunityDetail.name}
+                {formatArtistCommunityDisplayName(activeCommunityDetail)}
                 {activeCommunityDetail.isVerified && <span className="text-[#1DB954] w-5 h-5 flex items-center"><IconVerified /></span>}
               </h2>
-              {activeCommunityDetail.description && <p className="text-sm text-zinc-300 text-center leading-relaxed mb-3">{activeCommunityDetail.description}</p>}
-              <p className="text-sm text-[#1DB954] font-bold mb-4">{activeCommunityDetail.communityType === 'artist' ? '常設ファンコミュニティ' : activeCommunityDetail.date}</p>
+              {formatCommunityDescription(activeCommunityDetail) && <p className="text-sm text-zinc-300 text-center leading-relaxed mb-3">{formatCommunityDescription(activeCommunityDetail)}</p>}
+              <p className="text-sm text-[#1DB954] font-bold mb-4">{activeCommunityDetail.communityType === 'artist' ? t('permanentFanCommunity') : formatCommunityDate(activeCommunityDetail.date)}</p>
               <div className="flex -space-x-3 justify-center mb-2">
                 {(() => {
                   const me = allProfiles.find(u => u.id === currentUser?.id) || myProfile;
@@ -5928,17 +6071,17 @@ const renderFeedCard = (s: Song) => (
                   );
                 })()}
               </div>
-              <p className="text-xs text-zinc-400">{activeCommunityDetail.memberCount}人が参加中</p>
+              <p className="text-xs text-zinc-400">{formatCountTemplate('communityJoinedCount', activeCommunityDetail.memberCount)}</p>
             </div>
             {chatCommunities.some(c => c.id === activeCommunityDetail.id) || activeCommunityDetail.isJoined ? (
-              <button onClick={() => openCommunityChat(activeCommunityDetail)} className="w-full py-4 bg-[#1DB954] text-black rounded-xl text-sm font-bold shadow-lg hover:scale-105 transition-transform mb-2">コミュニティを見る</button>
+              <button onClick={() => openCommunityChat(activeCommunityDetail)} className="w-full py-4 bg-[#1DB954] text-black rounded-xl text-sm font-bold shadow-lg hover:scale-105 transition-transform mb-2">{t('viewCommunity')}</button>
             ) : (
-              <button onClick={() => joinCommunity(activeCommunityDetail)} className="w-full py-4 bg-white text-black rounded-xl text-sm font-bold shadow-lg hover:scale-105 transition-transform mb-2">参加する</button>
+              <button onClick={() => joinCommunity(activeCommunityDetail)} className="w-full py-4 bg-white text-black rounded-xl text-sm font-bold shadow-lg hover:scale-105 transition-transform mb-2">{t('joinCommunityAction')}</button>
             )}
             {/* 💡 ユーザー作成の非公式ライブの場合のみ、通報ボタンを表示 */}
             {!activeCommunityDetail.isVerified && activeCommunityDetail.communityType !== 'artist' && (
               <button onClick={() => handleReportCommunity(activeCommunityDetail.id)} className="w-full py-3 bg-transparent text-zinc-600 hover:text-red-500 rounded-xl text-[10px] font-bold transition-colors flex items-center justify-center gap-1.5 mt-2">
-                <IconWarning /> このライブ情報を嘘として{t('report')}
+                <IconWarning /> {t('reportFalseLiveInfo')}
               </button>
             )}
           </div>
@@ -6554,16 +6697,16 @@ const renderFeedCard = (s: Song) => (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[950] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowCreateCommunityModal(false)}>
           <div className="bg-[#1c1c1e] border border-zinc-800 p-6 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
             <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-lg">新しくライブを作成</h3>
+              <h3 className="font-bold text-lg">{t('createLiveTitle')}</h3>
               <button onClick={() => setShowCreateCommunityModal(false)} className="text-zinc-500 hover:text-white"><IconCross /></button>
             </div>
-            <p className="text-xs text-zinc-400 mb-6 leading-relaxed">探しているライブが見つからない場合、自分で作成して同行者や仲間を募集できます。</p>
+            <p className="text-xs text-zinc-400 mb-6 leading-relaxed">{t('createLiveDescription')}</p>
             <div className="mb-4">
-              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 block">Live Name</label>
-              <input type="text" placeholder="例: Vaundy ARENA tour 2026" value={newCommName} onChange={(e) => setNewCommName(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#1DB954]" />
+              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 block">{t('liveName')}</label>
+              <input type="text" placeholder={t('liveNamePlaceholder')} value={newCommName} onChange={(e) => setNewCommName(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#1DB954]" />
             </div>
             <div className="mb-8">
-              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">Date</label>
+              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">{t('dateLabel')}</label>
               <div className="flex items-center gap-2">
                 <input
                   ref={yearInputRef}
@@ -6599,7 +6742,7 @@ const renderFeedCard = (s: Song) => (
               </div>
             </div>
             <button onClick={handleCreateCommunity} className="w-full py-4 bg-[#1DB954] text-black rounded-xl text-sm font-bold shadow-lg hover:scale-105 transition-transform flex justify-center items-center gap-2">
-              ライブを作成して参加する
+              {t('createAndJoinLive')}
             </button>
           </div>
         </div>
@@ -7221,7 +7364,7 @@ const renderFeedCard = (s: Song) => (
                 </div>
                 {hasPeopleMusicFilter && (
                   <div className="mb-5 mx-1 rounded-2xl border border-[#1DB954]/20 bg-[#1DB954]/10 px-4 py-3">
-                    <p className="text-[11px] font-bold text-[#1DB954]">好きな音楽・ライブ履歴が近い人を表示中</p>
+                    <p className="text-[11px] font-bold text-[#1DB954]">{t('peopleFilterNotice')}</p>
                   </div>
                 )}
                 {(allAvailableHashtags.length > 0 || allAvailableLiveHistories.length > 0) && (
@@ -7261,16 +7404,16 @@ const renderFeedCard = (s: Song) => (
                         <div className="flex-1">
                           <p className="font-bold text-[15px] text-white flex items-center gap-1">{u.name} {(u as any).isVerified && <IconVerified />}</p>
                           <p className="text-[11px] text-zinc-400 mt-0.5">@{u.handle}</p>
-                          {mutualCount > 0 && <p className="text-[10px] text-zinc-500 mt-1">{mutualCount}人の共通の友達</p>}
+                          {mutualCount > 0 && <p className="text-[10px] text-zinc-500 mt-1">{formatCountTemplate('mutualFriendsCount', mutualCount)}</p>}
                         </div>
                       </div>
-                      <button onClick={() => toggleFollow(u.id)} className={`px-5 py-2 rounded-full text-[11px] font-bold transition-colors ${followedUsers.has(u.id) ? 'bg-transparent border border-zinc-700 text-zinc-400' : 'bg-zinc-800 hover:bg-zinc-700 text-white'}`}>{followedUsers.has(u.id) ? 'フォロー中' : '追加'}</button>
+                      <button onClick={() => toggleFollow(u.id)} className={`px-5 py-2 rounded-full text-[11px] font-bold transition-colors ${followedUsers.has(u.id) ? 'bg-transparent border border-zinc-700 text-zinc-400' : 'bg-zinc-800 hover:bg-zinc-700 text-white'}`}>{followedUsers.has(u.id) ? t('following') : t('add')}</button>
                     </div>
-                  )) : <p className="text-xs text-zinc-500 px-3 py-4 bg-[#1c1c1e]/50 rounded-2xl border border-zinc-800/50">{hasPeopleMusicFilter ? '選択したタグに合う友達候補がまだいません。' : '友達をフォローして、タイムラインを充実させましょう！'}</p>}
+                  )) : <p className="text-xs text-zinc-500 px-3 py-4 bg-[#1c1c1e]/50 rounded-2xl border border-zinc-800/50">{t(hasPeopleMusicFilter ? 'suggestedFriendsEmptyFiltered' : 'suggestedFriendsEmpty')}</p>}
                 </div>
                 <div className="mb-10">
                   <p className="text-xs font-bold text-white mb-4 px-2">{t('similarPeople')}</p>
-                  {filteredSimilarMusicUsers.length > 0 ? filteredSimilarMusicUsers.map(({ user: u, sharedReason }) => (
+                  {filteredSimilarMusicUsers.length > 0 ? filteredSimilarMusicUsers.map(({ user: u, sharedReasonKey, sharedReasonLabel }) => (
                     <div key={u.id} className="flex items-center justify-between py-3 px-3 hover:bg-zinc-800/30 rounded-2xl transition-colors">
                       <div className="flex items-center gap-4 cursor-pointer flex-1" onClick={() => { setViewingUser(u); setActiveTab('other_profile'); }}>
                         <div className="relative">
@@ -7280,13 +7423,13 @@ const renderFeedCard = (s: Song) => (
                         <div className="flex-1">
                           <p className="font-bold text-[15px] text-white flex items-center gap-1">{u.name} {(u as any).isVerified && <IconVerified />}</p>
                           <p className="text-[11px] text-zinc-400 mt-0.5">@{u.handle}</p>
-                          <p className="text-[10px] text-[#1DB954] mt-1.5 font-bold">{sharedReason}</p>
-                          <p className="text-[10px] text-zinc-500 mt-1">プロフィールを見てフォローしてみよう</p>
+                          <p className="text-[10px] text-[#1DB954] mt-1.5 font-bold">{formatTemplate(sharedReasonKey, { label: sharedReasonLabel })}</p>
+                          <p className="text-[10px] text-zinc-500 mt-1">{t('followUserPrompt')}</p>
                         </div>
                       </div>
-                      <button onClick={() => toggleFollow(u.id)} className={`px-5 py-2 rounded-full text-[11px] font-bold transition-colors ${followedUsers.has(u.id) ? 'bg-transparent border border-zinc-700 text-zinc-400' : 'bg-zinc-800 hover:bg-zinc-700 text-white'}`}>{followedUsers.has(u.id) ? 'フォロー中' : 'フォロー'}</button>
+                      <button onClick={() => toggleFollow(u.id)} className={`px-5 py-2 rounded-full text-[11px] font-bold transition-colors ${followedUsers.has(u.id) ? 'bg-transparent border border-zinc-700 text-zinc-400' : 'bg-zinc-800 hover:bg-zinc-700 text-white'}`}>{followedUsers.has(u.id) ? t('following') : t('follow')}</button>
                     </div>
-                  )) : <p className="text-xs text-zinc-500 px-3 py-4 bg-[#1c1c1e]/50 rounded-2xl border border-zinc-800/50">{hasPeopleMusicFilter ? '選択したタグに合う音楽仲間がまだいません。' : '音楽を記録して、好みの合う人を探しましょう！'}</p>}
+                  )) : <p className="text-xs text-zinc-500 px-3 py-4 bg-[#1c1c1e]/50 rounded-2xl border border-zinc-800/50">{t(hasPeopleMusicFilter ? 'similarPeopleEmptyFiltered' : 'similarPeopleEmpty')}</p>}
                 </div>
                 <div className="mb-10">
                   <p className="text-xs font-bold text-white mb-4 px-2">{t('popularAccounts')}</p>
@@ -7300,12 +7443,12 @@ const renderFeedCard = (s: Song) => (
                         <div className="flex-1">
                           <p className="font-bold text-[15px] text-white flex items-center gap-1">{u.name} {(u as any).isVerified && <IconVerified />}</p>
                           <p className="text-[11px] text-zinc-400 mt-0.5">@{u.handle}</p>
-                          <p className="text-[10px] text-orange-500 mt-1.5 font-bold">総投稿数: {postCount}件</p>
+                          <p className="text-[10px] text-orange-500 mt-1.5 font-bold">{formatCountTemplate('totalPostCount', postCount)}</p>
                         </div>
                       </div>
-                      <button onClick={() => toggleFollow(u.id)} className={`px-5 py-2 rounded-full text-[11px] font-bold transition-colors ${followedUsers.has(u.id) ? 'bg-transparent border border-zinc-700 text-zinc-400' : 'bg-zinc-800 hover:bg-zinc-700 text-white'}`}>{followedUsers.has(u.id) ? 'フォロー中' : '追加'}</button>
+                      <button onClick={() => toggleFollow(u.id)} className={`px-5 py-2 rounded-full text-[11px] font-bold transition-colors ${followedUsers.has(u.id) ? 'bg-transparent border border-zinc-700 text-zinc-400' : 'bg-zinc-800 hover:bg-zinc-700 text-white'}`}>{followedUsers.has(u.id) ? t('following') : t('add')}</button>
                     </div>
-                  )) : <p className="text-xs text-zinc-500 px-3 py-4 bg-[#1c1c1e]/50 rounded-2xl border border-zinc-800/50">{hasPeopleMusicFilter ? '選択したタグに合う人気アカウントがまだありません。' : '投稿が活発な公式ユーザーがここに表示されます。'}</p>}
+                  )) : <p className="text-xs text-zinc-500 px-3 py-4 bg-[#1c1c1e]/50 rounded-2xl border border-zinc-800/50">{t(hasPeopleMusicFilter ? 'popularAccountsEmptyFiltered' : 'popularAccountsEmpty')}</p>}
                 </div>
               </div>
             )}
@@ -7318,13 +7461,13 @@ const renderFeedCard = (s: Song) => (
                   {communitySearchFocused && suggestedCommunities.length > 0 && (
                     <div className="absolute top-full left-0 w-full mt-2 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden z-50 shadow-2xl">
                       {suggestedCommunities.map(c => (
-                        <div key={c.id} onMouseDown={(e) => { e.preventDefault(); setActiveCommunityDetail(c); }} className="flex items-center gap-3 p-3 text-xs text-white hover:bg-zinc-700 cursor-pointer border-b border-zinc-700 last:border-0"><IconTicket /><span className="font-bold">{c.name}</span></div>
+                        <div key={c.id} onMouseDown={(e) => { e.preventDefault(); setActiveCommunityDetail(c); }} className="flex items-center gap-3 p-3 text-xs text-white hover:bg-zinc-700 cursor-pointer border-b border-zinc-700 last:border-0"><IconTicket /><span className="font-bold">{formatArtistCommunityDisplayName(c)}</span></div>
                       ))}
                     </div>
                   )}
                 </div>
                 <div onClick={() => setShowCommCalendar(true)} className="mb-6 relative bg-[#1c1c1e] p-4 rounded-xl flex items-center justify-between cursor-pointer hover:bg-zinc-800 transition-colors shadow-sm">
-                  <div className="flex items-center gap-3"><IconCalendar /><span className="text-sm font-bold text-white">{communityDateFilter ? `${communityDateFilter.replace(/-/g, '/')} の公演` : t('searchFromCalendar')}</span></div>
+                  <div className="flex items-center gap-3"><IconCalendar /><span className="text-sm font-bold text-white">{communityDateFilter ? formatDatePerformances(communityDateFilter) : t('searchFromCalendar')}</span></div>
                   {communityDateFilter ? <button onClick={(e) => { e.stopPropagation(); setCommunityDateFilter(""); }} className="w-6 h-6 bg-zinc-800 rounded-full flex items-center justify-center text-zinc-400 hover:text-white"><IconCross /></button> : <IconChevronRight />}
                 </div>
                 {visibleArtistCommunities.length > 0 && (
@@ -7347,7 +7490,7 @@ const renderFeedCard = (s: Song) => (
                               ) : <div className="w-full h-full flex items-center justify-center text-zinc-500"><IconUsers /></div>}
                             </div>
                             <div className="flex-1 overflow-hidden">
-                              <p className="font-bold text-sm text-white truncate group-hover:text-[#1DB954] transition-colors">{c.name}</p>
+                              <p className="font-bold text-sm text-white truncate group-hover:text-[#1DB954] transition-colors">{formatArtistCommunityDisplayName(c)}</p>
                               <p className="text-[10px] text-zinc-500 truncate">{formatArtistCommunityStats(c)}</p>
                             </div>
                           </div>
@@ -7364,8 +7507,8 @@ const renderFeedCard = (s: Song) => (
                       <div className="flex items-center gap-4 flex-1 overflow-hidden">
                         <span className="w-6 h-6 rounded-full bg-zinc-800 text-zinc-400 font-bold text-[10px] flex items-center justify-center flex-shrink-0">{i + 1}</span>
                         <div className="flex-1 overflow-hidden">
-                          <p className="font-bold text-sm text-white truncate group-hover:text-[#1DB954] transition-colors flex items-center gap-1.5">{c.name} {c.isVerified && <span className="text-[#1DB954] w-3.5 h-3.5 flex items-center"><IconVerified /></span>}</p>
-                          <p className="text-[10px] text-zinc-500">{c.date} • {c.memberCount}人が参加中</p>
+                          <p className="font-bold text-sm text-white truncate group-hover:text-[#1DB954] transition-colors flex items-center gap-1.5">{formatArtistCommunityDisplayName(c)} {c.isVerified && <span className="text-[#1DB954] w-3.5 h-3.5 flex items-center"><IconVerified /></span>}</p>
+                          <p className="text-[10px] text-zinc-500">{formatCommunityDate(c.date)} • {formatCountTemplate('communityJoinedCount', c.memberCount)}</p>
                         </div>
                       </div>
                       <IconChevronRight />
