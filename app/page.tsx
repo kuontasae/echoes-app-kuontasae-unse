@@ -266,6 +266,22 @@ Object.assign(localI18n["日本語"], {
   SaveFailed: "保存に失敗しました",
   DeleteSuccess: "削除しました",
   PermissionDenied: "権限がありません",
+  CommentTooLong: "コメントが長すぎます",
+  DataFetchFailed: "データの取得に失敗しました",
+  CaptionTooLong: "キャプションが長すぎます",
+  LengthLimitExceeded: "文字数の上限を超えています",
+  TextLimitExceeded: "テキストが長すぎます",
+  TooManyFiles: "ファイル数が多すぎます",
+  InvalidDateFormat: "日付の形式が正しくありません",
+  InvalidCalendarDate: "存在しない日付です",
+  DatabaseInsertFailed: "データの保存に失敗しました",
+  MembershipSaveFailed: "参加情報の保存に失敗しました",
+  ReportAlreadySubmitted: "すでに通報済みです",
+  InvalidFileType: "このファイル形式は使えません",
+  FileSizeLimitExceeded: "ファイルサイズが大きすぎます",
+  Uploading: "アップロードしています...",
+  AudioSizeLimitExceeded: "音声ファイルが大きすぎます",
+  VoiceSendFailed: "音声の送信に失敗しました",
   feedShare: "シェア",
   feedDelete: "削除",
   feedLike: "いいね",
@@ -694,6 +710,22 @@ Object.assign(localI18n["English"], {
   SaveFailed: "Failed to save",
   DeleteSuccess: "Deleted",
   PermissionDenied: "You do not have permission",
+  CommentTooLong: "Comment is too long",
+  DataFetchFailed: "Could not load data",
+  CaptionTooLong: "Caption is too long",
+  LengthLimitExceeded: "Text is too long",
+  TextLimitExceeded: "Text is too long",
+  TooManyFiles: "Too many files",
+  InvalidDateFormat: "Invalid date format",
+  InvalidCalendarDate: "Invalid date",
+  DatabaseInsertFailed: "Could not save data",
+  MembershipSaveFailed: "Could not save membership",
+  ReportAlreadySubmitted: "Already reported",
+  InvalidFileType: "File type not supported",
+  FileSizeLimitExceeded: "File is too large",
+  Uploading: "Uploading...",
+  AudioSizeLimitExceeded: "Audio file is too large",
+  VoiceSendFailed: "Could not send voice message",
   feedShare: "Share",
   feedDelete: "Delete",
   feedLike: "Like",
@@ -1123,6 +1155,22 @@ Object.assign(localI18n["中文"], {
   SaveFailed: "保存失败",
   DeleteSuccess: "已删除",
   PermissionDenied: "没有操作权限",
+  CommentTooLong: "评论过长",
+  DataFetchFailed: "数据获取失败",
+  CaptionTooLong: "说明文字过长",
+  LengthLimitExceeded: "文字过长",
+  TextLimitExceeded: "文本过长",
+  TooManyFiles: "文件数量过多",
+  InvalidDateFormat: "日期格式无效",
+  InvalidCalendarDate: "日期无效",
+  DatabaseInsertFailed: "数据保存失败",
+  MembershipSaveFailed: "参加信息保存失败",
+  ReportAlreadySubmitted: "已举报过",
+  InvalidFileType: "不支持此文件类型",
+  FileSizeLimitExceeded: "文件过大",
+  Uploading: "上传中...",
+  AudioSizeLimitExceeded: "音频文件过大",
+  VoiceSendFailed: "语音发送失败",
   feedShare: "分享",
   feedDelete: "删除",
   feedLike: "点赞",
@@ -2261,7 +2309,7 @@ const handleSaveDraft = () => {
   const trimmedInput = articleCommentInput.trim();
   if (!trimmedInput || !currentUser || !viewingArticle) return;
   if (trimmedInput.length > 500) {
-    showToast("CommentTooLong", "error");
+    showToast(t("CommentTooLong"), "error");
     return;
   }
   const escapeHtml = (str: string) => str.replace(/[<&>]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c));
@@ -3652,7 +3700,7 @@ const handleSaveDraft = () => {
     setHasMoreVibes(vibesData.length === VIBES_PER_PAGE);
     setVibePage(pageNumber);
   } catch (error) {
-    showToast("DataFetchFailed", "error");
+    showToast(t("DataFetchFailed"), "error");
   } finally {
     setIsLoadingVibes(false);
   }
@@ -4090,7 +4138,7 @@ const handleSaveDraft = () => {
   }
   const tCaption = draftCaption.trim();
   if (tCaption.length > 300) {
-    showToast("CaptionTooLong", "error");
+    showToast(t("CaptionTooLong"), "error");
     return;
   }
   const escapeHtml = (str: string) => str.replace(/[<&>]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c));
@@ -4222,7 +4270,7 @@ const handleSaveDraft = () => {
     return;
   }
   if (trimmedInput.length > 200) {
-    showToast("LengthLimitExceeded", "error");
+    showToast(t("LengthLimitExceeded"), "error");
     return;
   }
   const sanitizedText = trimmedInput.replace(/[<&>]/g, (char) => {
@@ -4305,11 +4353,11 @@ const handleSaveDraft = () => {
     return;
   }
   if (textToSend.length > 1000) {
-    showToast("TextLimitExceeded", "error");
+    showToast(t("TextLimitExceeded"), "error");
     return;
   }
   if (attachmentsToSend.length > 5) {
-    showToast("TooManyFiles", "error");
+    showToast(t("TooManyFiles"), "error");
     return;
   }
   const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -4715,12 +4763,12 @@ const handleSaveDraft = () => {
   const m = parseInt(newCommMonth, 10);
   const d = parseInt(newCommDay, 10);
   if (isNaN(y) || isNaN(m) || isNaN(d) || y < 2024 || m < 1 || m > 12 || d < 1 || d > 31) {
-    showToast("InvalidDateFormat", "error");
+    showToast(t("InvalidDateFormat"), "error");
     return;
   }
   const testDate = new Date(y, m - 1, d);
   if (testDate.getFullYear() !== y || testDate.getMonth() !== m - 1 || testDate.getDate() !== d) {
-    showToast("InvalidCalendarDate", "error");
+    showToast(t("InvalidCalendarDate"), "error");
     return;
   }
   const escapeHtml = (str: string) => str.replace(/[<&>]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c));
@@ -4735,7 +4783,7 @@ const handleSaveDraft = () => {
       creator_id: currentUser.id
     }]);
     if (commError) {
-      showToast("DatabaseInsertFailed", "error");
+      showToast(t("DatabaseInsertFailed"), "error");
       return;
     }
     const { error: memberError } = await supabase.from('community_members').insert([{
@@ -4743,7 +4791,7 @@ const handleSaveDraft = () => {
       user_id: currentUser.id
     }]);
     if (memberError) {
-      showToast("MembershipSaveFailed", "error");
+      showToast(t("MembershipSaveFailed"), "error");
       return;
     }
     const newComm = {
@@ -4775,7 +4823,7 @@ const handleSaveDraft = () => {
   
   const target = realCommunities.find(c => c.id === id);
   if (target?.reportedBy?.includes(currentUser.id)) {
-    showToast("ReportAlreadySubmitted", "error");
+    showToast(t("ReportAlreadySubmitted"), "error");
     return;
   }
 
@@ -4863,17 +4911,17 @@ const handleDeleteCommunity = async (id: string) => {
     return;
   }
   if (!file.type.startsWith("image/")) {
-    showToast("InvalidFileType", "error");
+    showToast(t("InvalidFileType"), "error");
     e.target.value = "";
     return;
   }
   const MAX_FILE_SIZE = 5 * 1024 * 1024;
   if (file.size > MAX_FILE_SIZE) {
-    showToast("FileSizeLimitExceeded", "error");
+    showToast(t("FileSizeLimitExceeded"), "error");
     e.target.value = "";
     return;
   }
-  showToast("Uploading", "success");
+  showToast(t("Uploading"), "success");
   try {
     let uploadFile = file;
     try {
@@ -4992,7 +5040,7 @@ const handleDeleteCommunity = async (id: string) => {
 	  }
 	  const MAX_AUDIO_SIZE = 15 * 1024 * 1024;
   if (draftVoice.blob.size > MAX_AUDIO_SIZE) {
-    showToast("AudioSizeLimitExceeded", "error");
+    showToast(t("AudioSizeLimitExceeded"), "error");
     return;
   }
   const tempVoice = draftVoice;
@@ -5024,7 +5072,7 @@ const handleDeleteCommunity = async (id: string) => {
       });
     }
   } catch (err) {
-    showToast("VoiceSendFailed", "error");
+    showToast(t("VoiceSendFailed"), "error");
     setChatHistory(prev => ({ ...prev, [activeChatUserId]: (prev[activeChatUserId] || []).filter(m => m.id !== tempId) }));
   }
 };
@@ -6352,7 +6400,7 @@ const renderFeedCard = (s: Song) => (
 
 	  const commentText = chatMusicComment.trim();
   if (commentText.length > 500) {
-    showToast("TextLimitExceeded", "error");
+    showToast(t("TextLimitExceeded"), "error");
     return;
   }
 
