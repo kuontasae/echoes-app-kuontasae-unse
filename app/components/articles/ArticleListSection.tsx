@@ -50,6 +50,11 @@ type ArticleListSectionProps = {
     drafts: string;
     emptyArticles: string;
     emptyDrafts: string;
+    draftUntitled: string;
+    draftNoContent: string;
+    share: string;
+    edit: string;
+    delete: string;
   };
   onChangeTab: (mode: ArticleTabMode) => void;
   onOpenWriter: () => void;
@@ -100,10 +105,10 @@ export const ArticleListSection: React.FC<ArticleListSectionProps> = ({
         {draftArticles.length > 0 ? draftArticles.map((draft) => (
           <div key={draft.id} onClick={() => onOpenDraft(draft)} className="bg-[#1c1c1e] rounded-2xl p-5 shadow-lg border border-zinc-800 cursor-pointer hover:bg-zinc-800/50 transition-colors border-l-4 border-l-[#1DB954] relative group">
             <div className="flex justify-between items-start mb-3">
-              <h3 className="font-bold text-[17px] text-white truncate pr-10">{draft.title || "無題の下書き"}</h3>
+              <h3 className="font-bold text-[17px] text-white truncate pr-10">{draft.title || labels.draftUntitled}</h3>
               <span className="text-[10px] font-bold text-zinc-400 bg-zinc-900 px-2 py-1 rounded-md shrink-0">{draft.date}</span>
             </div>
-            <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">{draft.content.replace(/<[^>]*>/g, '') || "本文がありません"}</p>
+            <p className="text-xs text-zinc-500 line-clamp-2 leading-relaxed">{draft.content.replace(/<[^>]*>/g, '') || labels.draftNoContent}</p>
             <button onClick={(e) => {
               e.stopPropagation();
               onDeleteDraft(draft.id);
@@ -143,11 +148,11 @@ export const ArticleListSection: React.FC<ArticleListSectionProps> = ({
               </div>
             </div>
             <div className="absolute top-3 right-3 flex items-center gap-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
-              <button onClick={(e) => { e.stopPropagation(); onShareArticle(article); }} className="w-8 h-8 rounded-full bg-black/60 text-zinc-400 hover:text-white hover:bg-black flex items-center justify-center transition-colors" title="シェア"><IconShareExternal /></button>
+              <button onClick={(e) => { e.stopPropagation(); onShareArticle(article); }} className="w-8 h-8 rounded-full bg-black/60 text-zinc-400 hover:text-white hover:bg-black flex items-center justify-center transition-colors" title={labels.share}><IconShareExternal /></button>
               {article.author.id === myProfileId && (
                 <>
-                  <button onClick={(e) => { e.stopPropagation(); onStartEditingArticle(article); }} className="w-8 h-8 rounded-full bg-black/60 text-zinc-400 hover:text-white hover:bg-black flex items-center justify-center transition-colors" title="編集"><IconEdit2 /></button>
-                  <button onClick={(e) => { e.stopPropagation(); onDeleteArticle(article.id); }} className="w-8 h-8 rounded-full bg-black/60 text-zinc-400 hover:text-red-400 hover:bg-black flex items-center justify-center transition-colors" title="削除"><IconTrash /></button>
+                  <button onClick={(e) => { e.stopPropagation(); onStartEditingArticle(article); }} className="w-8 h-8 rounded-full bg-black/60 text-zinc-400 hover:text-white hover:bg-black flex items-center justify-center transition-colors" title={labels.edit}><IconEdit2 /></button>
+                  <button onClick={(e) => { e.stopPropagation(); onDeleteArticle(article.id); }} className="w-8 h-8 rounded-full bg-black/60 text-zinc-400 hover:text-red-400 hover:bg-black flex items-center justify-center transition-colors" title={labels.delete}><IconTrash /></button>
                 </>
               )}
             </div>
