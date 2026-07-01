@@ -364,7 +364,32 @@ Object.assign(localI18n["中文"], {
   artistFavoriteCountSuffix: "人收藏",
   FavoriteSaved: "已加入收藏",
   FavoriteRemoved: "已取消收藏",
-  ArtistFavoritesSetupRequired: "收藏保存尚未准备好"
+  ArtistFavoritesSetupRequired: "收藏保存尚未准备好",
+  WeakPassword: "密码需至少8个字符，并包含字母和数字。",
+  InvalidEmailFormat: "请输入有效的邮箱地址",
+  AuthFailed: "登录失败",
+  SignupFailed: "注册失败",
+  EmailAlreadyInUse: "该邮箱地址已被注册",
+  ProfileCreationError: "个人资料创建失败",
+  BioTooLong: "个人简介请控制在160个字符以内",
+  ProfileSaved: "个人资料已保存",
+  MusicProfileRequired: "请至少添加一个喜欢的音乐偏好",
+  MusicProfileSaved: "音乐资料已保存",
+  OnboardingPrompt: "添加你喜欢的音乐，让大家更容易与你连接",
+  TermsAgreementRequired: "需要同意服务条款和隐私政策",
+  LoggingOut: "正在退出登录...",
+  DeletingAccount: "正在删除账号",
+  CopiedUrl: "已复制URL到剪贴板。",
+  BlockUserConfirm: "要拉黑此用户吗？\n（你们将无法互相看到帖子和个人资料。）",
+  UserBlocked: "已拉黑用户",
+  BlockFailed: "拉黑失败",
+  UserUnblocked: "已解除拉黑",
+  NetworkError: "发生网络错误",
+  ReportUserConfirm: "要举报此用户吗？\n（运营团队会审核内容并采取适当处理。）",
+  UserReported: "举报已提交。感谢你的协助。",
+  ReportFailed: "举报提交失败",
+  HelpSupportContent: "客服邮箱: echos.jpn@gmail.com\n\n工作人员会在24小时内回复。",
+  AppInfoContent: "版本: 42.0.0\n\nEchoes 是一款通过音乐记录日常的新型社交应用。"
 });
 function MainApp() {
   const searchParams = useSearchParams();
