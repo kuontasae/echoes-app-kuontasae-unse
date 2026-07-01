@@ -342,6 +342,8 @@ Object.assign(localI18n["日本語"], {
   songPostOverwrite: "上書きする",
   songPostRecordAria: "{title}を記録する",
   aiRecommendationsEmpty: "もう少し曲を記録すると、あなたに合う曲を提案できます。",
+  aiRecommendationsAnalyzingFromHistory: "過去の記録から、あなたにおすすめの曲を分析しています...",
+  aiRecommendationsFromArtists: "{artists} などの傾向から、今のあなたにぴったりな3曲をピックアップしました。",
   popularSongsInJapan: "日本の人気曲",
   recommendedSongs: "おすすめ曲",
   matchPercentSuffix: "% マッチ",
@@ -833,6 +835,8 @@ Object.assign(localI18n["English"], {
   songPostOverwrite: "Overwrite",
   songPostRecordAria: "Record {title}",
   aiRecommendationsEmpty: "Record a few more songs to get recommendations for you.",
+  aiRecommendationsAnalyzingFromHistory: "Analyzing your past records for songs you may like...",
+  aiRecommendationsFromArtists: "Based on trends like {artists}, we picked 3 songs for you.",
   popularSongsInJapan: "Popular Songs in Japan",
   recommendedSongs: "Recommended Songs",
   matchPercentSuffix: "% match",
@@ -1325,6 +1329,8 @@ Object.assign(localI18n["中文"], {
   songPostOverwrite: "覆盖",
   songPostRecordAria: "记录{title}",
   aiRecommendationsEmpty: "再记录几首歌后，就能为你推荐合适的歌曲。",
+  aiRecommendationsAnalyzingFromHistory: "正在根据过去的记录分析适合你的歌曲...",
+  aiRecommendationsFromArtists: "根据 {artists} 等倾向，为你精选了3首歌曲。",
   popularSongsInJapan: "日本热门歌曲",
   recommendedSongs: "推荐歌曲",
   matchPercentSuffix: "% 匹配",
@@ -2644,7 +2650,7 @@ const handleSaveDraft = () => {
   const [isPosting, setIsPosting] = useState(false); // 💡 二重投稿防止（連打ロック）用の箱
   const [showPostSuccessCard, setShowPostSuccessCard] = useState(false);
   const [aiRecommendations, setAiRecommendations] = useState<any[]>([]); // 💡 AIが選んだ3曲を入れる箱
-  const [aiMessage, setAiMessage] = useState("過去の記録から、あなたにおすすめの曲を分析しています..."); // 💡 AIの分析メッセージ
+  const [aiMessage, setAiMessage] = useState(t('aiRecommendationsAnalyzingFromHistory')); // 💡 AIの分析メッセージ
   const [isAiRecommendationsLoading, setIsAiRecommendationsLoading] = useState(false);
   const [activeArtistProfile, setActiveArtistProfile] = useState<any>(null);
   const [artistSongs, setArtistSongs] = useState<any[]>([]);
@@ -3711,7 +3717,7 @@ const handleSaveDraft = () => {
       return;
     }
 
-    const fallbackMessage = `${myRecentArtistSeeds.join(', ')} などの傾向から、今のあなたにぴったりな3曲をピックアップしました。`;
+    const fallbackMessage = t('aiRecommendationsFromArtists').replace('{artists}', myRecentArtistSeeds.join(', '));
     setAiMessage(fallbackMessage);
     setIsAiRecommendationsLoading(true);
     const controller = new AbortController();
