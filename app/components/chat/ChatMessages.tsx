@@ -6,11 +6,26 @@ import { IconPlay, IconStop } from "../../Icons";
 
 const IconTrash = () => <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>;
 
+type ChatMessageWithReadCount = ChatMessage & { readCount?: number };
+
 type ChatMessagesProps = {
   activeChatUserId: string;
   messages: ChatMessage[];
   allProfiles: User[];
   currentUserId?: string;
+  labels: {
+    unknownFile: string;
+    fileSize: string;
+    fileSizeUnknown: string;
+    unsend: string;
+    cancel: string;
+    unsendConfirmTitle: string;
+    unsendConfirmDescriptionLine1: string;
+    unsendConfirmDescriptionLine2: string;
+    unsendConfirmAction: string;
+    read: string;
+    readCount: string;
+  };
   timeZone: string;
   playingSong: string | null;
   activeMenuId: string | null;
@@ -31,6 +46,7 @@ export function ChatMessages({
   messages,
   allProfiles,
   currentUserId,
+  labels,
   timeZone,
   playingSong,
   activeMenuId,
@@ -47,7 +63,7 @@ export function ChatMessages({
 }: ChatMessagesProps) {
   return (
     <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-4">
-      {messages.map((msg: any) => {
+      {messages.map((msg: ChatMessageWithReadCount) => {
         const sender = allProfiles.find(u => u.id === msg.senderId);
         const isMe = msg.senderId === currentUserId;
         const isHighlighted = jumpToMessageId === msg.id;
@@ -81,7 +97,7 @@ export function ChatMessages({
                 ) : msg.text.startsWith('[FILE]') ? (
                   (() => {
                     const parts = msg.text.replace('[FILE]', '').split('|');
-                    const fileName = parts[0] || "不明なファイル";
+                    const fileName = parts[0] || labels.unknownFile;
                     const fileUrl = parts[1] || "#";
                     const extMatch = fileName.match(/\.([a-zA-Z0-9]+)$/);
                     const ext = extMatch ? extMatch[1].toUpperCase() : 'FILE';
@@ -92,7 +108,7 @@ export function ChatMessages({
                         </div>
                         <div className="flex-1 overflow-hidden flex flex-col justify-center">
                           <span className="text-[14px] font-bold truncate leading-tight text-white mb-0.5">{fileName}</span>
-                          <span className="text-[10px] font-bold text-zinc-400">{ext} • {parts[2] ? `サイズ: ${parts[2]}` : "サイズ情報なし"}</span>
+                          <span className="text-[10px] font-bold text-zinc-400">{ext} • {parts[2] && parts[2] !== 'Unknown' ? labels.fileSize.replace('{size}', parts[2]) : labels.fileSizeUnknown}</span>
                         </div>
                       </a>
                     );
@@ -123,10 +139,10 @@ export function ChatMessages({
                     <div className="fixed inset-0 z-40" onClick={(e) => { e.stopPropagation(); onSetActiveMenuId(null); }}></div>
                     <div className={`absolute top-full ${isMe ? 'right-0' : 'left-0'} mt-2 bg-[#2c2c2e] border border-zinc-700 rounded-xl shadow-2xl z-50 overflow-hidden min-w-[160px] animate-fade-in flex flex-col`}>
                       <button onClick={(e) => { e.stopPropagation(); onSetActiveMenuId(msg.id + '_confirm'); }} className="w-full text-left px-4 py-3 text-sm text-red-500 font-bold hover:bg-zinc-700 transition-colors flex items-center gap-2">
-                        <IconTrash /> 送信取消
+                        <IconTrash /> {labels.unsend}
                       </button>
                       <button onClick={(e) => { e.stopPropagation(); onSetActiveMenuId(null); }} className="w-full text-left px-4 py-3 text-sm text-white hover:bg-zinc-700 transition-colors border-t border-zinc-700">
-                        キャンセル
+                        {labels.cancel}
                       </button>
                     </div>
                   </>
@@ -135,11 +151,11 @@ export function ChatMessages({
                   <div className="fixed inset-0 z-[1300] flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={(e) => { e.stopPropagation(); onSetActiveMenuId(null); }}>
                     <div className="bg-[#1c1c1e] rounded-3xl p-6 w-full max-w-xs shadow-2xl border border-zinc-800 flex flex-col items-center text-center" onClick={(e) => e.stopPropagation()}>
                       <div className="w-14 h-14 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mb-4"><IconTrash /></div>
-                      <h3 className="text-lg font-bold text-white mb-2">送信を取り消しますか？</h3>
-                      <p className="text-xs text-zinc-400 mb-6 leading-relaxed">相手の画面からもこのメッセージや写真が<br/>完全に削除されます。</p>
+                      <h3 className="text-lg font-bold text-white mb-2">{labels.unsendConfirmTitle}</h3>
+                      <p className="text-xs text-zinc-400 mb-6 leading-relaxed">{labels.unsendConfirmDescriptionLine1}<br/>{labels.unsendConfirmDescriptionLine2}</p>
                       <div className="flex gap-3 w-full">
-                        <button onClick={(e) => { e.stopPropagation(); onSetActiveMenuId(null); }} className="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition-colors">キャンセル</button>
-                        <button onClick={(e) => { e.stopPropagation(); onDeleteMessage(msg.id, activeChatUserId); onSetActiveMenuId(null); }} className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-bold transition-colors shadow-lg">取り消す</button>
+                        <button onClick={(e) => { e.stopPropagation(); onSetActiveMenuId(null); }} className="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition-colors">{labels.cancel}</button>
+                        <button onClick={(e) => { e.stopPropagation(); onDeleteMessage(msg.id, activeChatUserId); onSetActiveMenuId(null); }} className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl text-xs font-bold transition-colors shadow-lg">{labels.unsendConfirmAction}</button>
                       </div>
                     </div>
                   </div>
@@ -149,7 +165,7 @@ export function ChatMessages({
                 <span className="text-[9px] text-zinc-500">{displayLocalTime(msg.timestamp, timeZone)}</span>
                 {isMe && msg.isRead && (
                   <span className="text-[9px] text-[#1DB954] font-bold">
-                    {activeChatUserId.startsWith('g') || activeChatUserId.startsWith('com') || activeChatUserId.startsWith('artist:') ? `既読 ${(msg as any).readCount || 0}` : '既読'}
+                    {activeChatUserId.startsWith('g') || activeChatUserId.startsWith('com') || activeChatUserId.startsWith('artist:') ? labels.readCount.replace('{count}', String(msg.readCount || 0)) : labels.read}
                   </span>
                 )}
               </div>

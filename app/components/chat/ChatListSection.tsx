@@ -10,6 +10,19 @@ type ChatListLabels = {
   chat: string;
   friendsChat: string;
   groupsChat: string;
+  createGroup: string;
+  userFallback: string;
+  voiceMessage: string;
+  imageSent: string;
+  fileSent: string;
+  sendPrompt: string;
+  emptyMessages: string;
+  groupsSection: string;
+  joined: string;
+  artistCommunities: string;
+  liveCommunities: string;
+  membersCount: string;
+  emptyGroups: string;
 };
 
 type ChatListSectionProps = {
@@ -60,7 +73,7 @@ export function ChatListSection({
       {currentTab === 'groups' && (
         <div className="px-2 mb-4">
           <button onClick={onCreateGroup} className="w-full py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-sm font-bold text-[#1DB954] hover:bg-zinc-800 transition-colors flex items-center justify-center gap-2">
-            グループを作成
+            {labels.createGroup}
           </button>
         </div>
       )}
@@ -80,16 +93,16 @@ export function ChatListSection({
               />
               <div className="flex-1 overflow-hidden">
                 <div className="flex justify-between items-center">
-                  <p className="font-bold text-sm truncate">{user?.name || "ユーザー"}</p>
+                  <p className="font-bold text-sm truncate">{user?.name || labels.userFallback}</p>
                   <span className="text-[9px] text-zinc-500">{lastMsg ? displayLocalTime(lastMsg.timestamp, timeZone) : ""}</span>
                 </div>
                 <p className="text-xs text-zinc-400 truncate mt-0.5">
                   {lastMsg ? (
-                    lastMsg.text.startsWith('[VOICE]') ? 'ボイスメッセージ' :
-                      lastMsg.text.startsWith('[IMAGE]') ? '画像を送信しました' :
-                        lastMsg.text.startsWith('[FILE]') ? 'ファイルを送信しました' :
+                    lastMsg.text.startsWith('[VOICE]') ? labels.voiceMessage :
+                      lastMsg.text.startsWith('[IMAGE]') ? labels.imageSent :
+                        lastMsg.text.startsWith('[FILE]') ? labels.fileSent :
                           lastMsg.text
-                  ) : "メッセージを送ろう"}
+                  ) : labels.sendPrompt}
                 </p>
               </div>
               {chatHistory[partnerId].some(m => m.senderId !== currentUserId && !m.isRead) && (
@@ -100,37 +113,37 @@ export function ChatListSection({
         })}
         {currentTab === 'friends' && friendChatIds.length === 0 && (
           <div className="py-20 text-center">
-            <p className="text-zinc-500 text-sm">メッセージはまだありません</p>
+            <p className="text-zinc-500 text-sm">{labels.emptyMessages}</p>
           </div>
         )}
         {currentTab === 'groups' && (
           <>
-            {chatGroups.length > 0 && <p className="text-[10px] font-bold text-zinc-500 px-3 pt-2 pb-1">グループ</p>}
+            {chatGroups.length > 0 && <p className="text-[10px] font-bold text-zinc-500 px-3 pt-2 pb-1">{labels.groupsSection}</p>}
             {chatGroups.map(g => (
               <div key={g.id} onClick={() => onOpenChat(g.id)} className="flex items-center gap-4 p-3 hover:bg-[#1c1c1e] rounded-2xl cursor-pointer">
                 <div className="w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden relative"><IconUsers /></div>
-                <div className="flex-1 overflow-hidden z-10"><p className="font-bold text-sm truncate">{g.name}</p><p className="text-xs text-zinc-400 truncate">参加しました</p></div>
+                <div className="flex-1 overflow-hidden z-10"><p className="font-bold text-sm truncate">{g.name}</p><p className="text-xs text-zinc-400 truncate">{labels.joined}</p></div>
               </div>
             ))}
-            {artistCommunities.length > 0 && <p className="text-[10px] font-bold text-zinc-500 px-3 pt-4 pb-1">アーティストコミュニティ</p>}
+            {artistCommunities.length > 0 && <p className="text-[10px] font-bold text-zinc-500 px-3 pt-4 pb-1">{labels.artistCommunities}</p>}
             {artistCommunities.map(c => (
               <div key={c.id} onClick={() => onOpenChat(c.id)} className="flex items-center gap-4 p-3 hover:bg-[#1c1c1e] rounded-2xl cursor-pointer">
                 <div className="w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden relative">
                   {c.artworkUrl ? <img src={c.artworkUrl} className="w-full h-full object-cover" /> : <IconUsers />}
                 </div>
-                <div className="flex-1 overflow-hidden z-10"><p className="font-bold text-sm truncate">{c.name}</p><p className="text-xs text-zinc-400 truncate">参加者 {Math.max(1, c.memberCount)}人</p></div>
+                <div className="flex-1 overflow-hidden z-10"><p className="font-bold text-sm truncate">{c.name}</p><p className="text-xs text-zinc-400 truncate">{labels.membersCount.replace('{count}', String(Math.max(1, c.memberCount)))}</p></div>
               </div>
             ))}
-            {liveCommunities.length > 0 && <p className="text-[10px] font-bold text-zinc-500 px-3 pt-4 pb-1">ライブコミュニティ</p>}
+            {liveCommunities.length > 0 && <p className="text-[10px] font-bold text-zinc-500 px-3 pt-4 pb-1">{labels.liveCommunities}</p>}
             {liveCommunities.map(c => (
               <div key={c.id} onClick={() => onOpenChat(c.id)} className="flex items-center gap-4 p-3 hover:bg-[#1c1c1e] rounded-2xl cursor-pointer">
                 <div className="w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center flex-shrink-0 overflow-hidden relative"><IconTicket /></div>
-                <div className="flex-1 overflow-hidden z-10"><p className="font-bold text-sm truncate">{c.name}</p><p className="text-xs text-zinc-400 truncate">参加者 {Math.max(1, c.memberCount)}人</p></div>
+                <div className="flex-1 overflow-hidden z-10"><p className="font-bold text-sm truncate">{c.name}</p><p className="text-xs text-zinc-400 truncate">{labels.membersCount.replace('{count}', String(Math.max(1, c.memberCount)))}</p></div>
               </div>
             ))}
             {chatGroups.length === 0 && chatCommunities.length === 0 && (
               <div className="py-20 text-center">
-                <p className="text-zinc-500 text-sm">参加中のグループはまだありません</p>
+                <p className="text-zinc-500 text-sm">{labels.emptyGroups}</p>
               </div>
             )}
           </>

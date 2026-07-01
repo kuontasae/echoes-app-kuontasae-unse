@@ -11,9 +11,17 @@ const IconMusic = () => <svg viewBox="0 0 24 24" width="20" height="20" stroke="
 
 type PendingAttachment = { type: 'image' | 'file'; data: string; name: string; file: File };
 
+type ChatInputLabels = {
+  file: string;
+  music: string;
+  voicePrompt: string;
+  messagePlaceholder: string;
+};
+
 type ChatInputBarProps = {
   messageInput: string;
   pendingAttachments: PendingAttachment[];
+  labels: ChatInputLabels;
   showChatPlusMenu: boolean;
   showVoiceMenu: boolean;
   isRecording: boolean;
@@ -39,6 +47,7 @@ type ChatInputBarProps = {
 export function ChatInputBar({
   messageInput,
   pendingAttachments,
+  labels,
   showChatPlusMenu,
   showVoiceMenu,
   isRecording,
@@ -66,7 +75,7 @@ export function ChatInputBar({
         <div className="bg-[#1c1c1e] p-6 grid grid-cols-4 gap-4 border-t border-zinc-900 animate-fade-in absolute bottom-[68px] w-full z-20">
           <label className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80">
             <div className="w-12 h-12 bg-zinc-800 rounded-[18px] flex items-center justify-center text-white"><IconFile /></div>
-            <span className="text-[11px] font-bold text-zinc-400">ファイル</span>
+            <span className="text-[11px] font-bold text-zinc-400">{labels.file}</span>
             <input type="file" multiple onChange={(e) => {
               if(e.target.files) {
                 const newFiles = Array.from(e.target.files).map(f => ({ type: 'file' as const, data: URL.createObjectURL(f), name: f.name, file: f }));
@@ -77,7 +86,7 @@ export function ChatInputBar({
           </label>
           <div className="flex flex-col items-center gap-2 cursor-pointer hover:opacity-80" onClick={onOpenMusicSelector}>
             <div className="w-12 h-12 bg-zinc-800 rounded-[18px] flex items-center justify-center text-white"><IconMusic /></div>
-            <span className="text-[11px] font-bold text-zinc-400">音楽</span>
+            <span className="text-[11px] font-bold text-zinc-400">{labels.music}</span>
           </div>
         </div>
       )}
@@ -87,7 +96,7 @@ export function ChatInputBar({
           {draftVoice && <audio ref={draftAudioRef} src={draftVoice.url} onEnded={onDraftAudioEnded} className="hidden" />}
           {!isRecording && !draftVoice && (
             <>
-              <p className="text-zinc-400 text-sm font-bold mb-8">ボタンをタップして録音してください</p>
+              <p className="text-zinc-400 text-sm font-bold mb-8">{labels.voicePrompt}</p>
               <div onClick={onStartVoiceRecording} className="w-28 h-28 rounded-full border-4 border-zinc-800 flex items-center justify-center cursor-pointer hover:bg-zinc-800/50 transition-colors">
                 <div className="w-10 h-10 bg-red-500 rounded-full"></div>
               </div>
@@ -154,7 +163,7 @@ export function ChatInputBar({
             }} className="absolute opacity-0 w-0 h-0 overflow-hidden" />
           </label>
           <div className="flex-1 bg-[#1c1c1e] rounded-full px-4 py-2 flex items-center">
-            <input type="text" placeholder="Aa" value={messageInput} onChange={(e) => onMessageChange(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) onSubmitMessage(); }} className="w-full bg-transparent text-[15px] text-white focus:outline-none" />
+            <input type="text" placeholder={labels.messagePlaceholder} value={messageInput} onChange={(e) => onMessageChange(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) onSubmitMessage(); }} className="w-full bg-transparent text-[15px] text-white focus:outline-none" />
           </div>
           {messageInput.trim() || pendingAttachments.length > 0 ? (
             <button onClick={onSubmitMessage} className="w-8 h-8 rounded-full flex items-center justify-center bg-[#1DB954] text-black shadow-sm flex-shrink-0 transition-colors hover:scale-105">

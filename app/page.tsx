@@ -437,7 +437,83 @@ Object.assign(localI18n["日本語"], {
   articlePublishSalePrice: "販売価格",
   articlePublishCoin: "コイン",
   articlePublishPosting: "投稿中...",
-  articlePublishPostArticle: "この記事を投稿する"
+  articlePublishPostArticle: "この記事を投稿する",
+  chatCreateGroup: "グループを作成",
+  chatUserFallback: "ユーザー",
+  chatVoiceMessage: "ボイスメッセージ",
+  chatImageSent: "画像を送信しました",
+  chatFileSent: "ファイルを送信しました",
+  chatSendPrompt: "メッセージを送ろう",
+  chatEmptyMessages: "メッセージはまだありません",
+  chatGroupsSection: "グループ",
+  chatJoined: "参加しました",
+  chatArtistCommunities: "アーティストコミュニティ",
+  chatLiveCommunities: "ライブコミュニティ",
+  chatMembersCount: "参加者 {count}人",
+  chatEmptyGroups: "参加中のグループはまだありません",
+  chatCommunityFallback: "コミュニティ",
+  chatGroupFallback: "グループチャット",
+  chatBackAria: "戻る",
+  chatDetailsAria: "詳細",
+  chatFile: "ファイル",
+  chatMusic: "音楽",
+  chatVoicePrompt: "ボタンをタップして録音してください",
+  chatMessagePlaceholder: "Aa",
+  chatUnknownFile: "不明なファイル",
+  chatFileSize: "サイズ: {size}",
+  chatFileSizeUnknown: "サイズ情報なし",
+  chatUnsend: "送信取消",
+  chatUnsendConfirmTitle: "送信を取り消しますか？",
+  chatUnsendConfirmDescriptionLine1: "相手の画面からもこのメッセージや写真が",
+  chatUnsendConfirmDescriptionLine2: "完全に削除されます。",
+  chatUnsendConfirmAction: "取り消す",
+  chatRead: "既読",
+  chatReadCount: "既読 {count}",
+  chatConfirmMusic: "音楽を確認",
+  chatShareMusic: "音楽をシェア",
+  chatArtist: "アーティスト",
+  chatAddMessage: "メッセージを追加...",
+  chatMusicCommentPlaceholder: "この曲について話そう...",
+  chatSendToChat: "チャットに送信",
+  chatDetailsTitle: "詳細設定",
+  chatMembers: "メンバー",
+  chatAlbum: "アルバム",
+  chatNotes: "ノート",
+  chatNotificationsOff: "通知オフ",
+  chatInvite: "招待",
+  chatLeave: "退会",
+  chatMedia: "写真・動画",
+  chatEvents: "イベント",
+  chatComingSoon: "近日公開予定です",
+  chatInviteCopied: "招待リンクをコピーしました",
+  chatInviteCopiedSuccess: "招待リンクをコピーしました！",
+  chatInviteTitle: "Echoesに招待",
+  chatInviteText: "グループ/ライブに参加しよう！",
+  chatInviteFriend: "友だちを招待",
+  chatMembersParticipants: "メンバー・参加者 ({count})",
+  chatYou: "あなた",
+  chatNoPhotos: "まだ写真はありません",
+  chatNoFiles: "まだファイルはありません",
+  chatOpenOriginalMessage: "元のメッセージへ",
+  chatImageMissingUrl: "画像のURLが取得できませんでした",
+  chatImageSaveFailed: "画像の保存に失敗しました",
+  chatImageShareText: "Echoesの画像をシェアします",
+  chatImageUrlCopySuccess: "画像のURLをコピーしました！",
+  chatShare: "共有",
+  chatUploading: "送信しています...",
+  chatFileSending: "ファイルを送信しています...",
+  chatFileSendFailed: "ファイルの送信に失敗しました",
+  chatMessageSendFailed: "メッセージの送信に失敗しました",
+  chatMessageUnsent: "送信を取り消しました",
+  chatFileSizeLimitExceeded: "ファイルサイズが大きすぎます",
+  chatGroupName: "グループ名",
+  chatGroupNamePlaceholder: "例: VIVA LA ROCK 参戦組",
+  chatSelectMembers: "メンバーを選択",
+  chatCreateAction: "作成する",
+  chatInvalidGroupName: "グループ名を確認してください",
+  chatNoMembersSelected: "メンバーを選択してください",
+  chatGroupCreationError: "グループの作成に失敗しました",
+  chatMemberAdditionError: "メンバーの追加に失敗しました"
 });
 
 Object.assign(localI18n["English"], {
@@ -698,7 +774,83 @@ Object.assign(localI18n["English"], {
   articlePublishSalePrice: "Sale price",
   articlePublishCoin: "Coins",
   articlePublishPosting: "Posting...",
-  articlePublishPostArticle: "Post this article"
+  articlePublishPostArticle: "Post this article",
+  chatCreateGroup: "Create group",
+  chatUserFallback: "User",
+  chatVoiceMessage: "Voice message",
+  chatImageSent: "Sent an image",
+  chatFileSent: "Sent a file",
+  chatSendPrompt: "Send a message",
+  chatEmptyMessages: "No messages yet",
+  chatGroupsSection: "Groups",
+  chatJoined: "Joined",
+  chatArtistCommunities: "Artist communities",
+  chatLiveCommunities: "Live communities",
+  chatMembersCount: "{count} members",
+  chatEmptyGroups: "No groups joined yet",
+  chatCommunityFallback: "Community",
+  chatGroupFallback: "Group chat",
+  chatBackAria: "Back",
+  chatDetailsAria: "Details",
+  chatFile: "File",
+  chatMusic: "Music",
+  chatVoicePrompt: "Tap the button to record",
+  chatMessagePlaceholder: "Aa",
+  chatUnknownFile: "Unknown file",
+  chatFileSize: "Size: {size}",
+  chatFileSizeUnknown: "Size unknown",
+  chatUnsend: "Unsend",
+  chatUnsendConfirmTitle: "Unsend this message?",
+  chatUnsendConfirmDescriptionLine1: "This message or photo will also be",
+  chatUnsendConfirmDescriptionLine2: "deleted from the other person's screen.",
+  chatUnsendConfirmAction: "Unsend",
+  chatRead: "Read",
+  chatReadCount: "Read {count}",
+  chatConfirmMusic: "Confirm music",
+  chatShareMusic: "Share music",
+  chatArtist: "Artist",
+  chatAddMessage: "Add a message...",
+  chatMusicCommentPlaceholder: "Talk about this song...",
+  chatSendToChat: "Send to chat",
+  chatDetailsTitle: "Details",
+  chatMembers: "Members",
+  chatAlbum: "Album",
+  chatNotes: "Notes",
+  chatNotificationsOff: "Mute",
+  chatInvite: "Invite",
+  chatLeave: "Leave",
+  chatMedia: "Photos & videos",
+  chatEvents: "Events",
+  chatComingSoon: "Coming soon",
+  chatInviteCopied: "Invite link copied",
+  chatInviteCopiedSuccess: "Invite link copied!",
+  chatInviteTitle: "Invite to Echoes",
+  chatInviteText: "Join this group/live!",
+  chatInviteFriend: "Invite friends",
+  chatMembersParticipants: "Members / participants ({count})",
+  chatYou: "You",
+  chatNoPhotos: "No photos yet",
+  chatNoFiles: "No files yet",
+  chatOpenOriginalMessage: "Go to original message",
+  chatImageMissingUrl: "Could not get the image URL",
+  chatImageSaveFailed: "Could not save image",
+  chatImageShareText: "Sharing an image from Echoes",
+  chatImageUrlCopySuccess: "Image URL copied!",
+  chatShare: "Share",
+  chatUploading: "Sending...",
+  chatFileSending: "Sending file...",
+  chatFileSendFailed: "Could not send file",
+  chatMessageSendFailed: "Could not send message",
+  chatMessageUnsent: "Message unsent",
+  chatFileSizeLimitExceeded: "File size is too large",
+  chatGroupName: "Group name",
+  chatGroupNamePlaceholder: "Example: VIVA LA ROCK crew",
+  chatSelectMembers: "Select members",
+  chatCreateAction: "Create",
+  chatInvalidGroupName: "Check the group name",
+  chatNoMembersSelected: "Select at least one member",
+  chatGroupCreationError: "Could not create group",
+  chatMemberAdditionError: "Could not add members"
 });
 
 Object.assign(localI18n["中文"], {
@@ -959,7 +1111,83 @@ Object.assign(localI18n["中文"], {
   articlePublishSalePrice: "售价",
   articlePublishCoin: "金币",
   articlePublishPosting: "发布中...",
-  articlePublishPostArticle: "发布这篇文章"
+  articlePublishPostArticle: "发布这篇文章",
+  chatCreateGroup: "创建群组",
+  chatUserFallback: "用户",
+  chatVoiceMessage: "语音消息",
+  chatImageSent: "已发送图片",
+  chatFileSent: "已发送文件",
+  chatSendPrompt: "发送一条消息吧",
+  chatEmptyMessages: "暂无消息",
+  chatGroupsSection: "群组",
+  chatJoined: "已加入",
+  chatArtistCommunities: "艺人社区",
+  chatLiveCommunities: "现场社区",
+  chatMembersCount: "{count}人参加",
+  chatEmptyGroups: "暂无已加入的群组",
+  chatCommunityFallback: "社区",
+  chatGroupFallback: "群聊",
+  chatBackAria: "返回",
+  chatDetailsAria: "详情",
+  chatFile: "文件",
+  chatMusic: "音乐",
+  chatVoicePrompt: "点击按钮开始录音",
+  chatMessagePlaceholder: "输入...",
+  chatUnknownFile: "未知文件",
+  chatFileSize: "大小: {size}",
+  chatFileSizeUnknown: "无大小信息",
+  chatUnsend: "撤回",
+  chatUnsendConfirmTitle: "要撤回这条消息吗？",
+  chatUnsendConfirmDescriptionLine1: "对方画面中的这条消息或照片也会",
+  chatUnsendConfirmDescriptionLine2: "被完全删除。",
+  chatUnsendConfirmAction: "撤回",
+  chatRead: "已读",
+  chatReadCount: "已读 {count}",
+  chatConfirmMusic: "确认音乐",
+  chatShareMusic: "分享音乐",
+  chatArtist: "艺人",
+  chatAddMessage: "添加消息...",
+  chatMusicCommentPlaceholder: "聊聊这首歌...",
+  chatSendToChat: "发送到聊天",
+  chatDetailsTitle: "详细设置",
+  chatMembers: "成员",
+  chatAlbum: "相册",
+  chatNotes: "笔记",
+  chatNotificationsOff: "关闭通知",
+  chatInvite: "邀请",
+  chatLeave: "退出",
+  chatMedia: "照片・视频",
+  chatEvents: "活动",
+  chatComingSoon: "即将上线",
+  chatInviteCopied: "邀请链接已复制",
+  chatInviteCopiedSuccess: "邀请链接已复制！",
+  chatInviteTitle: "邀请加入 Echoes",
+  chatInviteText: "一起加入群组/现场吧！",
+  chatInviteFriend: "邀请好友",
+  chatMembersParticipants: "成员・参加者 ({count})",
+  chatYou: "你",
+  chatNoPhotos: "暂无照片",
+  chatNoFiles: "暂无文件",
+  chatOpenOriginalMessage: "前往原消息",
+  chatImageMissingUrl: "无法获取图片URL",
+  chatImageSaveFailed: "图片保存失败",
+  chatImageShareText: "分享 Echoes 的图片",
+  chatImageUrlCopySuccess: "图片URL已复制！",
+  chatShare: "分享",
+  chatUploading: "正在发送...",
+  chatFileSending: "正在发送文件...",
+  chatFileSendFailed: "文件发送失败",
+  chatMessageSendFailed: "消息发送失败",
+  chatMessageUnsent: "已撤回发送",
+  chatFileSizeLimitExceeded: "文件过大",
+  chatGroupName: "群组名",
+  chatGroupNamePlaceholder: "例: VIVA LA ROCK 参战组",
+  chatSelectMembers: "选择成员",
+  chatCreateAction: "创建",
+  chatInvalidGroupName: "请检查群组名",
+  chatNoMembersSelected: "请选择成员",
+  chatGroupCreationError: "群组创建失败",
+  chatMemberAdditionError: "成员添加失败"
 });
 function MainApp() {
   const searchParams = useSearchParams();
@@ -3793,7 +4021,7 @@ const handleSaveDraft = () => {
   const MAX_FILE_SIZE = 10 * 1024 * 1024;
   for (const att of attachmentsToSend) {
     if (att.file && att.file.size > MAX_FILE_SIZE) {
-      showToast("FileSizeLimitExceeded", "error");
+      showToast(t('chatFileSizeLimitExceeded'), "error");
       return;
     }
   }
@@ -3818,12 +4046,12 @@ const handleSaveDraft = () => {
         });
       }
     } catch (err) {
-      showToast("MessageSendFailed", "error");
+      showToast(t('chatMessageSendFailed'), "error");
       setChatHistory(prev => ({ ...prev, [targetId]: (prev[targetId] || []).filter(m => m.id !== tempId) }));
     }
   }
   if (attachmentsToSend.length > 0) {
-    showToast("Uploading", "success");
+    showToast(t('chatUploading'), "success");
     for (const att of attachmentsToSend) {
       const isImage = att.type === 'image';
       const sizeMB = att.file ? (att.file.size / (1024 * 1024)).toFixed(2) + " MB" : "Unknown";
@@ -3871,18 +4099,18 @@ const handleSaveDraft = () => {
       const currentHistory = prev[partnerId] || [];
       return { ...prev, [partnerId]: currentHistory.filter(m => m.id !== msgId) };
     });
-    showToast("送信を取り消しました");
+    showToast(t('chatMessageUnsent'));
     await supabase.from('chat_messages').delete().eq('id', msgId).eq('sender_id', currentUser.id);
   };
   const handleCreateGroup = async () => {
   if (!currentUser) return;
   const tName = newGroupName.trim();
   if (!tName || tName.length > 50) {
-    showToast("InvalidGroupName", "error");
+    showToast(t('chatInvalidGroupName'), "error");
     return;
   }
   if (newGroupMembers.size === 0) {
-    showToast("NoMembersSelected", "error");
+    showToast(t('chatNoMembersSelected'), "error");
     return;
   }
   const escapeHtml = (str: string) => str.replace(/[<&>]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c] || c));
@@ -3898,7 +4126,7 @@ const handleSaveDraft = () => {
       avatar: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=400&q=80"
     }]);
     if (groupError) {
-      showToast("GroupCreationError", "error");
+      showToast(t('chatGroupCreationError'), "error");
       return;
     }
     const memberInserts = memberArray.map(uid => ({
@@ -3907,7 +4135,7 @@ const handleSaveDraft = () => {
     }));
     const { error: memberError } = await supabase.from('group_members').insert(memberInserts);
     if (memberError) {
-      showToast("MemberAdditionError", "error");
+      showToast(t('chatMemberAdditionError'), "error");
       return;
     }
     const newGroup = {
@@ -4385,7 +4613,7 @@ const handleDeleteCommunity = async (id: string) => {
 	      e.target.value = "";
 	      return;
 	    }
-	    showToast("ファイルを送信しています...", "success");
+		    showToast(t('chatFileSending'), "success");
     const isImage = file.type.startsWith('image/');
     try {
       // 💡 画像なら圧縮し、それ以外のファイル（PDFなど）はそのまま扱う
@@ -4407,7 +4635,7 @@ const handleDeleteCommunity = async (id: string) => {
         });
       }
     } catch (err) {
-      showToast("ファイルの送信に失敗しました", "error");
+	      showToast(t('chatFileSendFailed'), "error");
     }
   };
   // 💡 音声録音パネルの機能（録音開始、停止、キャンセル、プレビュー再生、送信）
@@ -5724,6 +5952,13 @@ const renderFeedCard = (s: Song) => (
             chatGroups={chatGroups}
             chatCommunities={chatCommunities}
             activeCommunityMemberIds={activeCommunityMemberIds}
+            labels={{
+              communityFallback: t('chatCommunityFallback'),
+              groupFallback: t('chatGroupFallback'),
+              backAria: t('chatBackAria'),
+              detailsAria: t('chatDetailsAria'),
+              membersCount: t('chatMembersCount'),
+            }}
             onBack={handleGoBack}
             onOpenDetails={() => setShowChatDetails(true)}
           />
@@ -5732,6 +5967,19 @@ const renderFeedCard = (s: Song) => (
             messages={chatHistory[activeChatUserId] || []}
             allProfiles={allProfiles}
             currentUserId={currentUser?.id}
+            labels={{
+              unknownFile: t('chatUnknownFile'),
+              fileSize: t('chatFileSize'),
+              fileSizeUnknown: t('chatFileSizeUnknown'),
+              unsend: t('chatUnsend'),
+              cancel: t('cancel'),
+              unsendConfirmTitle: t('chatUnsendConfirmTitle'),
+              unsendConfirmDescriptionLine1: t('chatUnsendConfirmDescriptionLine1'),
+              unsendConfirmDescriptionLine2: t('chatUnsendConfirmDescriptionLine2'),
+              unsendConfirmAction: t('chatUnsendConfirmAction'),
+              read: t('chatRead'),
+              readCount: t('chatReadCount'),
+            }}
             timeZone={timeZone}
             playingSong={playingSong}
             activeMenuId={activeCommentSongId}
@@ -5759,7 +6007,7 @@ const renderFeedCard = (s: Song) => (
                 <div className="w-12 h-1.5 bg-zinc-700 rounded-full mx-auto mb-4 cursor-pointer" onClick={() => { setShowChatMusicSelector(false); setSelectedChatSong(null); setChatMusicComment(""); }}></div>
                 <div className="flex justify-between items-center mb-4 px-2 shrink-0">
                   <div className="w-8"></div>
-                  <h3 className="text-[15px] font-bold text-white flex items-center gap-2"><IconMusic /> {selectedChatSong ? '音楽を確認' : '音楽をシェア'}</h3>
+                  <h3 className="text-[15px] font-bold text-white flex items-center gap-2"><IconMusic /> {selectedChatSong ? t('chatConfirmMusic') : t('chatShareMusic')}</h3>
                   <button onClick={() => { setShowChatMusicSelector(false); setSelectedChatSong(null); setChatMusicComment(""); }} className="w-8 h-8 bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors"><IconCross /></button>
                 </div>
                 {!selectedChatSong ? (
@@ -5767,7 +6015,7 @@ const renderFeedCard = (s: Song) => (
                   <>
                     <div className="relative mb-4 px-2 shrink-0">
                       <div className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-500"><IconSearch /></div>
-                      <input type="text" placeholder="楽曲やアーティストを検索..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none" />
+                      <input type="text" placeholder={t('searchPlaceholder')} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none" />
                     </div>
                     <div className="flex-1 overflow-y-auto px-2 pb-4 scrollbar-hide flex flex-col gap-2">
                       {searchQuery && searchArtistInfo && (
@@ -5777,7 +6025,7 @@ const renderFeedCard = (s: Song) => (
                             setShowChatMusicSelector(false);
                           }}>
                             <img src={searchArtistInfo.artworkUrl} className="w-12 h-12 rounded-full object-cover" />
-                            <div className="flex-1"><p className="font-bold text-sm text-white">{searchArtistInfo.artistName}</p><p className="text-[10px] text-zinc-400 mt-0.5">アーティスト</p></div>
+                            <div className="flex-1"><p className="font-bold text-sm text-white">{searchArtistInfo.artistName}</p><p className="text-[10px] text-zinc-400 mt-0.5">{t('chatArtist')}</p></div>
                             <IconChevronRight />
                           </div>
                           {searchResults.length > 0 && <p className="text-[10px] font-bold text-zinc-500 uppercase px-2 pt-2 pb-1">ヒット</p>}
@@ -5875,7 +6123,7 @@ const renderFeedCard = (s: Song) => (
       };
     });
   } catch (err) {
-    showToast("MessageSendFailed", "error");
+    showToast(t('chatMessageSendFailed'), "error");
     setChatHistory(prev => ({
       ...prev,
       [activeChatUserId]: (prev[activeChatUserId] || []).filter(m => m.id !== tempMusicId && m.id !== tempTextId)
@@ -5896,14 +6144,14 @@ const renderFeedCard = (s: Song) => (
                           {currentUser && (
                             <div className="flex items-center gap-2 mb-3">
                               <img src={myProfile.avatar} className="w-6 h-6 rounded-full object-cover" />
-                              <span className="text-xs font-bold text-zinc-400">メッセージを追加...</span>
+	                          <span className="text-xs font-bold text-zinc-400">{t('chatAddMessage')}</span>
                             </div>
                           )}
-                          <textarea value={chatMusicComment} onChange={e => setChatMusicComment(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); handleSendMusicShare(); } }} placeholder="この曲について話そう..." className="w-full flex-1 bg-transparent text-white text-sm resize-none focus:outline-none scrollbar-hide" />
+	                          <textarea value={chatMusicComment} onChange={e => setChatMusicComment(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); handleSendMusicShare(); } }} placeholder={t('chatMusicCommentPlaceholder')} className="w-full flex-1 bg-transparent text-white text-sm resize-none focus:outline-none scrollbar-hide" />
                           <div className="absolute bottom-3 right-3 text-xs text-zinc-600">{chatMusicComment.length}/100</div>
                         </div>
                         <button onClick={handleSendMusicShare} className="w-full bg-[#1DB954] text-black font-bold rounded-full py-4 flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shadow-lg">
-                          <IconSend /> チャットに送信
+	                          <IconSend /> {t('chatSendToChat')}
                         </button>
                       </div>
                     );
@@ -5922,6 +6170,12 @@ const renderFeedCard = (s: Song) => (
             draftVoice={draftVoice}
             draftAudioRef={draftAudioRef}
             isPlayingDraft={isPlayingDraft}
+            labels={{
+              file: t('chatFile'),
+              music: t('chatMusic'),
+              voicePrompt: t('chatVoicePrompt'),
+              messagePlaceholder: t('chatMessagePlaceholder'),
+            }}
             onMessageChange={setChatMessageInput}
             onTogglePlusMenu={() => { setShowChatPlusMenu(!showChatPlusMenu); setShowVoiceMenu(false); }}
             onToggleVoiceMenu={() => { setShowVoiceMenu(!showVoiceMenu); setShowChatPlusMenu(false); }}
@@ -5944,47 +6198,47 @@ const renderFeedCard = (s: Song) => (
               <div className="flex items-center p-4 border-b border-zinc-900 sticky top-0 bg-[#0a0a0a]">
                 <button onClick={() => chatDetailsTab === 'menu' ? setShowChatDetails(false) : setChatDetailsTab('menu')} className="p-2 -ml-2 text-white hover:opacity-80 transition-opacity"><IconChevronLeft /></button>
                 <h2 className="text-white font-bold text-lg mx-auto pr-8">
-                  {chatDetailsTab === 'menu' ? '詳細設定' : chatDetailsTab === 'members' ? 'メンバー' : chatDetailsTab === 'album' ? 'アルバム' : 'ノート'}
+                  {chatDetailsTab === 'menu' ? t('chatDetailsTitle') : chatDetailsTab === 'members' ? t('chatMembers') : chatDetailsTab === 'album' ? t('chatAlbum') : chatDetailsTab === 'files' ? t('chatFile') : t('chatNotes')}
                 </h2>
               </div>
               <div className="flex-1 overflow-y-auto pb-20">
                 {chatDetailsTab === 'menu' && (
                   <div className="flex flex-col animate-fade-in">
                     <div className="grid grid-cols-4 gap-4 p-6 border-b border-zinc-900/80">
-                      <div className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => showToast("通知をオフにしました")}>
+                      <div className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => showToast(t('chatNotificationsOff'))}>
                         <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors"><IconBell /></div>
-                        <span className="text-[11px] font-bold text-zinc-400">通知オフ</span>
+                        <span className="text-[11px] font-bold text-zinc-400">{t('chatNotificationsOff')}</span>
                       </div>
                       <div className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => setChatDetailsTab('members')}>
                         <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors"><IconUsers /></div>
-                        <span className="text-[11px] font-bold text-zinc-400">メンバー</span>
+                        <span className="text-[11px] font-bold text-zinc-400">{t('chatMembers')}</span>
                       </div>
-                      <div className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => showToast("招待リンクをコピーしました")}>
+                      <div className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => showToast(t('chatInviteCopied'))}>
                         <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors"><IconUserPlus /></div>
-                        <span className="text-[11px] font-bold text-zinc-400">招待</span>
+                        <span className="text-[11px] font-bold text-zinc-400">{t('chatInvite')}</span>
                       </div>
                       <div className="flex flex-col items-center gap-2 cursor-pointer group" onClick={leaveActiveChat}>
                         <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-red-500 group-hover:bg-zinc-800 transition-colors">
                           <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" strokeWidth="2" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                         </div>
-                        <span className="text-[11px] font-bold text-zinc-400">退会</span>
+                        <span className="text-[11px] font-bold text-zinc-400">{t('chatLeave')}</span>
                       </div>
                     </div>
                     <div className="flex flex-col mt-2">
                       <div className="flex items-center justify-between p-4 hover:bg-[#1c1c1e] cursor-pointer transition-colors" onClick={() => setChatDetailsTab('album')}>
-                        <div className="flex items-center gap-4 text-white"><IconImage /><span className="text-[15px] font-bold">写真・動画</span></div>
+                        <div className="flex items-center gap-4 text-white"><IconImage /><span className="text-[15px] font-bold">{t('chatMedia')}</span></div>
                         <span className="text-zinc-600"><IconChevronRight /></span>
                       </div>
                       <div className="flex items-center justify-between p-4 hover:bg-[#1c1c1e] cursor-pointer transition-colors" onClick={() => setChatDetailsTab('notes')}>
-                        <div className="flex items-center gap-4 text-white"><IconPin /><span className="text-[15px] font-bold">ノート</span></div>
+                        <div className="flex items-center gap-4 text-white"><IconPin /><span className="text-[15px] font-bold">{t('chatNotes')}</span></div>
                         <span className="text-zinc-600"><IconChevronRight /></span>
                       </div>
-                      <div className="flex items-center justify-between p-4 hover:bg-[#1c1c1e] cursor-pointer transition-colors" onClick={() => showToast("近日公開予定です")}>
-                        <div className="flex items-center gap-4 text-white"><IconCalendar /><span className="text-[15px] font-bold">イベント</span></div>
+                      <div className="flex items-center justify-between p-4 hover:bg-[#1c1c1e] cursor-pointer transition-colors" onClick={() => showToast(t('chatComingSoon'))}>
+                        <div className="flex items-center gap-4 text-white"><IconCalendar /><span className="text-[15px] font-bold">{t('chatEvents')}</span></div>
                         <span className="text-zinc-600"><IconChevronRight /></span>
                       </div>
                       <div className="flex items-center justify-between p-4 hover:bg-[#1c1c1e] cursor-pointer transition-colors" onClick={() => setChatDetailsTab('files')}>
-                        <div className="flex items-center gap-4 text-white"><IconFile /><span className="text-[15px] font-bold">ファイル</span></div>
+                        <div className="flex items-center gap-4 text-white"><IconFile /><span className="text-[15px] font-bold">{t('chatFile')}</span></div>
                         <span className="text-zinc-600"><IconChevronRight /></span>
                       </div>
                     </div>
@@ -6027,22 +6281,22 @@ const renderFeedCard = (s: Song) => (
                         if (navigator.share) {
                           try {
                             await navigator.share({
-                              title: 'Echoesに招待',
-                              text: 'グループ/ライブに参加しよう！',
+                              title: t('chatInviteTitle'),
+                              text: t('chatInviteText'),
                               url: inviteUrl
                             });
                           } catch (err) {}
                         } else {
                           navigator.clipboard.writeText(inviteUrl);
-                          showToast("招待リンクをコピーしました！", "success");
+                          showToast(t('chatInviteCopiedSuccess'), "success");
                         }
                       }}>
                         <div className="w-12 h-12 rounded-full bg-[#1DB954]/10 text-[#1DB954] flex items-center justify-center border border-[#1DB954]/20"><IconUserPlus /></div>
-                        <span className="font-bold text-[15px] text-[#1DB954]">友だちを招待</span>
+                        <span className="font-bold text-[15px] text-[#1DB954]">{t('chatInviteFriend')}</span>
                       </div>
                       <div className="w-full h-2 bg-black"></div>
                       <div className="px-4 py-3 text-xs font-bold text-zinc-500 bg-[#0a0a0a]">
-                        メンバー・参加者 ({displayCount})
+                        {t('chatMembersParticipants').replace('{count}', String(displayCount))}
                       </div>
                       <div className="flex flex-col p-2">
                         {memberList.map(u => (
@@ -6051,7 +6305,7 @@ const renderFeedCard = (s: Song) => (
                               <img src={u.avatar} className="w-12 h-12 rounded-full object-cover border border-zinc-800" />
                               <div>
                                 <p className="font-bold text-[15px] text-white flex items-center gap-2">
-                                  {u.name} {u.id === currentUser?.id && <span className="bg-zinc-800 text-zinc-400 text-[9px] px-1.5 py-0.5 rounded-sm">あなた</span>}
+                                  {u.name} {u.id === currentUser?.id && <span className="bg-zinc-800 text-zinc-400 text-[9px] px-1.5 py-0.5 rounded-sm">{t('chatYou')}</span>}
                                 </p>
                                 <p className="text-xs text-zinc-500">@{u.handle}</p>
                               </div>
@@ -6091,7 +6345,7 @@ const renderFeedCard = (s: Song) => (
                         </div>
                       ) : (
                         <div className="flex flex-col items-center justify-center h-[50vh] text-zinc-500">
-                          <IconImage /><p className="mt-4 text-sm font-bold">まだ写真はありません</p>
+                          <IconImage /><p className="mt-4 text-sm font-bold">{t('chatNoPhotos')}</p>
                         </div>
                       )}
                     </div>
@@ -6115,7 +6369,7 @@ const renderFeedCard = (s: Song) => (
                                 <p className="font-bold text-sm text-white truncate">{fileName}</p>
                                 <div className="flex items-center gap-2 mt-1">
                                   {sender && <img src={sender.avatar} className="w-3.5 h-3.5 rounded-full object-cover border border-zinc-700" />}
-                                  <span className="text-[10px] text-zinc-500 truncate">{sender?.name || 'Unknown'}</span>
+                                  <span className="text-[10px] text-zinc-500 truncate">{sender?.name || t('chatUserFallback')}</span>
                                   <span className="text-[10px] text-zinc-500">• {displayLocalTime(fileMsg.timestamp, timeZone)}</span>
                                 </div>
                               </div>
@@ -6128,7 +6382,7 @@ const renderFeedCard = (s: Song) => (
                       ) : (
                         <div className="flex flex-col items-center justify-center h-[50vh] text-zinc-500">
                           <IconFile />
-                          <p className="mt-4 text-sm font-bold">まだファイルはありません</p>
+                          <p className="mt-4 text-sm font-bold">{t('chatNoFiles')}</p>
                         </div>
                       )}
                     </div>
@@ -6152,7 +6406,7 @@ const renderFeedCard = (s: Song) => (
                       <img src={viewingChatImage.sender.avatar} className="w-8 h-8 rounded-full object-cover border border-zinc-800" />
                       <div className="flex flex-col">
                         <span className="text-sm font-bold text-white leading-tight">{viewingChatImage.sender.name}</span>
-                        <span className="text-[10px] text-zinc-400">元のメッセージへ</span>
+                        <span className="text-[10px] text-zinc-400">{t('chatOpenOriginalMessage')}</span>
                       </div>
                     </div>
                   )}
@@ -6166,7 +6420,7 @@ const renderFeedCard = (s: Song) => (
                   e.stopPropagation();
                   try {
                     const imgUrl = viewingChatImage.text ? viewingChatImage.text.replace('[IMAGE]', '') : '';
-                    if (!imgUrl) throw new Error("画像URLがありません");
+                    if (!imgUrl) throw new Error(t('chatImageMissingUrl'));
                     const response = await fetch(imgUrl);
                     const blob = await response.blob();
                     const objectUrl = window.URL.createObjectURL(blob);
@@ -6178,32 +6432,32 @@ const renderFeedCard = (s: Song) => (
                     document.body.removeChild(a);
                     window.URL.revokeObjectURL(objectUrl);
                   } catch (err) {
-                    showToast("画像の保存に失敗しました", "error");
+                    showToast(t('chatImageSaveFailed'), "error");
                   }
                 }} className="flex flex-col items-center gap-2 text-white hover:opacity-80">
-                  <IconPlus /> <span className="text-[10px] font-bold">保存</span>
+                  <IconPlus /> <span className="text-[10px] font-bold">{t('save')}</span>
                 </button>
                 <button onClick={async (e) => {
                   e.stopPropagation();
                   const imgUrl = viewingChatImage.text ? viewingChatImage.text.replace('[IMAGE]', '') : '';
                   if (!imgUrl) {
-                    showToast("画像のURLが取得できませんでした", "error");
+                    showToast(t('chatImageMissingUrl'), "error");
                     return;
                   }
                   if (navigator.share) {
                     try {
                       await navigator.share({
                         title: 'Echoes Image',
-                        text: 'Echoesの画像をシェアします',
+                        text: t('chatImageShareText'),
                         url: imgUrl
                       });
                     } catch (err) {}
                   } else {
                     navigator.clipboard.writeText(imgUrl);
-                    showToast("画像のURLをコピーしました！", "success");
+                    showToast(t('chatImageUrlCopySuccess'), "success");
                   }
                 }} className="flex flex-col items-center gap-2 text-white hover:opacity-80">
-                  <IconShareExternal /> <span className="text-[10px] font-bold">共有</span>
+                  <IconShareExternal /> <span className="text-[10px] font-bold">{t('chatShare')}</span>
                 </button>
               </div>
             </div>
@@ -6274,10 +6528,10 @@ const renderFeedCard = (s: Song) => (
       {showCreateGroupModal && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[950] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowCreateGroupModal(false)}>
           <div className="bg-[#1c1c1e] border border-zinc-800 p-6 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-6"><h3 className="font-bold text-lg">グループを作成</h3><button onClick={() => setShowCreateGroupModal(false)} className="text-zinc-500 hover:text-white"><IconCross /></button></div>
-            <div className="mb-6"><label className="text-[10px] text-zinc-500 mb-1 block">グループ名</label><input type="text" placeholder="例: VIVA LA ROCK 参戦組" value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none" /></div>
+            <div className="flex justify-between items-center mb-6"><h3 className="font-bold text-lg">{t('chatCreateGroup')}</h3><button onClick={() => setShowCreateGroupModal(false)} className="text-zinc-500 hover:text-white"><IconCross /></button></div>
+            <div className="mb-6"><label className="text-[10px] text-zinc-500 mb-1 block">{t('chatGroupName')}</label><input type="text" placeholder={t('chatGroupNamePlaceholder')} value={newGroupName} onChange={(e) => setNewGroupName(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none" /></div>
             <div className="mb-6">
-              <label className="text-[10px] text-zinc-500 mb-2 block">メンバーを選択</label>
+              <label className="text-[10px] text-zinc-500 mb-2 block">{t('chatSelectMembers')}</label>
               <div className="flex flex-col gap-2 max-h-[150px] overflow-y-auto pr-2 scrollbar-hide">
                 {Array.from(followedUsers).map(uid => {
                   const u = allProfiles.find(mu => mu.id === uid);
@@ -6291,7 +6545,7 @@ const renderFeedCard = (s: Song) => (
                 })}
               </div>
             </div>
-            <button onClick={handleCreateGroup} className="w-full py-3 bg-white text-black rounded-xl text-sm font-bold shadow-lg">作成する</button>
+            <button onClick={handleCreateGroup} className="w-full py-3 bg-white text-black rounded-xl text-sm font-bold shadow-lg">{t('chatCreateAction')}</button>
           </div>
         </div>
       )}
@@ -7224,6 +7478,19 @@ const renderFeedCard = (s: Song) => (
               chat: t('chat'),
               friendsChat: t('Friends'),
               groupsChat: t('Groups'),
+              createGroup: t('chatCreateGroup'),
+              userFallback: t('chatUserFallback'),
+              voiceMessage: t('chatVoiceMessage'),
+              imageSent: t('chatImageSent'),
+              fileSent: t('chatFileSent'),
+              sendPrompt: t('chatSendPrompt'),
+              emptyMessages: t('chatEmptyMessages'),
+              groupsSection: t('chatGroupsSection'),
+              joined: t('chatJoined'),
+              artistCommunities: t('chatArtistCommunities'),
+              liveCommunities: t('chatLiveCommunities'),
+              membersCount: t('chatMembersCount'),
+              emptyGroups: t('chatEmptyGroups'),
             }}
             chatHistory={chatHistory}
             allProfiles={allProfiles}
