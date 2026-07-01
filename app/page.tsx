@@ -323,6 +323,50 @@ Object.assign(localI18n["日本語"], {
   articleEditorHeading: "見出し",
   articleEditorAlignment: "配置",
   articleEditorList: "リスト",
+  articleEditorHeadingStandard: "指定なし（標準テキスト）",
+  articleEditorHeadingLarge: "大見出し (H2)",
+  articleEditorHeadingSmall: "小見出し (H3)",
+  articleEditorAlignmentTitle: "文字の配置",
+  articleEditorAlignLeft: "左寄せ",
+  articleEditorAlignCenter: "中央寄せ",
+  articleEditorAlignRight: "右寄せ",
+  articleEditorListTitle: "リスト（箇条書き）",
+  articleEditorBulletedList: "箇条書きリスト (・)",
+  articleEditorNumberedList: "番号付きリスト (1. 2. 3.)",
+  articleEditorElementMenuTitle: "要素の追加",
+  articleEditorElementImage: "画像",
+  articleEditorElementEmbed: "埋め込み",
+  articleEditorElementFile: "ファイル",
+  articleEditorElementToc: "目次",
+  articleEditorElementQuote: "引用",
+  articleEditorElementCode: "コード",
+  articleEditorElementDivider: "区切り線",
+  articleEditorElementPaidArea: "有料エリア",
+  articleEditorElementInsertArticle: "記事を挿入",
+  articleEditorElementAudioFile: "音声ファイル",
+  articleEditorElementRecord: "録音",
+  articleEditorTocGenerating: "目次を生成します",
+  articleEditorCodePlaceholder: "ここからコードを入力...",
+  articleEditorVoicePrompt: "ボタンをタップして録音してください",
+  articleEditorDraftSavedTitle: "下書きを保存しました。",
+  articleEditorDraftSavedBody: "読み直すと新たな発見があるかも？",
+  articleEditorContinueEditing: "編集を続ける",
+  articleEditorPastArticleEmpty: "過去の記事がありません",
+  articleDetailPremiumUnlocked: "有料コンテンツをアンロックしました",
+  articleDetailPremiumPreviewLine1: "ここに有料限定のテキストが入ります。ライブの裏話や、特別なセットリストの解説、個人的な音楽の考察などが読めるようになります。アーティストの活動を支援するために、ぜひコインを使って続きを読んでみてください。応援がクリエイターの力になります...",
+  articleDetailPremiumPreviewLine2: "さらに深い音楽の話や、ここでしか見られない特別なコンテンツをお楽しみください。あなたのサポートが、次の素晴らしい作品を生み出す原動力となります。",
+  articleDetailPremiumPreviewLine3: "Echoesで新しい音楽の発見を。",
+  articleDetailPremiumLockedTitle: "この続きは有料コンテンツです",
+  articleDetailArticlePrice: "記事の価格",
+  articleDetailCurrentCoins: "現在の所持コイン",
+  articleDetailUnlockArticle: "記事をアンロック",
+  articleDetailSupportCreator: "クリエイターをサポート",
+  articleDetailSupportCreatorDescriptionLine1: "この記事が気に入ったら、コインを贈って応援しよう！",
+  articleDetailSupportCreatorDescriptionLine2: "あなたのサポートが次の作品の原動力になります。",
+  articleDetailLikes: "いいね",
+  articleDetailComments: "コメント",
+  articleDetailCommentPlaceholder: "感想を書く...",
+  articleDetailPostComment: "投稿",
   save: "保存",
   name: "名前",
   handle: "ユーザーID",
@@ -518,6 +562,50 @@ Object.assign(localI18n["English"], {
   articleEditorHeading: "Heading",
   articleEditorAlignment: "Alignment",
   articleEditorList: "List",
+  articleEditorHeadingStandard: "Normal text",
+  articleEditorHeadingLarge: "Large heading (H2)",
+  articleEditorHeadingSmall: "Small heading (H3)",
+  articleEditorAlignmentTitle: "Text alignment",
+  articleEditorAlignLeft: "Align left",
+  articleEditorAlignCenter: "Align center",
+  articleEditorAlignRight: "Align right",
+  articleEditorListTitle: "Lists",
+  articleEditorBulletedList: "Bulleted list",
+  articleEditorNumberedList: "Numbered list (1. 2. 3.)",
+  articleEditorElementMenuTitle: "Add element",
+  articleEditorElementImage: "Image",
+  articleEditorElementEmbed: "Embed",
+  articleEditorElementFile: "File",
+  articleEditorElementToc: "TOC",
+  articleEditorElementQuote: "Quote",
+  articleEditorElementCode: "Code",
+  articleEditorElementDivider: "Divider",
+  articleEditorElementPaidArea: "Paid area",
+  articleEditorElementInsertArticle: "Insert article",
+  articleEditorElementAudioFile: "Audio file",
+  articleEditorElementRecord: "Record",
+  articleEditorTocGenerating: "Generating table of contents",
+  articleEditorCodePlaceholder: "Start typing code here...",
+  articleEditorVoicePrompt: "Tap the button to record",
+  articleEditorDraftSavedTitle: "Draft saved.",
+  articleEditorDraftSavedBody: "You may notice something new when you read it again.",
+  articleEditorContinueEditing: "Keep editing",
+  articleEditorPastArticleEmpty: "No past articles",
+  articleDetailPremiumUnlocked: "Premium content unlocked",
+  articleDetailPremiumPreviewLine1: "Premium-only text will appear here. You can read behind-the-scenes live stories, special setlist notes, and personal music reflections. Use coins to keep reading and support the creator...",
+  articleDetailPremiumPreviewLine2: "Enjoy deeper music stories and special content available only here. Your support helps make the next work possible.",
+  articleDetailPremiumPreviewLine3: "Discover new music on Echoes.",
+  articleDetailPremiumLockedTitle: "The rest is premium content",
+  articleDetailArticlePrice: "Article price",
+  articleDetailCurrentCoins: "Current coins",
+  articleDetailUnlockArticle: "Unlock article",
+  articleDetailSupportCreator: "Support the creator",
+  articleDetailSupportCreatorDescriptionLine1: "If you enjoyed this article, send coins to show support.",
+  articleDetailSupportCreatorDescriptionLine2: "Your support helps power the next work.",
+  articleDetailLikes: "Likes",
+  articleDetailComments: "Comments",
+  articleDetailCommentPlaceholder: "Write a comment...",
+  articleDetailPostComment: "Post",
   save: "Save",
   name: "Name",
   handle: "User ID",
@@ -713,6 +801,50 @@ Object.assign(localI18n["中文"], {
   articleEditorHeading: "标题",
   articleEditorAlignment: "对齐",
   articleEditorList: "列表",
+  articleEditorHeadingStandard: "无指定（标准文本）",
+  articleEditorHeadingLarge: "大标题 (H2)",
+  articleEditorHeadingSmall: "小标题 (H3)",
+  articleEditorAlignmentTitle: "文字对齐",
+  articleEditorAlignLeft: "左对齐",
+  articleEditorAlignCenter: "居中",
+  articleEditorAlignRight: "右对齐",
+  articleEditorListTitle: "列表（项目符号）",
+  articleEditorBulletedList: "项目符号列表",
+  articleEditorNumberedList: "编号列表 (1. 2. 3.)",
+  articleEditorElementMenuTitle: "添加元素",
+  articleEditorElementImage: "图片",
+  articleEditorElementEmbed: "嵌入",
+  articleEditorElementFile: "文件",
+  articleEditorElementToc: "目录",
+  articleEditorElementQuote: "引用",
+  articleEditorElementCode: "代码",
+  articleEditorElementDivider: "分隔线",
+  articleEditorElementPaidArea: "付费区域",
+  articleEditorElementInsertArticle: "插入文章",
+  articleEditorElementAudioFile: "音频文件",
+  articleEditorElementRecord: "录音",
+  articleEditorTocGenerating: "正在生成目录",
+  articleEditorCodePlaceholder: "从这里输入代码...",
+  articleEditorVoicePrompt: "点击按钮开始录音",
+  articleEditorDraftSavedTitle: "草稿已保存。",
+  articleEditorDraftSavedBody: "重新阅读时也许会有新的发现。",
+  articleEditorContinueEditing: "继续编辑",
+  articleEditorPastArticleEmpty: "暂无过往文章",
+  articleDetailPremiumUnlocked: "已解锁付费内容",
+  articleDetailPremiumPreviewLine1: "这里会显示付费限定内容。你可以阅读演出幕后故事、特别歌单解说以及个人音乐思考。使用金币继续阅读，也是在支持创作者...",
+  articleDetailPremiumPreviewLine2: "享受更深入的音乐故事和仅在这里可见的特别内容。你的支持会成为创作下一部作品的动力。",
+  articleDetailPremiumPreviewLine3: "在 Echoes 发现新的音乐。",
+  articleDetailPremiumLockedTitle: "后续内容为付费内容",
+  articleDetailArticlePrice: "文章价格",
+  articleDetailCurrentCoins: "当前持有金币",
+  articleDetailUnlockArticle: "解锁文章",
+  articleDetailSupportCreator: "支持创作者",
+  articleDetailSupportCreatorDescriptionLine1: "如果喜欢这篇文章，就赠送金币支持吧！",
+  articleDetailSupportCreatorDescriptionLine2: "你的支持会成为下一部作品的动力。",
+  articleDetailLikes: "赞",
+  articleDetailComments: "评论",
+  articleDetailCommentPlaceholder: "写下感想...",
+  articleDetailPostComment: "发布",
   save: "保存",
   name: "名称",
   handle: "用户ID",
@@ -7181,18 +7313,18 @@ const renderFeedCard = (s: Song) => (
                 <div className="w-12 h-1.5 bg-zinc-700 rounded-full mx-auto mb-4 cursor-pointer" onClick={() => setShowHeadingMenu(false)}></div>
                 <div className="flex justify-between items-center mb-6 px-2">
                   <div className="w-8"></div>
-                  <h3 className="text-[15px] font-bold text-white">見出し</h3>
+                  <h3 className="text-[15px] font-bold text-white">{t('articleEditorHeading')}</h3>
                   <button onClick={() => setShowHeadingMenu(false)} className="w-8 h-8 bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors"><IconCross /></button>
                 </div>
                 <div className="flex flex-col gap-2">
                   <button onMouseDown={e => { e.preventDefault(); document.execCommand('formatBlock', false, 'DIV'); setShowHeadingMenu(false); }} className="flex items-center justify-between p-4 bg-zinc-800/50 hover:bg-zinc-800 rounded-2xl transition-colors">
-                    <span className="text-sm font-bold text-white">指定なし（標準テキスト）</span>
+                    <span className="text-sm font-bold text-white">{t('articleEditorHeadingStandard')}</span>
                   </button>
                   <button onMouseDown={e => { e.preventDefault(); document.execCommand('formatBlock', false, 'H2'); setShowHeadingMenu(false); }} className="flex items-center justify-between p-4 bg-zinc-800/50 hover:bg-zinc-800 rounded-2xl transition-colors">
-                    <span className="text-xl font-black text-white">大見出し (H2)</span>
+                    <span className="text-xl font-black text-white">{t('articleEditorHeadingLarge')}</span>
                   </button>
                   <button onMouseDown={e => { e.preventDefault(); document.execCommand('formatBlock', false, 'H3'); setShowHeadingMenu(false); }} className="flex items-center justify-between p-4 bg-zinc-800/50 hover:bg-zinc-800 rounded-2xl transition-colors">
-                    <span className="text-lg font-bold text-white">小見出し (H3)</span>
+                    <span className="text-lg font-bold text-white">{t('articleEditorHeadingSmall')}</span>
                   </button>
                 </div>
               </div>
@@ -7205,18 +7337,18 @@ const renderFeedCard = (s: Song) => (
                 <div className="w-12 h-1.5 bg-zinc-700 rounded-full mx-auto mb-4 cursor-pointer" onClick={() => setShowAlignmentMenu(false)}></div>
                 <div className="flex justify-between items-center mb-6 px-2">
                   <div className="w-8"></div>
-                  <h3 className="text-[15px] font-bold text-white">文字の配置</h3>
+                  <h3 className="text-[15px] font-bold text-white">{t('articleEditorAlignmentTitle')}</h3>
                   <button onClick={() => setShowAlignmentMenu(false)} className="w-8 h-8 bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors"><IconCross /></button>
                 </div>
                 <div className="flex flex-col gap-2">
                   <button onMouseDown={e => { e.preventDefault(); document.execCommand('justifyLeft', false, ''); setShowAlignmentMenu(false); }} className="flex items-center justify-between p-4 bg-zinc-800/50 hover:bg-zinc-800 rounded-2xl transition-colors">
-                    <span className="text-sm font-bold text-white flex items-center gap-3"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="15" y2="12"></line><line x1="3" y1="18" x2="19" y2="18"></line></svg> 左寄せ</span>
+                    <span className="text-sm font-bold text-white flex items-center gap-3"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="15" y2="12"></line><line x1="3" y1="18" x2="19" y2="18"></line></svg> {t('articleEditorAlignLeft')}</span>
                   </button>
                   <button onMouseDown={e => { e.preventDefault(); document.execCommand('justifyCenter', false, ''); setShowAlignmentMenu(false); }} className="flex items-center justify-between p-4 bg-zinc-800/50 hover:bg-zinc-800 rounded-2xl transition-colors">
-                    <span className="text-sm font-bold text-white flex items-center gap-3"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="5" y1="18" x2="19" y2="18"></line></svg> 中央寄せ</span>
+                    <span className="text-sm font-bold text-white flex items-center gap-3"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="7" y1="12" x2="17" y2="12"></line><line x1="5" y1="18" x2="19" y2="18"></line></svg> {t('articleEditorAlignCenter')}</span>
                   </button>
                   <button onMouseDown={e => { e.preventDefault(); document.execCommand('justifyRight', false, ''); setShowAlignmentMenu(false); }} className="flex items-center justify-between p-4 bg-zinc-800/50 hover:bg-zinc-800 rounded-2xl transition-colors">
-                    <span className="text-sm font-bold text-white flex items-center gap-3"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="9" y1="12" x2="21" y2="12"></line><line x1="5" y1="18" x2="21" y2="18"></line></svg> 右寄せ</span>
+                    <span className="text-sm font-bold text-white flex items-center gap-3"><svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="9" y1="12" x2="21" y2="12"></line><line x1="5" y1="18" x2="21" y2="18"></line></svg> {t('articleEditorAlignRight')}</span>
                   </button>
                 </div>
               </div>
@@ -7229,17 +7361,17 @@ const renderFeedCard = (s: Song) => (
                 <div className="w-12 h-1.5 bg-zinc-700 rounded-full mx-auto mb-4 cursor-pointer" onClick={() => setShowListMenu(false)}></div>
                 <div className="flex justify-between items-center mb-6 px-2">
                   <div className="w-8"></div>
-                  <h3 className="text-[15px] font-bold text-white">リスト（箇条書き）</h3>
+                  <h3 className="text-[15px] font-bold text-white">{t('articleEditorListTitle')}</h3>
                   <button onClick={() => setShowListMenu(false)} className="w-8 h-8 bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors"><IconCross /></button>
                 </div>
                 <div className="flex flex-col gap-2">
                   <button onMouseDown={e => { e.preventDefault(); if (articleTextareaRef.current) { articleTextareaRef.current.focus(); document.execCommand('insertUnorderedList', false, ''); setNewArticleContent(articleTextareaRef.current.innerHTML); } setShowListMenu(false); }} className="flex items-center justify-between p-4 bg-zinc-800/50 hover:bg-zinc-800 rounded-2xl transition-colors">
-                    <span className="text-sm font-bold text-white flex items-center gap-3"><IconList /> 箇条書きリスト (・)</span>
+                    <span className="text-sm font-bold text-white flex items-center gap-3"><IconList /> {t('articleEditorBulletedList')}</span>
                   </button>
                   <button onMouseDown={e => { e.preventDefault(); if (articleTextareaRef.current) { articleTextareaRef.current.focus(); document.execCommand('insertOrderedList', false, ''); setNewArticleContent(articleTextareaRef.current.innerHTML); } setShowListMenu(false); }} className="flex items-center justify-between p-4 bg-zinc-800/50 hover:bg-zinc-800 rounded-2xl transition-colors">
                     <span className="text-sm font-bold text-white flex items-center gap-3">
                       <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2" fill="none"><line x1="10" y1="6" x2="21" y2="6"></line><line x1="10" y1="12" x2="21" y2="12"></line><line x1="10" y1="18" x2="21" y2="18"></line><path d="M4 6h1v4"></path><path d="M4 10h2"></path><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"></path></svg>
-                      番号付きリスト (1. 2. 3.)
+                      {t('articleEditorNumberedList')}
                     </span>
                   </button>
                 </div>
@@ -7254,58 +7386,58 @@ const renderFeedCard = (s: Song) => (
                 <div className="w-12 h-1.5 bg-zinc-700 rounded-full mx-auto mb-4 cursor-pointer" onClick={() => setShowElementMenu(false)}></div>
                 <div className="flex justify-between items-center mb-6 px-2">
                   <div className="w-8"></div>
-                  <h3 className="text-[15px] font-bold text-white">要素の追加</h3>
+                  <h3 className="text-[15px] font-bold text-white">{t('articleEditorElementMenuTitle')}</h3>
                   <button onClick={() => setShowElementMenu(false)} className="w-8 h-8 bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors"><IconCross /></button>
                 </div>
                 <div className="grid grid-cols-4 gap-y-6 gap-x-2">
                   <label className="flex flex-col items-center gap-2 cursor-pointer group relative">
                     <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors"><IconImage /></div>
-                    <span className="text-[10px] text-zinc-300 font-bold">画像</span>
+                    <span className="text-[10px] text-zinc-300 font-bold">{t('articleEditorElementImage')}</span>
                     <input type="file" accept="image/*" onChange={handleArticleBodyImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                   </label>
                   <div className="flex flex-col items-center gap-2 cursor-pointer group" onClick={handleEmbedLink}>
                     <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors"><IconLink /></div>
-                    <span className="text-[10px] text-zinc-300 font-bold">埋め込み</span>
+                    <span className="text-[10px] text-zinc-300 font-bold">{t('articleEditorElementEmbed')}</span>
                   </div>
                   <label className="flex flex-col items-center gap-2 cursor-pointer group relative">
                     <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors"><IconFile /></div>
-                    <span className="text-[10px] text-zinc-300 font-bold">ファイル</span>
+                    <span className="text-[10px] text-zinc-300 font-bold">{t('articleEditorElementFile')}</span>
                     <input type="file" onChange={handleArticleFileUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                   </label>
-                  <div className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => { showToast("目次を生成します"); setShowElementMenu(false); }}>
+                  <div className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => { showToast(t('articleEditorTocGenerating')); setShowElementMenu(false); }}>
                     <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors">
                       <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                     </div>
-                    <span className="text-[10px] text-zinc-300 font-bold">目次</span>
+                    <span className="text-[10px] text-zinc-300 font-bold">{t('articleEditorElementToc')}</span>
                   </div>
                   <div className="flex flex-col items-center gap-2 cursor-pointer group" onMouseDown={e => { e.preventDefault(); if (articleTextareaRef.current) { articleTextareaRef.current.focus(); document.execCommand('insertHTML', false, '<br/><blockquote style="border-left: 4px solid #52525b; padding: 16px; margin: 16px 0; background: #27272a; border-radius: 8px;"><div class="quote-text" style="color: #e4e4e7;"></div><div class="quote-source" style="text-align: right; font-size: 10px; color: #a1a1aa; margin-top: 12px; font-style: normal;"></div></blockquote><br/><p><br/></p>'); setNewArticleContent(articleTextareaRef.current.innerHTML); } setShowElementMenu(false); }}>
                     <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors"><IconQuote /></div>
-                    <span className="text-[10px] text-zinc-300 font-bold">引用</span>
+                    <span className="text-[10px] text-zinc-300 font-bold">{t('articleEditorElementQuote')}</span>
                   </div>
-                  <div className="flex flex-col items-center gap-2 cursor-pointer group" onMouseDown={e => { e.preventDefault(); document.execCommand('insertHTML', false, '<br/><pre style="background:#27272a;padding:16px;border-radius:12px;overflow-x:auto;color:#e4e4e7;font-family:monospace;border:1px solid #52525b;"><code>ここからコードを入力...</code></pre><br/>'); setShowElementMenu(false); }}>
+                  <div className="flex flex-col items-center gap-2 cursor-pointer group" onMouseDown={e => { e.preventDefault(); document.execCommand('insertHTML', false, `<br/><pre style="background:#27272a;padding:16px;border-radius:12px;overflow-x:auto;color:#e4e4e7;font-family:monospace;border:1px solid #52525b;"><code>${t('articleEditorCodePlaceholder')}</code></pre><br/>`); setShowElementMenu(false); }}>
                     <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors"><IconCode /></div>
-                    <span className="text-[10px] text-zinc-300 font-bold">コード</span>
+                    <span className="text-[10px] text-zinc-300 font-bold">{t('articleEditorElementCode')}</span>
                   </div>
                   <div className="flex flex-col items-center gap-2 cursor-pointer group" onMouseDown={e => { e.preventDefault(); document.execCommand('insertHorizontalRule', false, ''); setShowElementMenu(false); }}>
                     <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors"><IconMinus /></div>
-                    <span className="text-[10px] text-zinc-300 font-bold">区切り線</span>
+                    <span className="text-[10px] text-zinc-300 font-bold">{t('articleEditorElementDivider')}</span>
                   </div>
                   <div className="flex flex-col items-center gap-2 cursor-pointer group" onMouseDown={e => { e.preventDefault(); document.execCommand('insertHTML', false, '<br/><div contenteditable="false"><hr style="border-top:2px dashed #1DB954;margin:32px 0;"/><p style="text-align:center;color:#1DB954;font-weight:bold;font-size:12px;letter-spacing:0.1em;margin-bottom:32px;">ここから先は有料エリアです</p></div><br/>'); setShowElementMenu(false); }}>
                     <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors"><IconYen /></div>
-                    <span className="text-[10px] text-zinc-300 font-bold">有料エリア</span>
+                    <span className="text-[10px] text-zinc-300 font-bold">{t('articleEditorElementPaidArea')}</span>
                   </div>
                   <div className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => { setShowPastArticleModal(true); setShowElementMenu(false); }}>
                     <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors"><IconArticle /></div>
-                    <span className="text-[10px] text-zinc-300 font-bold">記事を挿入</span>
+                    <span className="text-[10px] text-zinc-300 font-bold">{t('articleEditorElementInsertArticle')}</span>
                   </div>
                   <label className="flex flex-col items-center gap-2 cursor-pointer group relative">
                     <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors"><IconHeadphones /></div>
-                    <span className="text-[10px] text-zinc-300 font-bold">音声ファイル</span>
+                    <span className="text-[10px] text-zinc-300 font-bold">{t('articleEditorElementAudioFile')}</span>
                     <input type="file" accept="audio/*" onChange={handleArticleAudioUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" />
                   </label>
                   <div className="flex flex-col items-center gap-2 cursor-pointer group" onClick={() => { setShowEditorVoiceMenu(true); setShowElementMenu(false); }}>
                     <div className="w-14 h-14 rounded-full bg-zinc-900 border border-zinc-800 flex items-center justify-center text-white group-hover:bg-zinc-800 transition-colors"><IconMic /></div>
-                    <span className="text-[10px] text-zinc-300 font-bold">録音</span>
+                    <span className="text-[10px] text-zinc-300 font-bold">{t('articleEditorElementRecord')}</span>
                   </div>
                 </div>
               </div>
@@ -7319,7 +7451,7 @@ const renderFeedCard = (s: Song) => (
                 {draftVoice && <audio ref={draftAudioRef} src={draftVoice.url} onEnded={() => setIsPlayingDraft(false)} className="hidden" />}
                 {!isRecording && !draftVoice && (
                   <>
-                    <p className="text-zinc-400 text-sm font-bold mb-8">ボタンをタップして録音してください</p>
+                    <p className="text-zinc-400 text-sm font-bold mb-8">{t('articleEditorVoicePrompt')}</p>
                     <div onClick={startVoiceRecording} className="w-24 h-24 rounded-full border-4 border-zinc-800 flex items-center justify-center cursor-pointer hover:bg-zinc-800/50 transition-colors">
                       <div className="w-8 h-8 bg-red-500 rounded-full"></div>
                     </div>
@@ -7355,11 +7487,11 @@ const renderFeedCard = (s: Song) => (
           {showDraftSaveDialog && (
             <div className="absolute inset-0 z-[1100] flex items-center justify-center p-6 animate-fade-in bg-black/60 backdrop-blur-sm">
               <div className="bg-[#1c1c1e] rounded-3xl p-6 w-full max-w-xs shadow-2xl border border-zinc-800 flex flex-col items-center text-center">
-                <h3 className="text-lg font-bold text-white mb-2">下書きを保存しました。</h3>
-                <p className="text-xs text-zinc-400 mb-6 leading-relaxed">読み直すと新たな発見があるかも？</p>
+                <h3 className="text-lg font-bold text-white mb-2">{t('articleEditorDraftSavedTitle')}</h3>
+                <p className="text-xs text-zinc-400 mb-6 leading-relaxed">{t('articleEditorDraftSavedBody')}</p>
                 <div className="flex gap-3 w-full">
-                  <button onClick={() => setShowDraftSaveDialog(false)} className="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition-colors">編集を続ける</button>
-                  <button onClick={() => { setShowDraftSaveDialog(false); setShowWriteArticleModal(false); }} className="flex-1 py-3 bg-white hover:bg-gray-200 text-black rounded-xl text-xs font-bold transition-colors">閉じる</button>
+                  <button onClick={() => setShowDraftSaveDialog(false)} className="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition-colors">{t('articleEditorContinueEditing')}</button>
+                  <button onClick={() => { setShowDraftSaveDialog(false); setShowWriteArticleModal(false); }} className="flex-1 py-3 bg-white hover:bg-gray-200 text-black rounded-xl text-xs font-bold transition-colors">{t('close')}</button>
                 </div>
               </div>
             </div>
@@ -7371,7 +7503,7 @@ const renderFeedCard = (s: Song) => (
                 <div className="w-12 h-1.5 bg-zinc-700 rounded-full mx-auto mb-4 cursor-pointer" onClick={() => setShowPastArticleModal(false)}></div>
                 <div className="flex justify-between items-center mb-4 px-2 shrink-0">
                   <div className="w-8"></div>
-                  <h3 className="text-[15px] font-bold text-white">記事を挿入</h3>
+                  <h3 className="text-[15px] font-bold text-white">{t('articleEditorElementInsertArticle')}</h3>
                   <button onClick={() => setShowPastArticleModal(false)} className="w-8 h-8 bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors"><IconCross /></button>
                 </div>
                 <div className="flex-1 overflow-y-auto flex flex-col gap-3 px-2 pb-4 scrollbar-hide">
@@ -7386,7 +7518,7 @@ const renderFeedCard = (s: Song) => (
                   )) : (
                     <div className="flex flex-col items-center justify-center h-full text-zinc-500 gap-2">
                       <IconArticle />
-                      <p className="text-xs font-bold mt-2">過去の記事がありません</p>
+                      <p className="text-xs font-bold mt-2">{t('articleEditorPastArticleEmpty')}</p>
                     </div>
                   )}
                 </div>
@@ -7536,6 +7668,24 @@ const renderFeedCard = (s: Song) => (
           onToggleArticleLike={toggleArticleLike}
           onSubmitArticleComment={submitArticleComment}
           onArticleCommentInputChange={setArticleCommentInput}
+          labels={{
+            follow: t('follow'),
+            premiumUnlocked: t('articleDetailPremiumUnlocked'),
+            premiumPreviewLine1: t('articleDetailPremiumPreviewLine1'),
+            premiumPreviewLine2: t('articleDetailPremiumPreviewLine2'),
+            premiumPreviewLine3: t('articleDetailPremiumPreviewLine3'),
+            premiumLockedTitle: t('articleDetailPremiumLockedTitle'),
+            articlePrice: t('articleDetailArticlePrice'),
+            currentCoins: t('articleDetailCurrentCoins'),
+            unlockArticle: t('articleDetailUnlockArticle'),
+            supportCreator: t('articleDetailSupportCreator'),
+            supportCreatorDescriptionLine1: t('articleDetailSupportCreatorDescriptionLine1'),
+            supportCreatorDescriptionLine2: t('articleDetailSupportCreatorDescriptionLine2'),
+            likes: t('articleDetailLikes'),
+            comments: t('articleDetailComments'),
+            commentPlaceholder: t('articleDetailCommentPlaceholder'),
+            postComment: t('articleDetailPostComment'),
+          }}
         />
       )}
       {/* 💡 コンポーネント化したミニプレイヤー */}

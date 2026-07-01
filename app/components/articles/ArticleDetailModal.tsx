@@ -13,20 +13,67 @@ import {
 } from "../../Icons";
 import type { User } from "../../types";
 
+type ArticleDetailComment = {
+  id: string;
+  user: ArticleUser;
+  text: string;
+};
+
+type ArticleUser = User & {
+  isVerified?: boolean;
+};
+
+type ArticleDetail = {
+  id: string;
+  coverUrl: string;
+  date: string;
+  readTime: string;
+  title: string;
+  author: ArticleUser;
+  content: string;
+  premium_content?: string | null;
+  price: number;
+  likes: number;
+  isLiked: boolean;
+  comments: ArticleDetailComment[];
+};
+
+type ArticleDetailProfile = User & {
+  coin_balance?: number;
+};
+
 type ArticleDetailModalProps = {
-  article: any;
-  myProfile: User;
+  article: ArticleDetail;
+  myProfile: ArticleDetailProfile;
   currentUserId?: string;
   hasPurchasedArticle?: boolean;
   articleCommentInput: string;
   onClose: () => void;
   onOpenAuthor: (author: User) => void;
   onOpenCoinCharge: () => void;
-  onUnlockArticle: (article: any) => void;
+  onUnlockArticle: (article: ArticleDetail) => void;
   onSendGift: (amount: number) => void;
   onToggleArticleLike: (articleId: string) => void;
   onSubmitArticleComment: (e?: React.FormEvent) => void;
   onArticleCommentInputChange: (value: string) => void;
+  labels: {
+    follow: string;
+    premiumUnlocked: string;
+    premiumPreviewLine1: string;
+    premiumPreviewLine2: string;
+    premiumPreviewLine3: string;
+    premiumLockedTitle: string;
+    articlePrice: string;
+    currentCoins: string;
+    unlockArticle: string;
+    supportCreator: string;
+    supportCreatorDescriptionLine1: string;
+    supportCreatorDescriptionLine2: string;
+    likes: string;
+    comments: string;
+    commentPlaceholder: string;
+    postComment: string;
+  };
 };
 
 export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({
@@ -43,6 +90,7 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({
   onToggleArticleLike,
   onSubmitArticleComment,
   onArticleCommentInputChange,
+  labels,
 }) => (
   <div className="fixed inset-0 bg-black z-[950] flex flex-col animate-fade-in overflow-y-auto">
     <div className="relative w-full h-[40vh] flex-shrink-0">
@@ -64,7 +112,7 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({
             <p className="text-[10px] text-zinc-500">@{viewingArticle.author.handle}</p>
           </div>
         </div>
-        <button className="px-4 py-1.5 border border-zinc-700 rounded-full text-[10px] font-bold text-white hover:bg-zinc-800 transition-colors">Follow</button>
+        <button className="px-4 py-1.5 border border-zinc-700 rounded-full text-[10px] font-bold text-white hover:bg-zinc-800 transition-colors">{labels.follow}</button>
       </div>
       <div className="text-sm text-zinc-300 leading-loose whitespace-pre-wrap mb-12 [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-white [&_h2]:mt-6 [&_h2]:mb-3 [&_h3]:text-lg [&_h3]:font-bold [&_h3]:text-white [&_h3]:mt-4 [&_h3]:mb-2 [&_blockquote]:border-l-4 [&_blockquote]:border-zinc-500 [&_blockquote]:pl-4 [&_blockquote]:italic [&_blockquote]:text-zinc-400 [&_ul]:list-disc [&_ul]:list-inside [&_ul]:my-2 [&_ol]:list-decimal [&_ol]:list-inside [&_ol]:my-2 [&_li]:mb-1 [&_hr]:my-6 [&_hr]:border-zinc-700">
         <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(viewingArticle.content) }} />
@@ -74,27 +122,27 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({
               <div className="border-t border-[#1DB954]/30 pt-6 mt-6 animate-fade-in">
                 <div className="flex items-center gap-2 mb-6 text-[#1DB954] font-bold text-xs bg-[#1DB954]/10 w-fit px-4 py-2 rounded-full border border-[#1DB954]/20 shadow-sm">
                   <IconLockSetting />
-                  <span>有料コンテンツをアンロックしました</span>
+                  <span>{labels.premiumUnlocked}</span>
                 </div>
                 <div className="text-sm text-zinc-300 leading-loose whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(viewingArticle.premium_content || "") }} />
               </div>
             ) : (
               <div className="border-t border-zinc-800 pt-6 mt-6 relative overflow-hidden rounded-3xl">
                 <div className="filter blur-md opacity-30 select-none pointer-events-none h-[320px] overflow-hidden">
-                  <p>ここに有料限定のテキストが入ります。ライブの裏話や、特別なセットリストの解説、個人的な音楽の考察などが読めるようになります。アーティストの活動を支援するために、ぜひコインを使って続きを読んでみてください。応援がクリエイターの力になります...</p>
+                  <p>{labels.premiumPreviewLine1}</p>
                   <br/>
-                  <p>さらに深い音楽の話や、ここでしか見られない特別なコンテンツをお楽しみください。あなたのサポートが、次の素晴らしい作品を生み出す原動力となります。</p>
+                  <p>{labels.premiumPreviewLine2}</p>
                   <br/>
-                  <p>Echoesで新しい音楽の発見を。</p>
+                  <p>{labels.premiumPreviewLine3}</p>
                 </div>
                 <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/90 to-transparent p-6 text-center z-10">
                   <div className="w-14 h-14 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full flex items-center justify-center text-black shadow-[0_0_20px_rgba(250,204,21,0.2)] mb-4 border border-yellow-300/50">
                     <IconLock />
                   </div>
-                  <p className="text-white font-black text-xl mb-2 tracking-tight">この続きは有料コンテンツです</p>
+                  <p className="text-white font-black text-xl mb-2 tracking-tight">{labels.premiumLockedTitle}</p>
                   <div className="flex flex-col items-center gap-3 mb-8 w-full max-w-[260px] mt-4">
                     <div className="w-full flex items-center justify-between bg-[#1c1c1e] border border-zinc-800 px-5 py-3.5 rounded-2xl shadow-inner">
-                      <span className="text-xs font-bold text-zinc-400">記事の価格</span>
+                      <span className="text-xs font-bold text-zinc-400">{labels.articlePrice}</span>
                       <div className="flex items-center gap-2">
                         <div className="w-4 h-4 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full flex items-center justify-center text-black shadow-sm">
                           <span className="text-[9px] font-black leading-none mt-[0.5px]">C</span>
@@ -103,12 +151,12 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({
                       </div>
                     </div>
                     <div className="w-full flex items-center justify-between bg-transparent border border-zinc-800 px-5 py-3 rounded-xl cursor-pointer hover:bg-zinc-800/50 transition-colors" onClick={onOpenCoinCharge}>
-                      <span className="text-[10px] font-bold text-zinc-500">現在の所持コイン</span>
+                      <span className="text-[10px] font-bold text-zinc-500">{labels.currentCoins}</span>
                       <div className="flex items-center gap-1.5">
                         <div className="w-3.5 h-3.5 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full flex items-center justify-center text-black shadow-sm">
                           <span className="text-[8px] font-black leading-none mt-[0.5px]">C</span>
                         </div>
-                        <span className="text-sm font-bold text-zinc-300 leading-none">{(myProfile as any).coin_balance || 0}</span>
+                        <span className="text-sm font-bold text-zinc-300 leading-none">{myProfile.coin_balance || 0}</span>
                       </div>
                     </div>
                   </div>
@@ -117,7 +165,7 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({
                     className="bg-gradient-to-r from-yellow-400 to-amber-500 text-black font-black py-4 px-10 rounded-full shadow-[0_0_20px_rgba(250,204,21,0.3)] hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2 w-full max-w-[280px] text-sm"
                   >
                     <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                    記事をアンロック
+                    {labels.unlockArticle}
                   </button>
                 </div>
               </div>
@@ -128,8 +176,8 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({
       <div className="border-t border-zinc-900 pt-8 pb-12">
         {viewingArticle.author.id !== currentUserId && (
           <div className="bg-[#121212] border border-zinc-800 rounded-[24px] p-6 mb-10 flex flex-col items-center shadow-lg animate-fade-in">
-            <h3 className="font-black text-lg text-white mb-2 tracking-tight">クリエイターをサポート</h3>
-            <p className="text-xs text-zinc-400 mb-6 text-center leading-relaxed">この記事が気に入ったら、コインを贈って応援しよう！<br/>あなたのサポートが次の作品の原動力になります。</p>
+            <h3 className="font-black text-lg text-white mb-2 tracking-tight">{labels.supportCreator}</h3>
+            <p className="text-xs text-zinc-400 mb-6 text-center leading-relaxed">{labels.supportCreatorDescriptionLine1}<br/>{labels.supportCreatorDescriptionLine2}</p>
             <div className="flex gap-3 w-full justify-center">
               {[100, 500, 1000].map(amount => (
                 <button key={amount} onClick={() => onSendGift(amount)} className="flex flex-col items-center justify-center p-3 w-[80px] sm:w-[100px] bg-black border border-zinc-800 rounded-2xl hover:border-yellow-500/50 hover:bg-yellow-500/5 transition-all group active:scale-95 shadow-sm">
@@ -144,13 +192,13 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({
         )}
         <div className="flex gap-6 mb-8">
           <button onClick={() => onToggleArticleLike(viewingArticle.id)} className={`flex items-center gap-2 font-bold ${viewingArticle.isLiked ? 'text-[#1DB954]' : 'text-zinc-400 hover:text-white'}`}>
-            <IconHeart filled={viewingArticle.isLiked} /> {viewingArticle.likes} Likes
+            <IconHeart filled={viewingArticle.isLiked} /> {viewingArticle.likes} {labels.likes}
           </button>
-          <div className="flex items-center gap-2 font-bold text-zinc-400"><IconComment /> {viewingArticle.comments.length} Comments</div>
+          <div className="flex items-center gap-2 font-bold text-zinc-400"><IconComment /> {viewingArticle.comments.length} {labels.comments}</div>
         </div>
         {viewingArticle.comments.length > 0 && (
           <div className="flex flex-col gap-5 mb-8">
-            {viewingArticle.comments.map((c: any) => (
+            {viewingArticle.comments.map((c) => (
               <div key={c.id} className="flex gap-3">
                 <img src={c.user.avatar} className="w-8 h-8 rounded-full object-cover border border-zinc-800 shrink-0" />
                 <div className="flex flex-col">
@@ -167,8 +215,8 @@ export const ArticleDetailModal: React.FC<ArticleDetailModalProps> = ({
         <form onSubmit={onSubmitArticleComment} className="flex gap-3 items-center mb-8">
           <img src={myProfile.avatar} className="w-8 h-8 rounded-full object-cover shrink-0" />
           <div className="flex-1 bg-[#1c1c1e] rounded-full px-4 py-2 flex items-center border border-zinc-800 focus-within:border-zinc-600 transition-colors">
-            <input type="text" placeholder="感想を書く..." value={articleCommentInput} onChange={e => onArticleCommentInputChange(e.target.value)} className="w-full bg-transparent text-xs text-white focus:outline-none" />
-            <button type="submit" className="text-[10px] font-bold text-black bg-white px-3 py-1 rounded-full ml-2 shrink-0">Post</button>
+            <input type="text" placeholder={labels.commentPlaceholder} value={articleCommentInput} onChange={e => onArticleCommentInputChange(e.target.value)} className="w-full bg-transparent text-xs text-white focus:outline-none" />
+            <button type="submit" className="text-[10px] font-bold text-black bg-white px-3 py-1 rounded-full ml-2 shrink-0">{labels.postComment}</button>
           </div>
         </form>
       </div>
