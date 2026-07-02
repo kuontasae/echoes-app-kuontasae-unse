@@ -23,6 +23,7 @@ import { ArtistDetailOverlay } from './components/ArtistDetailOverlay';
 import { BlockedUsersModal } from './components/BlockedUsersModal';
 import { CalendarMonthYearPicker } from './components/CalendarMonthYearPicker';
 import { ChatMusicPickerModal } from './components/ChatMusicPickerModal';
+import { CommunityCalendarPicker } from './components/CommunityCalendarPicker';
 import { CreateGroupModal } from './components/CreateGroupModal';
 import { MatchFilterModal } from './components/MatchFilterModal';
 import { MiniPlayer } from './components/MiniPlayer';
@@ -6342,31 +6343,20 @@ const renderFeedCard = (s: Song) => (
       {showDrumrollModal && <DrumrollPickerModal />}
       {/* 💡 コミュニティカレンダー専用の年月選択ドラムロール（ズレ修正版） */}
       {showCommDrumroll && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-xl z-[1000] flex flex-col justify-end animate-fade-in" onClick={() => setShowCommDrumroll(false)}>
-          <div className="bg-[#1c1c1e] rounded-t-3xl border-t border-zinc-800 p-8 w-full shadow-2xl relative" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-8">
-              <button onClick={() => setShowCommDrumroll(false)} className="text-zinc-500 text-xs font-bold uppercase tracking-widest">{t('cancel')}</button>
-              <h4 className="font-bold text-sm">{t('selectYearMonth')}</h4>
-              <button onClick={() => setShowCommDrumroll(false)} className="text-white text-xs font-bold uppercase tracking-widest bg-zinc-800 px-6 py-2 rounded-full">{t('set')}</button>
-            </div>
-            <div className="relative h-[200px] w-full flex gap-4 justify-center items-center overflow-hidden">
-              {/* 💡 選択枠をピッタリ中央に配置 */}
-              <div className="absolute top-1/2 left-0 w-full h-[50px] bg-white/10 -mt-[25px] rounded-xl pointer-events-none z-10" />
-              {/* 💡 左側：年選択（上下に75pxの余白を追加してズレを解消） */}
-              <div className="relative flex-1 h-full overflow-y-auto scrollbar-hide snap-y snap-mandatory py-[75px] z-20" onScroll={e => { const st = e.currentTarget.scrollTop; const y = 2024 + Math.round(st / 50); if (y >= 2024 && y <= 2028) setCommCalDate(new Date(y, commCalDate.getMonth(), 1)); }}>
-                {[2024, 2025, 2026, 2027, 2028].map(y => (
-                  <div key={y} className={`h-[50px] flex justify-center items-center snap-center ${commCalDate.getFullYear() === y ? 'text-white font-bold text-lg' : 'text-zinc-500'}`}>{formatTemplate('yearSuffix', { year: y })}</div>
-                ))}
-              </div>
-              {/* 💡 右側：月選択（上下に75pxの余白を追加してズレを解消） */}
-              <div className="relative flex-1 h-full overflow-y-auto scrollbar-hide snap-y snap-mandatory py-[75px] z-20" onScroll={e => { const st = e.currentTarget.scrollTop; const m = Math.round(st / 50) + 1; if (m >= 1 && m <= 12) setCommCalDate(new Date(commCalDate.getFullYear(), m - 1, 1)); }}>
-                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
-                  <div key={m} className={`h-[50px] flex justify-center items-center snap-center ${commCalDate.getMonth() + 1 === m ? 'text-white font-bold text-lg' : 'text-zinc-500'}`}>{formatTemplate('monthSuffix', { month: m.toString().padStart(2, '0') })}</div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
+        <CommunityCalendarPicker
+          selectedYear={commCalDate.getFullYear()}
+          selectedMonth={commCalDate.getMonth() + 1}
+          yearOptions={[2024, 2025, 2026, 2027, 2028]}
+          monthOptions={Array.from({ length: 12 }, (_, i) => i + 1)}
+          cancelLabel={t('cancel')}
+          titleLabel={t('selectYearMonth')}
+          setLabel={t('set')}
+          formatYear={(y) => formatTemplate('yearSuffix', { year: y })}
+          formatMonth={(m) => formatTemplate('monthSuffix', { month: m.toString().padStart(2, '0') })}
+          onClose={() => setShowCommDrumroll(false)}
+          onYearScroll={e => { const st = e.currentTarget.scrollTop; const y = 2024 + Math.round(st / 50); if (y >= 2024 && y <= 2028) setCommCalDate(new Date(y, commCalDate.getMonth(), 1)); }}
+          onMonthScroll={e => { const st = e.currentTarget.scrollTop; const m = Math.round(st / 50) + 1; if (m >= 1 && m <= 12) setCommCalDate(new Date(commCalDate.getFullYear(), m - 1, 1)); }}
+        />
       )}
       {/* 💡 カレンダーモーダル（タップしてリストを表示するUI ＆ ドラムロール対応 ＆ 10人以上制限） */}
       {showCommCalendar && (
