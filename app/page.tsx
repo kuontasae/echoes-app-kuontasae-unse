@@ -21,6 +21,7 @@ import { ChatMessages } from './components/chat/ChatMessages';
 import { ChatRoomHeader } from './components/chat/ChatRoomHeader';
 import { ArtistDetailOverlay } from './components/ArtistDetailOverlay';
 import { CalendarMonthYearPicker } from './components/CalendarMonthYearPicker';
+import { ChatMusicPickerModal } from './components/ChatMusicPickerModal';
 import { MatchFilterModal } from './components/MatchFilterModal';
 import { MiniPlayer } from './components/MiniPlayer';
 import { NotificationsModal } from './components/NotificationsModal';
@@ -6052,6 +6053,89 @@ const renderFeedCard = (s: Song) => (
     </div>
   );
 
+  const closeChatMusicPicker = () => { setShowChatMusicSelector(false); setSelectedChatSong(null); setChatMusicComment(""); };
+  const handleSendChatMusicShare = async () => {
+    if (!activeChatUserId || !currentUser || !selectedChatSong) return;
+    if (!canAccessChatTarget(activeChatUserId)) {
+      showToast(t("Unauthorized"), "error");
+      return;
+    }
+
+    const commentText = chatMusicComment.trim();
+    if (commentText.length > 500) {
+      showToast(t("TextLimitExceeded"), "error");
+      return;
+    }
+
+    const escapeHtml = (str: string) => str.replace(/[<&>|]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '|': '&#124;' }[c] || c));
+    
+    const safeTrackName = escapeHtml(selectedChatSong.trackName || "");
+    const safeArtistName = escapeHtml(selectedChatSong.artistName || "");
+    const safeComment = escapeHtml(commentText);
+
+    const now = Date.now();
+    const tempMusicId = `msg_music_${now}_${Math.random().toString(36).substring(2, 9)}`;
+    const tempTextId = `msg_text_${now}_${Math.random().toString(36).substring(2, 9)}`;
+
+    const fileText = `[MUSIC]${selectedChatSong.trackId}|${safeTrackName}|${safeArtistName}|${selectedChatSong.artworkUrl100}|${selectedChatSong.previewUrl}`;
+
+    const newMessages = [{ id: tempMusicId, senderId: currentUser.id, text: fileText, timestamp: now, isRead: false }];
+    if (safeComment) {
+      newMessages.push({ id: tempTextId, senderId: currentUser.id, text: safeComment, timestamp: now + 1, isRead: false });
+    }
+
+    setChatHistory(prev => ({
+      ...prev,
+      [activeChatUserId]: [...(prev[activeChatUserId] || []), ...(newMessages as any)]
+    }));
+
+    setShowChatMusicSelector(false);
+    setSelectedChatSong(null);
+    setChatMusicComment("");
+    setSearchQuery("");
+    setActiveArtistProfile(null);
+    setActiveAlbumProfile(null);
+
+    try {
+      const { data: musicData, error: musicError } = await supabase
+        .from('chat_messages')
+        .insert([{ sender_id: currentUser.id, target_id: activeChatUserId, text: fileText }])
+        .select()
+        .single();
+
+      if (musicError) throw musicError;
+
+      let textData = null;
+      if (safeComment) {
+        const { data, error: textError } = await supabase
+          .from('chat_messages')
+          .insert([{ sender_id: currentUser.id, target_id: activeChatUserId, text: safeComment }])
+          .select()
+          .single();
+        if (textError) throw textError;
+        textData = data;
+      }
+
+      setChatHistory(prev => {
+        const history = prev[activeChatUserId] || [];
+        return {
+          ...prev,
+          [activeChatUserId]: history.map(m => {
+            if (m.id === tempMusicId) return { ...m, id: musicData.id };
+            if (safeComment && m.id === tempTextId && textData) return { ...m, id: textData.id };
+            return m;
+          }) as any
+        };
+      });
+    } catch (err) {
+      showToast(t('chatMessageSendFailed'), "error");
+      setChatHistory(prev => ({
+        ...prev,
+        [activeChatUserId]: (prev[activeChatUserId] || []).filter(m => m.id !== tempMusicId && m.id !== tempTextId)
+      }));
+    }
+  };
+
   if (isInitializing) return <div className="min-h-screen bg-black flex items-center justify-center"><h1 className="text-5xl font-black italic text-white animate-pulse">Echoes.</h1></div>;
   if (!isLoggedIn) return (
     <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 animate-fade-in relative">
@@ -6480,164 +6564,38 @@ const renderFeedCard = (s: Song) => (
           />
           {/* 💡 音楽選択モーダル（投稿作成画面風UI・最前面表示） */}
           {showChatMusicSelector && (
-            <div className="fixed inset-0 z-[1200] flex flex-col justify-end animate-fade-in">
-              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setShowChatMusicSelector(false); setSelectedChatSong(null); setChatMusicComment(""); }}></div>
-              <div className={`bg-[#1c1c1e] rounded-t-[32px] w-full pb-10 pt-4 px-4 relative z-10 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] transition-all duration-300 ${selectedChatSong ? 'h-[85vh]' : 'h-[70vh]'} flex flex-col`}>
-                <div className="w-12 h-1.5 bg-zinc-700 rounded-full mx-auto mb-4 cursor-pointer" onClick={() => { setShowChatMusicSelector(false); setSelectedChatSong(null); setChatMusicComment(""); }}></div>
-                <div className="flex justify-between items-center mb-4 px-2 shrink-0">
-                  <div className="w-8"></div>
-                  <h3 className="text-[15px] font-bold text-white flex items-center gap-2"><IconMusic /> {selectedChatSong ? t('chatConfirmMusic') : t('chatShareMusic')}</h3>
-                  <button onClick={() => { setShowChatMusicSelector(false); setSelectedChatSong(null); setChatMusicComment(""); }} className="w-8 h-8 bg-zinc-800 hover:bg-zinc-700 rounded-full flex items-center justify-center text-zinc-400 hover:text-white transition-colors"><IconCross /></button>
-                </div>
-                {!selectedChatSong ? (
-                  // 曲選択モード（検索UI）
-                  <>
-                    <div className="relative mb-4 px-2 shrink-0">
-                      <div className="absolute left-6 top-1/2 -translate-y-1/2 text-zinc-500"><IconSearch /></div>
-                      <input type="text" placeholder={t('searchPlaceholder')} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none" />
-                    </div>
-                    <div className="flex-1 overflow-y-auto px-2 pb-4 scrollbar-hide flex flex-col gap-2">
-                      {searchQuery && searchArtistInfo && (
-                        <>
-                          <div className="p-3 border border-zinc-800 flex items-center gap-4 cursor-pointer hover:bg-zinc-800/50 rounded-2xl mb-2" onMouseDown={e => {
-                            handleArtistClick(e, searchArtistInfo.artistId, searchArtistInfo.artistName, searchArtistInfo.artworkUrl);
-                            setShowChatMusicSelector(false);
-                          }}>
-                            <img src={searchArtistInfo.artworkUrl} className="w-12 h-12 rounded-full object-cover" />
-                            <div className="flex-1"><p className="font-bold text-sm text-white">{searchArtistInfo.artistName}</p><p className="text-[10px] text-zinc-400 mt-0.5">{t('chatArtist')}</p></div>
-                            <IconChevronRight />
-                          </div>
-                          {searchResults.length > 0 && <p className="text-[10px] font-bold text-zinc-500 uppercase px-2 pt-2 pb-1">{t('topResults')}</p>}
-                        </>
-                      )}
-                      {!searchQuery && trendingSongs.length > 0 && <p className="text-[10px] font-bold text-zinc-500 uppercase px-2 pt-2 pb-1 flex items-center"><IconTrend />{trendingSongsLabel}</p>}
-                      {(searchQuery && searchResults.length > 0 ? searchResults : trendingSongs).map((song, i) => (
-                        <div key={i} className="flex items-center gap-3 p-3 bg-zinc-800/30 hover:bg-zinc-800 rounded-2xl cursor-pointer transition-colors group" onClick={() => setSelectedChatSong(song)}>
-                          <div className="relative w-12 h-12 rounded-lg overflow-hidden shrink-0 border border-zinc-800">
-                            <img src={song.artworkUrl60.replace('60x60', '100x100')} className="w-full h-full object-cover" />
-                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><IconPlus /></div>
-                          </div>
-                          <div className="flex-1 overflow-hidden">
-                            <p className="font-bold text-sm text-white truncate">{song.trackName}</p>
-                            <p className="text-[10px] text-zinc-400 mt-1 truncate">{song.artistName}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  // 曲確認・送信モード（投稿作成画面風UI）
-                  (() => {
-	                    const handleSendMusicShare = async () => {
-	  if (!activeChatUserId || !currentUser || !selectedChatSong) return;
-	  if (!canAccessChatTarget(activeChatUserId)) {
-	    showToast(t("Unauthorized"), "error");
-	    return;
-	  }
-
-	  const commentText = chatMusicComment.trim();
-  if (commentText.length > 500) {
-    showToast(t("TextLimitExceeded"), "error");
-    return;
-  }
-
-  const escapeHtml = (str: string) => str.replace(/[<&>|]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '|': '&#124;' }[c] || c));
-  
-  const safeTrackName = escapeHtml(selectedChatSong.trackName || "");
-  const safeArtistName = escapeHtml(selectedChatSong.artistName || "");
-  const safeComment = escapeHtml(commentText);
-
-  const now = Date.now();
-  const tempMusicId = `msg_music_${now}_${Math.random().toString(36).substring(2, 9)}`;
-  const tempTextId = `msg_text_${now}_${Math.random().toString(36).substring(2, 9)}`;
-
-  const fileText = `[MUSIC]${selectedChatSong.trackId}|${safeTrackName}|${safeArtistName}|${selectedChatSong.artworkUrl100}|${selectedChatSong.previewUrl}`;
-
-  const newMessages = [{ id: tempMusicId, senderId: currentUser.id, text: fileText, timestamp: now, isRead: false }];
-  if (safeComment) {
-    newMessages.push({ id: tempTextId, senderId: currentUser.id, text: safeComment, timestamp: now + 1, isRead: false });
-  }
-
-  setChatHistory(prev => ({
-    ...prev,
-    [activeChatUserId]: [...(prev[activeChatUserId] || []), ...(newMessages as any)]
-  }));
-
-  setShowChatMusicSelector(false);
-  setSelectedChatSong(null);
-  setChatMusicComment("");
-  setSearchQuery("");
-  setActiveArtistProfile(null);
-  setActiveAlbumProfile(null);
-
-  try {
-    const { data: musicData, error: musicError } = await supabase
-      .from('chat_messages')
-      .insert([{ sender_id: currentUser.id, target_id: activeChatUserId, text: fileText }])
-      .select()
-      .single();
-
-    if (musicError) throw musicError;
-
-    let textData = null;
-    if (safeComment) {
-      const { data, error: textError } = await supabase
-        .from('chat_messages')
-        .insert([{ sender_id: currentUser.id, target_id: activeChatUserId, text: safeComment }])
-        .select()
-        .single();
-      if (textError) throw textError;
-      textData = data;
-    }
-
-    setChatHistory(prev => {
-      const history = prev[activeChatUserId] || [];
-      return {
-        ...prev,
-        [activeChatUserId]: history.map(m => {
-          if (m.id === tempMusicId) return { ...m, id: musicData.id };
-          if (safeComment && m.id === tempTextId && textData) return { ...m, id: textData.id };
-          return m;
-        }) as any
-      };
-    });
-  } catch (err) {
-    showToast(t('chatMessageSendFailed'), "error");
-    setChatHistory(prev => ({
-      ...prev,
-      [activeChatUserId]: (prev[activeChatUserId] || []).filter(m => m.id !== tempMusicId && m.id !== tempTextId)
-    }));
-  }
-};
-                    return (
-                      <div className="flex-1 flex flex-col gap-6 animate-fade-in p-2">
-                        <div className="flex items-center gap-4 bg-black p-4 rounded-2xl border border-zinc-800">
-                          <img src={selectedChatSong.artworkUrl100} className="w-20 h-20 rounded-xl object-cover shadow-md" />
-                          <div className="flex-1 overflow-hidden">
-                            <p className="font-bold text-lg text-white truncate">{selectedChatSong.trackName}</p>
-                            <p className="text-sm text-zinc-400 mt-1 truncate">{selectedChatSong.artistName}</p>
-                          </div>
-                          <button onClick={() => setSelectedChatSong(null)} className="text-zinc-600 hover:text-white transition-colors"><IconCross /></button>
-                        </div>
-                        <div className="flex-1 bg-black rounded-2xl border border-zinc-800 p-4 flex flex-col relative">
-                          {currentUser && (
-                            <div className="flex items-center gap-2 mb-3">
-                              <img src={myProfile.avatar} className="w-6 h-6 rounded-full object-cover" />
-	                          <span className="text-xs font-bold text-zinc-400">{t('chatAddMessage')}</span>
-                            </div>
-                          )}
-	                          <textarea value={chatMusicComment} onChange={e => setChatMusicComment(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); handleSendMusicShare(); } }} placeholder={t('chatMusicCommentPlaceholder')} className="w-full flex-1 bg-transparent text-white text-sm resize-none focus:outline-none scrollbar-hide" />
-                          <div className="absolute bottom-3 right-3 text-xs text-zinc-600">{chatMusicComment.length}/100</div>
-                        </div>
-                        <button onClick={handleSendMusicShare} className="w-full bg-[#1DB954] text-black font-bold rounded-full py-4 flex items-center justify-center gap-2 hover:scale-[1.02] transition-transform shadow-lg">
-	                          <IconSend /> {t('chatSendToChat')}
-                        </button>
-                      </div>
-                    );
-                  })()
-                )}
-              </div>
-            </div>
+            <ChatMusicPickerModal
+              selectedChatSong={selectedChatSong}
+              searchQuery={searchQuery}
+              searchArtistInfo={searchArtistInfo}
+              searchResults={searchResults}
+              trendingSongs={trendingSongs}
+              trendingSongsLabel={trendingSongsLabel}
+              chatMusicComment={chatMusicComment}
+              currentUserExists={Boolean(currentUser)}
+              myProfileAvatar={myProfile.avatar}
+              labels={{
+                confirmMusic: t('chatConfirmMusic'),
+                shareMusic: t('chatShareMusic'),
+                searchPlaceholder: t('searchPlaceholder'),
+                chatArtist: t('chatArtist'),
+                topResults: t('topResults'),
+                addMessage: t('chatAddMessage'),
+                commentPlaceholder: t('chatMusicCommentPlaceholder'),
+                sendToChat: t('chatSendToChat'),
+              }}
+              onClose={closeChatMusicPicker}
+              onSearchQueryChange={setSearchQuery}
+              onArtistMouseDown={(e) => {
+                handleArtistClick(e, searchArtistInfo.artistId, searchArtistInfo.artistName, searchArtistInfo.artworkUrl);
+                setShowChatMusicSelector(false);
+              }}
+              onSelectSong={setSelectedChatSong}
+              onClearSelectedSong={() => setSelectedChatSong(null)}
+              onCommentChange={setChatMusicComment}
+              onCommentKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); handleSendChatMusicShare(); } }}
+              onSendMusicShare={handleSendChatMusicShare}
+            />
           )}
           <ChatInputBar
             messageInput={chatMessageInput}
