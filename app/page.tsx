@@ -29,6 +29,7 @@ import { ChatMusicPickerModal } from './components/ChatMusicPickerModal';
 import { CommunityCalendarPicker } from './components/CommunityCalendarPicker';
 import { CreateGroupModal } from './components/CreateGroupModal';
 import { CreateLiveCommunityModal } from './components/CreateLiveCommunityModal';
+import { LogoutConfirmationModal } from './components/LogoutConfirmationModal';
 import { MatchFilterModal } from './components/MatchFilterModal';
 import { MiniPlayer } from './components/MiniPlayer';
 import { MutualFriendsModal } from './components/MutualFriendsModal';
@@ -6221,15 +6222,13 @@ const renderFeedCard = (s: Song) => (
         </div>
       )}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-2xl z-[1000] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowLogoutConfirm(false)}>
-          <div className="bg-[#1c1c1e] border border-zinc-800 p-8 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
-            <p className="text-center font-bold text-lg mb-8 leading-relaxed">{t('logoutConfirmTitle')}</p>
-            <div className="flex gap-4">
-              <button onClick={() => setShowLogoutConfirm(false)} className="flex-1 py-3.5 border border-zinc-800 rounded-xl text-xs font-bold uppercase">{t('cancel')}</button>
-              <button onClick={async () => { await supabase.auth.signOut(); window.location.reload(); }} className="flex-1 py-3.5 bg-red-500 text-white rounded-xl text-xs font-bold uppercase">{t('logout')}</button>
-            </div>
-          </div>
-        </div>
+        <LogoutConfirmationModal
+          title={t('logoutConfirmTitle')}
+          cancelLabel={t('cancel')}
+          logoutLabel={t('logout')}
+          onCancel={() => setShowLogoutConfirm(false)}
+          onConfirm={async () => { await supabase.auth.signOut(); window.location.reload(); }}
+        />
       )}
       <SongPostModal
         draftSong={draftSong}
