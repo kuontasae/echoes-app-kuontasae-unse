@@ -5696,11 +5696,19 @@ const handleDeleteCommunity = async (id: string) => {
   try {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) {
+      console.error("[auth.signUp] signup failed", {
+        message: error.message,
+        code: (error as { code?: string }).code,
+      });
       showToast(t("SignupFailed"), "error");
       return;
     }
     if (data.user && data.user.identities && data.user.identities.length === 0) {
       showToast(t("EmailAlreadyInUse"), "error");
+      return;
+    }
+    if (data.user && !data.session) {
+      setSignupSuccess(true);
       return;
     }
     if (data.user) {
@@ -5713,12 +5721,27 @@ const handleDeleteCommunity = async (id: string) => {
         bio: "Hello"
       }]);
       if (profileError) {
+        console.error("[profiles.insert] signup profile creation failed", {
+          message: profileError.message,
+          code: (profileError as { code?: string }).code,
+          userId: data.user.id,
+          hasSession: Boolean(data.session),
+        });
         showToast(t("ProfileCreationError"), "error");
         return;
       }
       setSignupSuccess(true);
+      return;
     }
+    console.error("[auth.signUp] signup returned without user", {
+      hasSession: Boolean(data.session),
+    });
+    showToast(t("SignupFailed"), "error");
   } catch (err) {
+    console.error("[auth.signUp] unexpected signup failure", {
+      message: err instanceof Error ? err.message : String(err),
+      code: typeof err === "object" && err !== null && "code" in err ? (err as { code?: string }).code : undefined,
+    });
     showToast(t("SystemError"), "error");
   } finally {
     setIsAuthLoading(false);
