@@ -6,6 +6,7 @@ import { User, Comment, Song, FavoriteArtist, Notification, ChatMessage, ChatGro
 import { IconHeart, IconComment, IconLock, IconPlay, IconStop, IconChevronLeft, IconChevronRight, IconChevronDown, IconSearch, IconShareBox, IconVerified, IconCross, IconGear, IconTrend, IconSparkles, IconMusic, IconMusicSmall, IconBell, IconGlobe, IconClock, IconShareExternal, IconStar, IconInfo, IconHelp, IconLockSetting, IconCamera, IconShuffle, IconDots, IconFlame, IconRewind, IconCheck, IconWarning, IconMatchTab, IconChatTab, IconSend, IconUserPlus, IconUser, IconMessagePlus, IconFilter, IconTicket, IconCrown, IconUsers, IconCalendar } from './Icons';
 import { supabase } from './supabase';
 import { FeedCard } from './components/FeedCard';
+import { ArticleDraftSavedDialog } from './components/articles/ArticleDraftSavedDialog';
 import { ArticleEditorModal } from './components/articles/ArticleEditorModal';
 import { ArticleListSection } from './components/articles/ArticleListSection';
 import { ArticleDetailModal } from './components/articles/ArticleDetailModal';
@@ -7948,16 +7949,14 @@ const renderFeedCard = (s: Song) => (
             </div>
           )}
           {showDraftSaveDialog && (
-            <div className="absolute inset-0 z-[1100] flex items-center justify-center p-6 animate-fade-in bg-black/60 backdrop-blur-sm">
-              <div className="bg-[#1c1c1e] rounded-3xl p-6 w-full max-w-xs shadow-2xl border border-zinc-800 flex flex-col items-center text-center">
-                <h3 className="text-lg font-bold text-white mb-2">{t('articleEditorDraftSavedTitle')}</h3>
-                <p className="text-xs text-zinc-400 mb-6 leading-relaxed">{t('articleEditorDraftSavedBody')}</p>
-                <div className="flex gap-3 w-full">
-                  <button onClick={() => setShowDraftSaveDialog(false)} className="flex-1 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-xl text-xs font-bold transition-colors">{t('articleEditorContinueEditing')}</button>
-                  <button onClick={() => { setShowDraftSaveDialog(false); setShowWriteArticleModal(false); }} className="flex-1 py-3 bg-white hover:bg-gray-200 text-black rounded-xl text-xs font-bold transition-colors">{t('close')}</button>
-                </div>
-              </div>
-            </div>
+            <ArticleDraftSavedDialog
+              title={t('articleEditorDraftSavedTitle')}
+              body={t('articleEditorDraftSavedBody')}
+              continueLabel={t('articleEditorContinueEditing')}
+              closeLabel={t('close')}
+              onContinue={() => setShowDraftSaveDialog(false)}
+              onClose={() => { setShowDraftSaveDialog(false); setShowWriteArticleModal(false); }}
+            />
           )}
           {showPastArticleModal && (
             <div className="absolute inset-0 z-[1100] flex flex-col justify-end animate-fade-in">
