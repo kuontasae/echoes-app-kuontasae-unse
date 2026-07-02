@@ -3172,7 +3172,7 @@ const handleSaveDraft = () => {
     community.communityType === 'artist' && community.artistName
       ? formatTemplate('artistCommunityDescription', { artist: community.artistName })
       : community.description;
-  const formatCommunityDate = (date: string) => date === "日程未定" ? t('dateTbd') : date;
+  const formatCommunityDate = (date: string) => date === "日程未定" ? t('dateTbd') : date === "常設" ? t('permanentFanCommunity') : date;
   const formatDatePerformances = (date: string) => formatTemplate('communityDatePerformances', { date: date.replace(/-/g, '/') });
   const weekdayLabels = String(t('weekdaysShort') || "").split(",");
   const fetchArtistImage = async (artist: { artistId?: string | number; artistName?: string; fallbackArtworkUrl?: string }) => {
