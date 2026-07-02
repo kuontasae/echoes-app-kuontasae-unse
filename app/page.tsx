@@ -27,6 +27,7 @@ import { CommunityCalendarPicker } from './components/CommunityCalendarPicker';
 import { CreateGroupModal } from './components/CreateGroupModal';
 import { MatchFilterModal } from './components/MatchFilterModal';
 import { MiniPlayer } from './components/MiniPlayer';
+import { MutualFriendsModal } from './components/MutualFriendsModal';
 import { NotificationsModal } from './components/NotificationsModal';
 import { displayLocalTime, formatCount } from './utils/formatters';
 import { COIN_CHARGE_PLANS, type CoinChargePlan } from './coinPlans';
@@ -7193,25 +7194,12 @@ const renderFeedCard = (s: Song) => (
       )}
       {/* 💡 共通の友達リストモーダル */}
       {showMutualFriendsModal && (
-        <div className="fixed inset-0 bg-black/95 z-[900] flex flex-col animate-fade-in">
-          <div className="flex items-center p-4 border-b border-zinc-900 sticky top-0 bg-black/90 backdrop-blur-md z-10">
-            <button onClick={() => setShowMutualFriendsModal(false)}><IconChevronLeft /></button>
-            <h2 className="text-white font-bold text-lg mx-auto pr-8">{t('mutualFriends')}</h2>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4">
-            <div className="flex flex-col gap-4">
-              {mutualFriendsList.map(u => (
-                <div key={u.id} className="flex items-center justify-between p-3 bg-[#1c1c1e] rounded-2xl border border-zinc-800 cursor-pointer hover:bg-zinc-800" onClick={() => { setShowMutualFriendsModal(false); setViewingUser(u); setActiveTab('other_profile'); }}>
-                  <div className="flex items-center gap-3">
-                    <img src={u.avatar} className="w-12 h-12 rounded-full object-cover" />
-                    <div><p className="font-bold text-sm text-white">{u.name}</p><p className="text-[10px] text-zinc-500">@{u.handle}</p></div>
-                  </div>
-                  <IconChevronRight />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <MutualFriendsModal
+          users={mutualFriendsList}
+          title={t('mutualFriends')}
+          onClose={() => setShowMutualFriendsModal(false)}
+          onOpenUser={(u) => { setShowMutualFriendsModal(false); setViewingUser(u); setActiveTab('other_profile'); }}
+        />
       )}
       {/* 💡 アカウント削除確認モーダル */}
       {showDeleteAccountConfirm && (
