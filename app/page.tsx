@@ -39,6 +39,7 @@ import { MiniPlayer } from './components/MiniPlayer';
 import { MutualFriendsModal } from './components/MutualFriendsModal';
 import { NotificationsModal } from './components/NotificationsModal';
 import { OnboardingPanel } from './components/OnboardingPanel';
+import { RevenueDashboard } from './components/RevenueDashboard';
 import { SettingsMenu } from './components/SettingsMenu';
 import { displayLocalTime, formatCount } from './utils/formatters';
 import { COIN_CHARGE_PLANS, type CoinChargePlan } from './coinPlans';
@@ -6949,113 +6950,65 @@ const renderFeedCard = (s: Song) => (
         />
       )}
       {showRevenueDashboard && (
-        <div className="fixed inset-0 bg-black/95 z-[1500] flex flex-col animate-fade-in" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center p-4 border-b border-zinc-900 sticky top-0 bg-black/90 backdrop-blur-md z-10">
-            <button onClick={() => setShowRevenueDashboard(false)} className="p-2 -ml-2 text-white hover:opacity-80 transition-opacity"><IconChevronLeft /></button>
-            <h2 className="text-white font-bold text-lg mx-auto pr-8">{t('revenueDashboard')}</h2>
-          </div>
-          <div className="flex-1 overflow-y-auto p-4 sm:p-6 pb-24 scrollbar-hide">
-            {(() => {
-              const validHistory = revenueData.history.filter(tx => tx.transaction_type !== 'charge');
-              const paidTotal = validHistory.filter(tx => tx.transaction_type?.endsWith('_paid')).reduce((sum, tx) => sum + tx.amount, 0);
-              const jpyRevenue = Math.floor(paidTotal * 0.5);
-              const canWithdraw = jpyRevenue >= 1000;
-              
-              return (
-                <>
-                  <div className="bg-gradient-to-br from-[#1DB954]/20 to-[#1DB954]/5 border border-[#1DB954]/30 rounded-[32px] p-8 mb-4 flex flex-col items-center text-center shadow-[0_0_40px_rgba(29,185,84,0.15)] relative overflow-hidden">
-                    <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-transparent via-[#1DB954] to-transparent opacity-50"></div>
-                    <p className="text-[#1DB954] text-[10px] font-black uppercase tracking-widest mb-3">{t('availableRevenue')}</p>
-                    <div className="flex items-end gap-1 mb-3">
-                      <span className="text-2xl font-bold text-white mb-1">¥</span>
-                      <span className="text-5xl font-black text-white tracking-tighter">{jpyRevenue.toLocaleString()}</span>
-                    </div>
-                    <p className="text-[10px] text-zinc-400 font-bold bg-black/40 px-3 py-1 rounded-full border border-zinc-800 mb-6">
-                      {t('payoutEligiblePaidCoins').replace('{coins}', paidTotal.toLocaleString())}
-                    </p>
-	                    <div className="w-full bg-black/35 border border-zinc-800 rounded-2xl p-3 mb-3 text-left">
-	                      <p className="text-[10px] font-bold text-zinc-500 mb-1">{t('payoutSettings')}</p>
-	                      <p className="text-xs text-zinc-300 leading-relaxed">
-	                        {stripeConnectStatus.lastPayoutFailure ? t('payoutLastFailure').replace('{reason}', stripeConnectStatus.lastPayoutFailure.message || stripeConnectStatus.lastPayoutFailure.code || t('payoutDefaultFailureReason')) : stripeConnectStatus.payoutsEnabled ? t('stripePayoutsReady') : stripeConnectStatus.connected ? t('stripePayoutsIncomplete') : t('stripePayoutsRequired')}
-	                      </p>
-	                    </div>
-	                    {!stripeConnectStatus.payoutsEnabled ? (
-	                      <button
-	                        onClick={startStripeConnectOnboarding}
-	                        disabled={isStartingStripeConnect}
-	                        className="w-full py-3.5 rounded-full font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 bg-white text-black hover:bg-zinc-200 active:scale-95 disabled:opacity-50"
-	                      >
-	                        {isStartingStripeConnect ? t('stripeConnecting') : stripeConnectStatus.connected ? t('payoutSetupContinue') : t('payoutSetupStart')}
-	                      </button>
-	                    ) : (
-	                      <button 
-	                        disabled={!canWithdraw || isRequestingPayout}
-	                        onClick={requestCreatorPayout}
-	                        className={`w-full py-3.5 rounded-full font-bold text-sm transition-all shadow-lg flex items-center justify-center gap-2 ${canWithdraw ? 'bg-white text-black hover:bg-zinc-200 active:scale-95' : 'bg-black/50 text-zinc-500 border border-zinc-700 cursor-not-allowed'}`}
-	                      >
-	                        {isRequestingPayout ? t('payoutRequesting') : canWithdraw ? t('payoutRequestButton') : t('payoutMinimum')}
-	                      </button>
-	                    )}
-                  </div>
-                  <div className="bg-[#1c1c1e] border border-zinc-800 rounded-3xl p-5 mb-6 flex items-center justify-between shadow-inner">
-                    <div className="flex flex-col">
-                      <span className="text-zinc-400 text-[10px] font-bold mb-1">{t('totalEarnedCoins')}</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-5 h-5 bg-gradient-to-br from-yellow-400 to-amber-600 rounded-full flex items-center justify-center text-black shadow-md">
-                          <span className="text-[12px] font-black mt-[1px]">C</span>
-                        </div>
-                        <span className="text-xl font-black text-white">{revenueData.total.toLocaleString()}</span>
-                      </div>
-                    </div>
-                    <div className="flex gap-4 text-[10px] font-bold text-zinc-500 text-right">
-                      <div className="flex flex-col"><span className="mb-0.5">{t('revenueArticle')}</span><span className="text-white">{revenueData.article.toLocaleString()}</span></div>
-                      <div className="flex flex-col"><span className="mb-0.5">{t('revenueGift')}</span><span className="text-white">{revenueData.gift.toLocaleString()}</span></div>
-                    </div>
-                  </div>
-                  <h3 className="font-bold text-xs text-zinc-500 mb-4 px-2 uppercase tracking-widest flex items-center gap-2"><IconList /> {t('transactionHistory')}</h3>
-                  <div className="flex flex-col gap-3">
-                    {validHistory.length > 0 ? validHistory.map((tx: any) => {
-                      const isGift = tx.transaction_type?.startsWith('gift');
-                      const isPaid = tx.transaction_type?.endsWith('_paid');
-                      const sender = allProfiles.find(u => u.id === tx.sender_id);
-                      return (
-                        <div key={tx.id} className="bg-[#1c1c1e] p-4 rounded-2xl border border-zinc-800 flex items-center justify-between shadow-sm relative overflow-hidden">
-                          {isPaid && <div className="absolute left-0 top-0 bottom-0 w-1 bg-[#1DB954]"></div>}
-                          <div className="flex items-center gap-3 pl-1">
-                            <img src={sender?.avatar || '/default-avatar.png'} className="w-10 h-10 rounded-full object-cover border border-zinc-700 shrink-0" />
-                            <div className="flex flex-col justify-center">
-                              <p className="font-bold text-sm text-white leading-tight mb-1.5">{sender?.name || t('userFallback')}</p>
-                              <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 mb-0.5">
-                                <div className="w-3 h-3 flex items-center justify-center opacity-80">
-                                  {isGift ? <IconSparkles /> : <IconArticle />}
-                                </div>
-                                <span>{isGift ? t('revenueGiftReceived') : t('revenueArticlePurchased')}</span>
-                                <span className={isPaid ? 'text-[#1DB954] font-bold ml-1' : 'text-zinc-500 ml-1'}>
-                                  ({isPaid ? t('paidCoin') : t('freeCoin')})
-                                </span>
-                              </div>
-                              <p className="text-[9px] text-zinc-600">{new Date(tx.created_at).toLocaleDateString('ja-JP')} {new Date(tx.created_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</p>
-                            </div>
-                          </div>
-                          <div className="text-right shrink-0">
-                            <p className={`font-black text-lg ${isPaid ? 'text-[#1DB954]' : 'text-yellow-500'}`}>+{tx.amount.toLocaleString()}</p>
-                            <p className="text-[9px] text-zinc-500">{t('coinUnit')}</p>
-                          </div>
-                        </div>
-                      )
-                    }) : (
-                      <div className="text-center py-16 bg-[#1c1c1e] rounded-3xl border border-zinc-800 border-dashed">
-                        <div className="w-12 h-12 bg-zinc-900 rounded-full flex items-center justify-center text-zinc-600 mx-auto mb-3"><IconYen /></div>
-                        <p className="text-zinc-400 text-sm font-bold">{t('noRevenueData')}</p>
-                        <p className="text-[10px] text-zinc-500 mt-2 px-6">{t('noRevenueDataDescription').split('\n').map((line: string, index: number) => <React.Fragment key={line}>{index > 0 && <br />}{line}</React.Fragment>)}</p>
-                      </div>
-                    )}
-                  </div>
-                </>
-              );
-            })()}
-          </div>
-        </div>
+        (() => {
+          const validHistory = revenueData.history.filter(tx => tx.transaction_type !== 'charge');
+          const paidTotal = validHistory.filter(tx => tx.transaction_type?.endsWith('_paid')).reduce((sum, tx) => sum + tx.amount, 0);
+          const jpyRevenue = Math.floor(paidTotal * 0.5);
+          const canWithdraw = jpyRevenue >= 1000;
+          const payoutStatusText = stripeConnectStatus.lastPayoutFailure ? t('payoutLastFailure').replace('{reason}', stripeConnectStatus.lastPayoutFailure.message || stripeConnectStatus.lastPayoutFailure.code || t('payoutDefaultFailureReason')) : stripeConnectStatus.payoutsEnabled ? t('stripePayoutsReady') : stripeConnectStatus.connected ? t('stripePayoutsIncomplete') : t('stripePayoutsRequired');
+          const stripeSetupLabel = isStartingStripeConnect ? t('stripeConnecting') : stripeConnectStatus.connected ? t('payoutSetupContinue') : t('payoutSetupStart');
+          const payoutButtonLabel = isRequestingPayout ? t('payoutRequesting') : canWithdraw ? t('payoutRequestButton') : t('payoutMinimum');
+          const historyRows = validHistory.map((tx: any) => {
+            const isGift = tx.transaction_type?.startsWith('gift');
+            const isPaid = tx.transaction_type?.endsWith('_paid');
+            const sender = allProfiles.find(u => u.id === tx.sender_id);
+            return {
+              id: tx.id,
+              isGift,
+              isPaid,
+              senderAvatar: sender?.avatar || '/default-avatar.png',
+              senderName: sender?.name || t('userFallback'),
+              actionLabel: isGift ? t('revenueGiftReceived') : t('revenueArticlePurchased'),
+              coinTypeLabel: isPaid ? t('paidCoin') : t('freeCoin'),
+              dateLabel: `${new Date(tx.created_at).toLocaleDateString('ja-JP')} ${new Date(tx.created_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}`,
+              amount: tx.amount,
+            };
+          });
+
+          return (
+            <RevenueDashboard
+              jpyRevenue={jpyRevenue}
+              paidTotal={paidTotal}
+              totalRevenue={revenueData.total}
+              articleRevenue={revenueData.article}
+              giftRevenue={revenueData.gift}
+              historyRows={historyRows}
+              canWithdraw={canWithdraw}
+              showStripeSetupAction={!stripeConnectStatus.payoutsEnabled}
+              isStartingStripeConnect={isStartingStripeConnect}
+              isRequestingPayout={isRequestingPayout}
+              payoutStatusText={payoutStatusText}
+              stripeSetupLabel={stripeSetupLabel}
+              payoutButtonLabel={payoutButtonLabel}
+              labels={{
+                title: t('revenueDashboard'),
+                availableRevenue: t('availableRevenue'),
+                payoutEligiblePaidCoins: t('payoutEligiblePaidCoins'),
+                payoutSettings: t('payoutSettings'),
+                totalEarnedCoins: t('totalEarnedCoins'),
+                revenueArticle: t('revenueArticle'),
+                revenueGift: t('revenueGift'),
+                transactionHistory: t('transactionHistory'),
+                coinUnit: t('coinUnit'),
+                noRevenueData: t('noRevenueData'),
+                noRevenueDataDescription: t('noRevenueDataDescription'),
+              }}
+              onClose={() => setShowRevenueDashboard(false)}
+              onStartStripeConnectOnboarding={startStripeConnectOnboarding}
+              onRequestCreatorPayout={requestCreatorPayout}
+            />
+          );
+        })()
       )}
       {/* 💡 ブロックリスト確認・解除モーダル */}
       {showBlockedUsersModal && (
