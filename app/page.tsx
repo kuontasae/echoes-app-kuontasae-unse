@@ -32,6 +32,7 @@ import { MiniPlayer } from './components/MiniPlayer';
 import { MutualFriendsModal } from './components/MutualFriendsModal';
 import { NotificationsModal } from './components/NotificationsModal';
 import { OnboardingPanel } from './components/OnboardingPanel';
+import { SettingsMenu } from './components/SettingsMenu';
 import { displayLocalTime, formatCount } from './utils/formatters';
 import { COIN_CHARGE_PLANS, type CoinChargePlan } from './coinPlans';
 import { useSearchParams } from 'next/navigation';
@@ -6934,49 +6935,48 @@ const renderFeedCard = (s: Song) => (
         />
       )}
       {showSettingsMenu && (
-        <div className="fixed inset-0 bg-black z-[800] animate-fade-in overflow-y-auto">
-          <div className="flex items-center px-4 py-4 border-b border-zinc-900 sticky top-0 bg-black/90 backdrop-blur-md z-10"><button onClick={() => setShowSettingsMenu(false)}><IconChevronLeft /></button><h2 className="text-white font-bold text-lg mx-auto pr-8">{t('settings')}</h2></div>
-          <div className="px-4 py-6">
-            <div className="bg-[#1c1c1e] rounded-[22px] p-4 flex items-center justify-between mb-8 cursor-pointer" onClick={() => { setShowSettingsMenu(false); openEditProfile(); }}><div className="flex items-center gap-4"><img src={myProfile.avatar} className="w-12 h-12 rounded-full object-cover border border-zinc-800" /><div><p className="font-bold text-lg">{myProfile.name}</p><p className="text-sm text-zinc-500">@{myProfile.handle}</p></div></div><IconChevronRight /></div>
-            <p className="text-xs font-bold text-zinc-500 mb-2 px-2">{t('creatorTools')}</p>
-            <div className="bg-[#1c1c1e] rounded-2xl mb-8 flex flex-col">
-	              <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-zinc-800/50 transition-colors" onClick={loadRevenueDashboard}>
-                <div className="flex items-center gap-3 text-yellow-500"><IconYen /><p className="font-bold text-sm text-white">{t('revenueDashboard')}</p></div>
-                <IconChevronRight />
-              </div>
-            </div>
-            <p className="text-xs font-bold text-zinc-500 mb-2 px-2">{t('features')}</p>
-            <div className="bg-[#1c1c1e] rounded-2xl mb-8"><div className="flex items-center justify-between p-4"><div className="flex items-center gap-3"><IconMusic /><p className="font-bold text-sm">{t('audio')}</p></div><button onClick={() => setSettings({ ...settings, audio: !settings.audio })} className={`w-12 h-6 rounded-full p-1 transition-colors ${settings.audio ? 'bg-[#1DB954]' : 'bg-zinc-700'}`}><div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${settings.audio ? 'translate-x-6' : 'translate-x-0'}`}></div></button></div></div>
-            <p className="text-xs font-bold text-zinc-500 mb-2 px-2">{t('settings')}</p>
-            <div className="bg-[#1c1c1e] rounded-2xl mb-8 flex flex-col">
-              <div className="flex items-center justify-between p-4 border-b border-zinc-800/50"><div className="flex items-center gap-3"><IconBell /><p className="font-bold text-sm">{t('notifications')}</p></div><button onClick={() => { setSettings({ ...settings, notifications: !settings.notifications }); }} className={`w-12 h-6 rounded-full p-1 transition-colors ${settings.notifications ? 'bg-[#1DB954]' : 'bg-zinc-700'}`}><div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${settings.notifications ? 'translate-x-6' : 'translate-x-0'}`}></div></button></div>
-              <div className="flex items-center justify-between p-4 border-b border-zinc-800/50"><div className="flex items-center gap-3"><IconLockSetting /><p className="font-bold text-sm">{t('privateAcc')}</p></div><button onClick={() => { setEditIsPrivate(!myProfile.isPrivate); setMyProfile({ ...myProfile, isPrivate: !myProfile.isPrivate }); }} className={`w-12 h-6 rounded-full p-1 transition-colors ${myProfile.isPrivate ? 'bg-white' : 'bg-zinc-700'}`}><div className={`w-4 h-4 rounded-full shadow-md transform transition-transform ${myProfile.isPrivate ? 'translate-x-6 bg-black' : 'translate-x-0 bg-white'}`}></div></button></div>
-              <div className="relative flex items-center justify-between p-4 border-b border-zinc-800/50 cursor-pointer"><div className="flex items-center gap-3"><IconClock /><p className="font-bold text-sm">{t('timezone')}: {timeZone.split('/').pop()?.replace('_', ' ')}</p></div><IconChevronRight /><select value={timeZone} onChange={(e) => setTimeZone(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"><optgroup label="Asia"><option value="Asia/Tokyo">Tokyo (JST)</option><option value="Asia/Seoul">Seoul (KST)</option><option value="Asia/Shanghai">Shanghai (CST)</option></optgroup><optgroup label="America"><option value="America/New_York">New York (EST/EDT)</option><option value="America/Los_Angeles">Los Angeles (PST/PDT)</option></optgroup><optgroup label="Europe"><option value="Europe/London">London (GMT/BST)</option><option value="Europe/Paris">Paris (CET/CEST)</option></optgroup></select></div>
-              <div className="relative flex items-center justify-between p-4 cursor-pointer"><div className="flex items-center gap-3"><IconGlobe /><p className="font-bold text-sm">{t('language')}: {language}</p></div><IconChevronRight /><select value={language} onChange={(e) => handleLanguageChange(e.target.value)} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"><option value="日本語">日本語</option><option value="English">English</option><option value="中文">中文</option></select></div>
-              <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-zinc-800/50 transition-colors" onClick={() => { setShowSettingsMenu(false); setShowBlockedUsersModal(true); }}><div className="flex items-center gap-3"><IconLock /><p className="font-bold text-sm">{t('blockedUsers')}</p></div><IconChevronRight /></div>
-            </div>
-            <p className="text-xs font-bold text-zinc-500 mb-2 px-2">{t('appInfo')}</p>
-            <div className="bg-[#1c1c1e] rounded-2xl mb-8 flex flex-col">
-              <div className="flex items-center justify-between p-4 border-b border-zinc-800/50 cursor-pointer" onClick={handleShareApp}><div className="flex items-center gap-3"><IconShareExternal /><p className="font-bold text-sm">{t('shareApp')}</p></div><IconChevronRight /></div>
-              <div className="flex items-center justify-between p-4 border-b border-zinc-800/50 cursor-pointer"><div className="flex items-center gap-3"><IconStar /><p className="font-bold text-sm">{t('rateApp')}</p></div><IconChevronRight /></div>
-              <div className="flex items-center justify-between p-4 border-b border-zinc-800/50 cursor-pointer" onClick={() => setShowAppInfoModal({ title: t('help'), content: t('HelpSupportContent') })}><div className="flex items-center gap-3"><IconHelp /><p className="font-bold text-sm">{t('help')}</p></div><IconChevronRight /></div>
-              <div className="flex items-center justify-between p-4 cursor-pointer" onClick={() => setShowAppInfoModal({ title: t('appInfo'), content: t('AppInfoContent') })}><div className="flex items-center gap-3"><IconInfo /><p className="font-bold text-sm">{t('appInfo')}</p></div><IconChevronRight /></div>
-            </div>
-            {currentUser?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL && (
-              <>
-                <p className="text-xs font-bold text-red-500 mb-2 px-2">{t('adminOnly')}</p>
-                <div className="bg-[#1c1c1e] rounded-2xl mb-8 flex flex-col border border-red-500/30">
-                  <div className="flex items-center justify-between p-4 cursor-pointer hover:bg-red-500/10 transition-colors rounded-2xl" onClick={() => { setShowSettingsMenu(false); setShowAdminDashboard(true); }}>
-                    <div className="flex items-center gap-3 text-red-500"><IconWarning /><p className="font-bold text-sm">{t('adminDashboard')}</p></div>
-                    <IconChevronRight />
-                  </div>
-                </div>
-              </>
-            )}
-            <button onClick={() => setShowLogoutConfirm(true)} className="w-full bg-[#1c1c1e] hover:bg-zinc-900 transition-colors text-white font-bold py-4 rounded-2xl text-center mb-4 shadow-sm">{t('logout')}</button>
-            <button onClick={() => setShowDeleteAccountConfirm(true)} className="w-full bg-transparent border border-red-500/30 hover:bg-red-500/10 transition-colors text-red-500 font-bold py-4 rounded-2xl text-center mb-10 shadow-sm">{t('deleteAccFull')}</button>
-          </div>
-        </div>
+        <SettingsMenu
+          myProfile={myProfile}
+          settingsState={settings}
+          timeZone={timeZone}
+          language={language}
+          isAdmin={currentUser?.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL}
+          labels={{
+            settings: t('settings'),
+            creatorTools: t('creatorTools'),
+            revenueDashboard: t('revenueDashboard'),
+            features: t('features'),
+            audio: t('audio'),
+            notifications: t('notifications'),
+            privateAcc: t('privateAcc'),
+            timezone: t('timezone'),
+            language: t('language'),
+            blockedUsers: t('blockedUsers'),
+            appInfo: t('appInfo'),
+            shareApp: t('shareApp'),
+            rateApp: t('rateApp'),
+            help: t('help'),
+            adminOnly: t('adminOnly'),
+            adminDashboard: t('adminDashboard'),
+            logout: t('logout'),
+            deleteAccFull: t('deleteAccFull'),
+          }}
+          onClose={() => setShowSettingsMenu(false)}
+          onOpenEditProfile={() => { setShowSettingsMenu(false); openEditProfile(); }}
+          onLoadRevenueDashboard={loadRevenueDashboard}
+          onToggleAudio={() => setSettings({ ...settings, audio: !settings.audio })}
+          onToggleNotifications={() => { setSettings({ ...settings, notifications: !settings.notifications }); }}
+          onTogglePrivate={() => { setEditIsPrivate(!myProfile.isPrivate); setMyProfile({ ...myProfile, isPrivate: !myProfile.isPrivate }); }}
+          onTimeZoneChange={setTimeZone}
+          onLanguageChange={handleLanguageChange}
+          onOpenBlockedUsers={() => { setShowSettingsMenu(false); setShowBlockedUsersModal(true); }}
+          onShareApp={handleShareApp}
+          onOpenHelp={() => setShowAppInfoModal({ title: t('help'), content: t('HelpSupportContent') })}
+          onOpenAppInfo={() => setShowAppInfoModal({ title: t('appInfo'), content: t('AppInfoContent') })}
+          onOpenAdminDashboard={() => { setShowSettingsMenu(false); setShowAdminDashboard(true); }}
+          onLogout={() => setShowLogoutConfirm(true)}
+          onDeleteAccount={() => setShowDeleteAccountConfirm(true)}
+        />
       )}
       {showRevenueDashboard && (
         <div className="fixed inset-0 bg-black/95 z-[1500] flex flex-col animate-fade-in" onClick={(e) => e.stopPropagation()}>
