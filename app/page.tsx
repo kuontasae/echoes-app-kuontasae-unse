@@ -23,6 +23,7 @@ import { ArtistDetailOverlay } from './components/ArtistDetailOverlay';
 import { CalendarMonthYearPicker } from './components/CalendarMonthYearPicker';
 import { MatchFilterModal } from './components/MatchFilterModal';
 import { MiniPlayer } from './components/MiniPlayer';
+import { NotificationsModal } from './components/NotificationsModal';
 import { displayLocalTime, formatCount } from './utils/formatters';
 import { COIN_CHARGE_PLANS, type CoinChargePlan } from './coinPlans';
 import { useSearchParams } from 'next/navigation';
@@ -7059,12 +7060,14 @@ const renderFeedCard = (s: Song) => (
         </div>
       )}
       {showNotifications && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[950] animate-fade-in" onClick={() => setShowNotifications(false)}>
-          <div className="absolute top-4 right-4 w-full max-w-sm bg-[#1c1c1e] border border-zinc-800 rounded-3xl p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-6"><h3 className="font-bold text-lg">{t('notifications')}</h3><button onClick={() => setShowNotifications(false)} className="text-zinc-500 hover:text-white"><IconCross /></button></div>
-            <div className="flex flex-col gap-4 max-h-[60vh] overflow-y-auto pr-2 scrollbar-hide">
-  {notifications.map((n) => (
-    <div key={n.id} onClick={async () => { 
+        <NotificationsModal
+          notifications={notifications}
+          labels={{
+            title: t('notifications'),
+            empty: t('notificationsEmpty'),
+          }}
+          onClose={() => setShowNotifications(false)}
+          onNotificationClick={async (n) => {
       if (n.read) return;
       setNotifications(prev => prev.map(p => p.id === n.id ? { ...p, read: true } : p));
       try {
@@ -7073,18 +7076,8 @@ const renderFeedCard = (s: Song) => (
       } catch (err) {
         setNotifications(prev => prev.map(p => p.id === n.id ? { ...p, read: false } : p));
       }
-    }} className="flex items-start gap-4 p-3 rounded-2xl hover:bg-zinc-800/50 transition-colors cursor-pointer relative">
-      {!n.read && <div className="absolute top-4 right-4 w-2 h-2 bg-[#1DB954] rounded-full"></div>}
-      <div className="w-10 h-10 rounded-full bg-zinc-800 flex items-center justify-center flex-shrink-0 text-white">
-        {n.type === 'follow' ? <IconUserPlus /> : n.type === 'like' ? <IconHeart filled={true} /> : n.type === 'vibe_request' ? <IconSparkles /> : n.type === 'match' ? <IconMatchTab /> : <IconComment />}
-      </div>
-      <div><p className={`text-sm ${n.read ? 'text-zinc-400 font-normal' : 'text-white font-bold'}`}>{n.text}</p><p className="text-[10px] text-zinc-500 mt-1">{n.time}</p></div>
-    </div>
-  ))}
-  {notifications.length === 0 && <p className="text-zinc-500 text-xs text-center py-4">{t('notificationsEmpty')}</p>}
-</div>
-          </div>
-        </div>
+    }}
+        />
       )}
       {showSettingsMenu && (
         <div className="fixed inset-0 bg-black z-[800] animate-fade-in overflow-y-auto">
