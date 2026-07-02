@@ -31,6 +31,7 @@ import { MatchFilterModal } from './components/MatchFilterModal';
 import { MiniPlayer } from './components/MiniPlayer';
 import { MutualFriendsModal } from './components/MutualFriendsModal';
 import { NotificationsModal } from './components/NotificationsModal';
+import { OnboardingPanel } from './components/OnboardingPanel';
 import { displayLocalTime, formatCount } from './utils/formatters';
 import { COIN_CHARGE_PLANS, type CoinChargePlan } from './coinPlans';
 import { useSearchParams } from 'next/navigation';
@@ -6007,57 +6008,6 @@ const renderFeedCard = (s: Song) => (
     const labels = localI18n[language]?.onboardingDefaultChoiceLabels;
     return labels?.[candidate] || candidate;
   };
-  const renderOnboardingChipPicker = (
-    label: string,
-    candidates: string[],
-    items: string[],
-    setItems: React.Dispatch<React.SetStateAction<string[]>>,
-    prefix = ""
-  ) => (
-    <div>
-      <label className="text-[10px] text-zinc-500 ml-1 mb-2 block font-bold">{label}</label>
-      <div className="flex flex-wrap gap-2">
-        {candidates.map(candidate => {
-          const isSelected = items.includes(candidate);
-          return (
-            <button
-              key={candidate}
-              type="button"
-              onClick={() => toggleOnboardingChoice(candidate, items, setItems)}
-              className={`px-3 py-2 rounded-full border text-[11px] font-bold transition-colors ${isSelected ? 'bg-[#1DB954] border-[#1DB954] text-black' : 'bg-black border-zinc-800 text-zinc-300 hover:text-white'}`}
-            >
-              {prefix}{getOnboardingChoiceDisplayLabel(candidate)}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-  const renderOnboardingTextAdd = (
-    placeholder: string,
-    value: string,
-    setValue: (value: string) => void,
-    items: string[],
-    setItems: React.Dispatch<React.SetStateAction<string[]>>
-  ) => (
-    <div className="flex gap-2 mt-2">
-      <input
-        type="text"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => handleOnboardingTextKeyDown(e, value, setValue, items, setItems)}
-        placeholder={placeholder}
-        className="min-w-0 flex-1 bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-zinc-500"
-      />
-      <button
-        type="button"
-        onClick={() => addOnboardingTag(value, setValue, items, setItems)}
-        className="px-4 bg-white text-black rounded-xl text-xs font-bold shrink-0"
-      >
-        {t('add')}
-      </button>
-    </div>
-  );
 
   const closeChatMusicPicker = () => { setShowChatMusicSelector(false); setSelectedChatSong(null); setChatMusicComment(""); };
   const handleSendChatMusicShare = async () => {
@@ -7248,139 +7198,66 @@ const renderFeedCard = (s: Song) => (
         onInstagramChange={setEditInstagram}
       />
       {showInitialOnboarding && (
-        <div className="fixed inset-0 bg-black/90 z-[520] flex items-center justify-center p-6 animate-fade-in">
-          <div className="bg-[#1c1c1e] w-full max-w-sm rounded-[24px] p-6 flex flex-col gap-5 shadow-2xl max-h-[86vh] overflow-y-auto">
-            <div>
-              <div className="w-12 h-12 rounded-full bg-[#1DB954]/20 text-[#1DB954] flex items-center justify-center mb-4">
-                <IconHeadphones />
-              </div>
-              <h3 className="font-bold text-xl mb-2">{t('onboardingTitle')}</h3>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                {t('onboardingDescription')}
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <p className="text-[11px] font-bold text-white">{t('profileSection')}</p>
-              <div className="flex items-center gap-4">
-                <div className="relative w-20 h-20 shrink-0 group cursor-pointer">
-                  <img src={editAvatar} alt="" className="w-full h-full rounded-full object-cover opacity-80 group-hover:opacity-60" />
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none"><IconCamera /></div>
-                  <input type="file" accept="image/*" onChange={handleImageUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" aria-label={t('profileSection')} />
-                </div>
-                <div className="min-w-0 flex-1 space-y-2">
-                  <input type="text" value={editName} onChange={(e) => setEditName(e.target.value)} placeholder={t('name')} className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-zinc-500" />
-                  <div className="flex items-center bg-black border border-zinc-800 rounded-xl overflow-hidden focus-within:border-zinc-500">
-                    <span className="pl-3 text-zinc-500 font-bold">@</span>
-                    <input type="text" value={editHandle} onChange={(e) => setEditHandle(e.target.value)} placeholder={t('handle')} className="min-w-0 w-full bg-transparent p-3 text-sm text-white focus:outline-none" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <p className="text-[11px] font-bold text-white">{t('musicTaste')}</p>
-              {renderOnboardingChipPicker(
-                t('favoriteGenres'),
-                onboardingGenreCandidates,
-                onboardingGenres,
-                setOnboardingGenres
-              )}
-              <div>
-                <label className="text-[10px] text-zinc-500 ml-1 mb-2 block font-bold">{t('favoriteArtist')}</label>
-                <input
-                  type="text"
-                  value={onboardingArtistInput}
-                  onChange={(e) => setOnboardingArtistInput(e.target.value)}
-                  placeholder={t('artistSearchPlaceholder')}
-                  aria-label={t('favoriteArtistSearchLabel')}
-                  className="w-full bg-black border border-zinc-800 rounded-xl p-3 text-sm text-white focus:outline-none focus:border-zinc-500"
-                />
-                {onboardingArtists.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {onboardingArtists.map(artist => (
-                      <button
-                        key={artist}
-                        type="button"
-                        onClick={() => removeOnboardingTag(artist, setOnboardingArtists)}
-                        className="px-3 py-1.5 bg-[#1DB954] text-black rounded-full text-[11px] font-bold"
-                      >
-                        {artist} ×
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {onboardingArtistInput.trim() && (
-                  <div className="mt-2 bg-black border border-zinc-800 rounded-xl overflow-hidden">
-                    {onboardingArtistSuggestions.length > 0 ? onboardingArtistSuggestions.map(artist => (
-                      <button
-                        key={artist.artistId}
-                        type="button"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          addOnboardingTag(artist.artistName, setOnboardingArtistInput, onboardingArtists, setOnboardingArtists);
-                        }}
-                        className="w-full flex items-center gap-3 p-3 text-left text-xs text-white hover:bg-zinc-800 border-b border-zinc-900 last:border-0"
-                      >
-                        <img src={artist.artworkUrl} alt="" className="w-8 h-8 rounded-full object-cover" />
-                        <span className="font-bold truncate">{artist.artistName}</span>
-                      </button>
-                    )) : (
-                      <p className="p-3 text-[11px] text-zinc-500">{t('searchingCandidates')}</p>
-                    )}
-                  </div>
-                )}
-              </div>
-              {renderOnboardingChipPicker(
-                t('hashtags'),
-                onboardingHashtagCandidates,
-                onboardingHashtags,
-                setOnboardingHashtags,
-                "#"
-              )}
-              {renderOnboardingTextAdd(
-                t('customHashtagPlaceholder'),
-                onboardingHashtagInput,
-                setOnboardingHashtagInput,
-                onboardingHashtags,
-                setOnboardingHashtags
-              )}
-              {renderOnboardingChipPicker(
-                t('liveHistory'),
-                onboardingLiveCandidates,
-                onboardingLiveHistory,
-                setOnboardingLiveHistory
-              )}
-              {renderOnboardingTextAdd(
-                t('customLiveHistoryPlaceholder'),
-                onboardingLiveInput,
-                setOnboardingLiveInput,
-                onboardingLiveHistory,
-                setOnboardingLiveHistory
-              )}
-            </div>
-
-            <div className="flex gap-3 sticky bottom-0 bg-[#1c1c1e] pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  if (currentUser?.id) window.localStorage.setItem(getOnboardingSkippedKey(currentUser.id), 'true');
-                  setShowInitialOnboarding(false);
-                }}
-                className="flex-1 py-3.5 border border-zinc-800 rounded-xl text-xs font-bold text-zinc-300 hover:bg-zinc-800 transition-colors"
-              >
-                {t('later')}
-              </button>
-              <button
-                type="button"
-                onClick={saveInitialOnboarding}
-                className="flex-1 py-3.5 bg-[#1DB954] text-black rounded-xl text-xs font-bold hover:brightness-110 transition-colors"
-              >
-                {t('saveAndStart')}
-              </button>
-            </div>
-          </div>
-        </div>
+        <OnboardingPanel
+          editAvatar={editAvatar}
+          editName={editName}
+          editHandle={editHandle}
+          onboardingGenreCandidates={onboardingGenreCandidates}
+          onboardingGenres={onboardingGenres}
+          onboardingArtistInput={onboardingArtistInput}
+          onboardingArtists={onboardingArtists}
+          onboardingArtistSuggestions={onboardingArtistSuggestions}
+          onboardingHashtagCandidates={onboardingHashtagCandidates}
+          onboardingHashtags={onboardingHashtags}
+          onboardingHashtagInput={onboardingHashtagInput}
+          onboardingLiveCandidates={onboardingLiveCandidates}
+          onboardingLiveHistory={onboardingLiveHistory}
+          onboardingLiveInput={onboardingLiveInput}
+          labels={{
+            profileSection: t('profileSection'),
+            title: t('onboardingTitle'),
+            description: t('onboardingDescription'),
+            name: t('name'),
+            handle: t('handle'),
+            musicTaste: t('musicTaste'),
+            favoriteGenres: t('favoriteGenres'),
+            favoriteArtist: t('favoriteArtist'),
+            artistSearchPlaceholder: t('artistSearchPlaceholder'),
+            favoriteArtistSearchLabel: t('favoriteArtistSearchLabel'),
+            searchingCandidates: t('searchingCandidates'),
+            hashtags: t('hashtags'),
+            customHashtagPlaceholder: t('customHashtagPlaceholder'),
+            liveHistory: t('liveHistory'),
+            customLiveHistoryPlaceholder: t('customLiveHistoryPlaceholder'),
+            add: t('add'),
+            later: t('later'),
+            saveAndStart: t('saveAndStart'),
+          }}
+          getChoiceDisplayLabel={getOnboardingChoiceDisplayLabel}
+          onImageUpload={handleImageUpload}
+          onNameChange={setEditName}
+          onHandleChange={setEditHandle}
+          onToggleGenre={(candidate) => toggleOnboardingChoice(candidate, onboardingGenres, setOnboardingGenres)}
+          onArtistInputChange={setOnboardingArtistInput}
+          onRemoveArtist={(artist) => removeOnboardingTag(artist, setOnboardingArtists)}
+          onArtistSuggestionMouseDown={(e, artistName) => {
+            e.preventDefault();
+            addOnboardingTag(artistName, setOnboardingArtistInput, onboardingArtists, setOnboardingArtists);
+          }}
+          onToggleHashtag={(candidate) => toggleOnboardingChoice(candidate, onboardingHashtags, setOnboardingHashtags)}
+          onHashtagInputChange={setOnboardingHashtagInput}
+          onHashtagInputKeyDown={(e) => handleOnboardingTextKeyDown(e, onboardingHashtagInput, setOnboardingHashtagInput, onboardingHashtags, setOnboardingHashtags)}
+          onAddHashtag={() => addOnboardingTag(onboardingHashtagInput, setOnboardingHashtagInput, onboardingHashtags, setOnboardingHashtags)}
+          onToggleLiveHistory={(candidate) => toggleOnboardingChoice(candidate, onboardingLiveHistory, setOnboardingLiveHistory)}
+          onLiveInputChange={setOnboardingLiveInput}
+          onLiveInputKeyDown={(e) => handleOnboardingTextKeyDown(e, onboardingLiveInput, setOnboardingLiveInput, onboardingLiveHistory, setOnboardingLiveHistory)}
+          onAddLiveHistory={() => addOnboardingTag(onboardingLiveInput, setOnboardingLiveInput, onboardingLiveHistory, setOnboardingLiveHistory)}
+          onSkip={() => {
+            if (currentUser?.id) window.localStorage.setItem(getOnboardingSkippedKey(currentUser.id), 'true');
+            setShowInitialOnboarding(false);
+          }}
+          onSave={saveInitialOnboarding}
+        />
       )}
       {showAppInfoModal && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[950] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowAppInfoModal(null)}>
