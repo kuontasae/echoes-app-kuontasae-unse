@@ -25,6 +25,7 @@ import { ArtistDetailOverlay } from './components/ArtistDetailOverlay';
 import { BlockedUsersModal } from './components/BlockedUsersModal';
 import { CalendarMonthYearPicker } from './components/CalendarMonthYearPicker';
 import { CalendarPopupVibeOverlay } from './components/CalendarPopupVibeOverlay';
+import { CommunityCalendarModal } from './components/CommunityCalendarModal';
 import { ChatMusicPickerModal } from './components/ChatMusicPickerModal';
 import { CommunityCalendarPicker } from './components/CommunityCalendarPicker';
 import { CreateGroupModal } from './components/CreateGroupModal';
@@ -6214,6 +6215,31 @@ const renderFeedCard = (s: Song) => (
       )}
     </div>
   );
+  const communityCalendarDayCells = [
+    ...Array.from({ length: new Date(commCalDate.getFullYear(), commCalDate.getMonth(), 1).getDay() }).map((_, i) => ({ type: 'empty' as const, key: `empty-${i}` })),
+    ...Array.from({ length: new Date(commCalDate.getFullYear(), commCalDate.getMonth() + 1, 0).getDate() }).map((_, i) => {
+      const day = i + 1;
+      const dateStr = `${commCalDate.getFullYear()}-${(commCalDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+      const eventsToday = realCommunities.filter(c => c.date === dateStr && (c.memberCount >= 10 || c.isJoined));
+      const isSelected = selectedModalDate === dateStr;
+      return {
+        type: 'day' as const,
+        key: String(day),
+        day,
+        dateStr,
+        eventsCount: eventsToday.length,
+        eventCountLabel: formatCountTemplate('eventCount', eventsToday.length),
+        isSelected,
+      };
+    }),
+  ];
+  const selectedDateCommunities = selectedModalDate ? realCommunities.filter(c => c.date === selectedModalDate && (c.memberCount >= 10 || c.isJoined)) : [];
+  const selectedDateCommunityItems = selectedDateCommunities.map(c => ({
+    community: c,
+    displayName: formatArtistCommunityDisplayName(c),
+    scheduledCountLabel: formatCountTemplate('communityScheduledCount', c.memberCount),
+  }));
+  const selectedDatePerformanceLabel = selectedModalDate ? formatDatePerformances(selectedModalDate) : "";
   return (
     <main className="min-h-screen bg-black text-white pb-24 font-sans relative selection:bg-zinc-800 overflow-x-hidden">
       <audio ref={audioRef} onEnded={() => setPlayingSong(null)} />
@@ -6322,70 +6348,24 @@ const renderFeedCard = (s: Song) => (
       )}
       {/* 💡 カレンダーモーダル（タップしてリストを表示するUI ＆ ドラムロール対応 ＆ 10人以上制限） */}
       {showCommCalendar && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-md z-[950] flex justify-center items-end md:items-center animate-fade-in" onClick={() => { setShowCommCalendar(false); setSelectedModalDate(null); }}>
-          <div className="bg-[#1c1c1e] w-full md:max-w-[420px] h-[85vh] md:max-h-[80vh] rounded-t-[32px] md:rounded-[32px] p-6 shadow-2xl relative flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-6 shrink-0">
-              <h3 className="font-bold text-lg">{t('findLive')}</h3>
-              <button onClick={() => { setShowCommCalendar(false); setSelectedModalDate(null); }} className="text-zinc-500 hover:text-white"><IconCross /></button>
-            </div>
-            <div className="flex justify-between items-center mb-6 px-2 shrink-0">
-              <button onClick={() => setCommCalDate(new Date(commCalDate.getFullYear(), commCalDate.getMonth() - 1, 1))} className="p-2 text-zinc-400 hover:text-white bg-black rounded-full"><IconChevronLeft /></button>
-              {/* 💡 ここをタップするとドラムロールが開く */}
-              <div className="cursor-pointer hover:opacity-70 transition-opacity" onClick={() => setShowCommDrumroll(true)}>
-                <span className="font-bold text-xl tracking-widest flex items-center gap-2">
-                  {commCalDate.getFullYear()} . {(commCalDate.getMonth() + 1).toString().padStart(2, '0')}
-                  <IconChevronDown />
-                </span>
-              </div>
-              <button onClick={() => setCommCalDate(new Date(commCalDate.getFullYear(), commCalDate.getMonth() + 1, 1))} className="p-2 text-zinc-400 hover:text-white bg-black rounded-full"><IconChevronRight /></button>
-            </div>
-            <div className="grid grid-cols-7 gap-2 mb-4 shrink-0">
-              {weekdayLabels.map(d => <div key={d} className="text-center text-[10px] text-zinc-500 font-bold mb-2">{d}</div>)}
-              {Array.from({ length: new Date(commCalDate.getFullYear(), commCalDate.getMonth(), 1).getDay() }).map((_, i) => <div key={`empty-${i}`} />)}
-             　{Array.from({ length: new Date(commCalDate.getFullYear(), commCalDate.getMonth() + 1, 0).getDate() }).map((_, i) => {
-                const day = i + 1;
-                const dateStr = `${commCalDate.getFullYear()}-${(commCalDate.getMonth() + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-                const eventsToday = realCommunities.filter(c => c.date === dateStr && (c.memberCount >= 10 || c.isJoined));
-                const isSelected = selectedModalDate === dateStr;
-                return (
-                  <div
-                    key={day}
-                    onClick={() => { if (eventsToday.length > 0) setSelectedModalDate(dateStr); }}
-                    className={`aspect-square rounded-xl flex flex-col items-center justify-center relative transition-colors ${eventsToday.length > 0 ? 'cursor-pointer' : 'opacity-50'} ${isSelected ? 'bg-[#1DB954] text-black shadow-lg scale-105 z-10' : 'bg-black hover:bg-zinc-800 text-white'}`}
-                  >
-                    <span className={`text-sm ${isSelected ? 'font-black' : 'font-medium'}`}>{day}</span>
-                    {eventsToday.length > 0 && (
-                      <span className={`text-[9px] font-bold mt-0.5 ${isSelected ? 'text-black' : 'text-[#1DB954]'}`}>{formatCountTemplate('eventCount', eventsToday.length)}</span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-            <div className="flex-1 overflow-y-auto scrollbar-hide mt-4 border-t border-zinc-800 pt-4">
-              {selectedModalDate ? (
-                <div className="flex flex-col gap-3 animate-fade-in">
-                  <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">{formatDatePerformances(selectedModalDate)}</p>
-                  {realCommunities.filter(c => c.date === selectedModalDate && (c.memberCount >= 10 || c.isJoined)).map(c => (
-                    <div key={c.id} onClick={() => { setActiveCommunityDetail(c); setShowCommCalendar(false); setSelectedModalDate(null); }} className="bg-black p-4 rounded-xl flex items-center justify-between cursor-pointer hover:bg-zinc-800 border border-zinc-800 transition-colors">
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        <div className="w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center text-[#1DB954] flex-shrink-0"><IconTicket /></div>
-                        <div className="flex-1 overflow-hidden"><p className="font-bold text-sm text-white truncate">{formatArtistCommunityDisplayName(c)}</p><p className="text-[10px] text-zinc-500">{formatCountTemplate('communityScheduledCount', c.memberCount)}</p></div>
-                      </div>
-                      <IconChevronRight />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="h-full flex items-center justify-center">
-                  <p className="text-sm text-zinc-500 font-bold">{t('tapDateToViewLives')}</p>
-                </div>
-              )}
-            </div>
-            <button onClick={() => { setCommunityDateFilter(""); setShowCommCalendar(false); setSelectedModalDate(null); }} className="w-full mt-4 py-4 bg-zinc-800 text-white rounded-xl text-sm font-bold shadow-lg hover:bg-zinc-700 transition-colors shrink-0">
-              {t('showAllDates')}
-            </button>
-          </div>
-        </div>
+        <CommunityCalendarModal
+          title={t('findLive')}
+          monthLabel={`${commCalDate.getFullYear()} . ${(commCalDate.getMonth() + 1).toString().padStart(2, '0')}`}
+          weekdayLabels={weekdayLabels}
+          dayCells={communityCalendarDayCells}
+          selectedDateLabel={selectedDatePerformanceLabel}
+          selectedCommunities={selectedDateCommunityItems}
+          emptyLabel={t('tapDateToViewLives')}
+          showAllDatesLabel={t('showAllDates')}
+          hasSelectedDate={Boolean(selectedModalDate)}
+          onClose={() => { setShowCommCalendar(false); setSelectedModalDate(null); }}
+          onPreviousMonth={() => setCommCalDate(new Date(commCalDate.getFullYear(), commCalDate.getMonth() - 1, 1))}
+          onNextMonth={() => setCommCalDate(new Date(commCalDate.getFullYear(), commCalDate.getMonth() + 1, 1))}
+          onOpenMonthPicker={() => setShowCommDrumroll(true)}
+          onSelectDate={(dateStr) => setSelectedModalDate(dateStr)}
+          onSelectCommunity={(community) => { setActiveCommunityDetail(community); setShowCommCalendar(false); setSelectedModalDate(null); }}
+          onShowAllDates={() => { setCommunityDateFilter(""); setShowCommCalendar(false); setSelectedModalDate(null); }}
+        />
       )}
       {selectedCalendarPopupVibe && (
         <CalendarPopupVibeOverlay
