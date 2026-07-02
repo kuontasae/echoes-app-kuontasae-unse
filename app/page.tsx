@@ -25,6 +25,7 @@ import { CalendarMonthYearPicker } from './components/CalendarMonthYearPicker';
 import { ChatMusicPickerModal } from './components/ChatMusicPickerModal';
 import { CommunityCalendarPicker } from './components/CommunityCalendarPicker';
 import { CreateGroupModal } from './components/CreateGroupModal';
+import { CreateLiveCommunityModal } from './components/CreateLiveCommunityModal';
 import { MatchFilterModal } from './components/MatchFilterModal';
 import { MiniPlayer } from './components/MiniPlayer';
 import { MutualFriendsModal } from './components/MutualFriendsModal';
@@ -6952,58 +6953,31 @@ const renderFeedCard = (s: Song) => (
       )}
       {/* 💡 新しいライブコミュニティを作成するモーダル */}
       {showCreateCommunityModal && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[950] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowCreateCommunityModal(false)}>
-          <div className="bg-[#1c1c1e] border border-zinc-800 p-6 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-lg">{t('createLiveTitle')}</h3>
-              <button onClick={() => setShowCreateCommunityModal(false)} className="text-zinc-500 hover:text-white"><IconCross /></button>
-            </div>
-            <p className="text-xs text-zinc-400 mb-6 leading-relaxed">{t('createLiveDescription')}</p>
-            <div className="mb-4">
-              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-1 block">{t('liveName')}</label>
-              <input type="text" placeholder={t('liveNamePlaceholder')} value={newCommName} onChange={(e) => setNewCommName(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#1DB954]" />
-            </div>
-            <div className="mb-8">
-              <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">{t('dateLabel')}</label>
-              <div className="flex items-center gap-2">
-                <input
-                  ref={yearInputRef}
-                  type="text"
-                  maxLength={4}
-                  placeholder="YYYY"
-                  value={newCommYear}
-                  onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ''); setNewCommYear(v); if (v.length === 4) monthInputRef.current?.focus(); }}
-                  className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-center text-white focus:outline-none focus:border-[#1DB954] transition-colors"
-                />
-                <span className="text-zinc-500 font-bold">/</span>
-                <input
-                  ref={monthInputRef}
-                  type="text"
-                  maxLength={2}
-                  placeholder="MM"
-                  value={newCommMonth}
-                  onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ''); setNewCommMonth(v); if (v.length === 2) dayInputRef.current?.focus(); }}
-                  onKeyDown={(e) => { if (e.key === 'Backspace' && newCommMonth === '') yearInputRef.current?.focus(); }}
-                  className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-center text-white focus:outline-none focus:border-[#1DB954] transition-colors"
-                />
-                <span className="text-zinc-500 font-bold">/</span>
-                <input
-                  ref={dayInputRef}
-                  type="text"
-                  maxLength={2}
-                  placeholder="DD"
-                  value={newCommDay}
-                  onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ''); setNewCommDay(v); }}
-                  onKeyDown={(e) => { if (e.key === 'Backspace' && newCommDay === '') monthInputRef.current?.focus(); }}
-                  className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-center text-white focus:outline-none focus:border-[#1DB954] transition-colors"
-                />
-              </div>
-            </div>
-            <button onClick={handleCreateCommunity} className="w-full py-4 bg-[#1DB954] text-black rounded-xl text-sm font-bold shadow-lg hover:scale-105 transition-transform flex justify-center items-center gap-2">
-              {t('createAndJoinLive')}
-            </button>
-          </div>
-        </div>
+        <CreateLiveCommunityModal
+          newCommName={newCommName}
+          newCommYear={newCommYear}
+          newCommMonth={newCommMonth}
+          newCommDay={newCommDay}
+          yearInputRef={yearInputRef}
+          monthInputRef={monthInputRef}
+          dayInputRef={dayInputRef}
+          labels={{
+            title: t('createLiveTitle'),
+            description: t('createLiveDescription'),
+            liveName: t('liveName'),
+            liveNamePlaceholder: t('liveNamePlaceholder'),
+            dateLabel: t('dateLabel'),
+            createAndJoin: t('createAndJoinLive'),
+          }}
+          onClose={() => setShowCreateCommunityModal(false)}
+          onNameChange={setNewCommName}
+          onYearChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ''); setNewCommYear(v); if (v.length === 4) monthInputRef.current?.focus(); }}
+          onMonthChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ''); setNewCommMonth(v); if (v.length === 2) dayInputRef.current?.focus(); }}
+          onMonthKeyDown={(e) => { if (e.key === 'Backspace' && newCommMonth === '') yearInputRef.current?.focus(); }}
+          onDayChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ''); setNewCommDay(v); }}
+          onDayKeyDown={(e) => { if (e.key === 'Backspace' && newCommDay === '') monthInputRef.current?.focus(); }}
+          onCreateCommunity={handleCreateCommunity}
+        />
       )}
       {showNotifications && (
         <NotificationsModal
