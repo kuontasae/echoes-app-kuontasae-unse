@@ -29,6 +29,7 @@ import { ChatMusicPickerModal } from './components/ChatMusicPickerModal';
 import { CommunityCalendarPicker } from './components/CommunityCalendarPicker';
 import { CreateGroupModal } from './components/CreateGroupModal';
 import { CreateLiveCommunityModal } from './components/CreateLiveCommunityModal';
+import { DeleteAccountConfirmationModal } from './components/DeleteAccountConfirmationModal';
 import { LogoutConfirmationModal } from './components/LogoutConfirmationModal';
 import { MatchFilterModal } from './components/MatchFilterModal';
 import { MiniPlayer } from './components/MiniPlayer';
@@ -7130,19 +7131,16 @@ const renderFeedCard = (s: Song) => (
       )}
       {/* 💡 アカウント削除確認モーダル */}
       {showDeleteAccountConfirm && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-2xl z-[1000] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowDeleteAccountConfirm(false)}>
-          <div className="bg-[#1c1c1e] border border-red-500/50 p-8 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
-            <div className="w-16 h-16 bg-red-500/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4"><IconWarning /></div>
-            <p className="text-center font-bold text-lg mb-4 text-white">{t('deleteAccountConfirmTitle')}</p>
-            <p className="text-xs text-zinc-400 text-center mb-8 leading-relaxed">
-              {t('deleteAccountWarningLine1')}<br />{t('deleteAccountWarningLine2')}<br />{t('deleteAccountWarningLine3')}
-            </p>
-            <div className="flex gap-4">
-              <button onClick={() => setShowDeleteAccountConfirm(false)} className="flex-1 py-3.5 border border-zinc-800 rounded-xl text-xs font-bold uppercase hover:bg-zinc-800">{t('cancel')}</button>
-              <button onClick={handleDeleteAccount} className="flex-1 py-3.5 bg-red-500 text-white rounded-xl text-xs font-bold uppercase hover:scale-105 transition-transform shadow-lg">{t('deleteAccountAction')}</button>
-            </div>
-          </div>
-        </div>
+        <DeleteAccountConfirmationModal
+          title={t('deleteAccountConfirmTitle')}
+          warningLine1={t('deleteAccountWarningLine1')}
+          warningLine2={t('deleteAccountWarningLine2')}
+          warningLine3={t('deleteAccountWarningLine3')}
+          cancelLabel={t('cancel')}
+          deleteLabel={t('deleteAccountAction')}
+          onCancel={() => setShowDeleteAccountConfirm(false)}
+          onConfirm={handleDeleteAccount}
+        />
       )}
       {/* 💡 運営専用：{t('adminDashboard')}画面 */}
       {showAdminDashboard && (
