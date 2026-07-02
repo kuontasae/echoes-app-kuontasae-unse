@@ -19,6 +19,7 @@ import { ChatInputBar } from './components/chat/ChatInputBar';
 import { ChatListSection } from './components/chat/ChatListSection';
 import { ChatMessages } from './components/chat/ChatMessages';
 import { ChatRoomHeader } from './components/chat/ChatRoomHeader';
+import { ArtistDetailOverlay } from './components/ArtistDetailOverlay';
 import { CalendarMonthYearPicker } from './components/CalendarMonthYearPicker';
 import { MatchFilterModal } from './components/MatchFilterModal';
 import { MiniPlayer } from './components/MiniPlayer';
@@ -6180,131 +6181,41 @@ const renderFeedCard = (s: Song) => (
         onOverwrite={() => executePost(new Date())}
       />
       {activeArtistProfile && (
-        <div className="fixed inset-0 bg-black z-[1000] animate-fade-in flex flex-col overflow-y-auto">
-          <div className="absolute top-0 w-full h-[50vh] z-0 pointer-events-none">
-            {(activeArtistProfile.artistImageUrl || activeArtistProfile.artworkUrl) && (
-              <img src={activeArtistProfile.artistImageUrl || activeArtistProfile.artworkUrl} className="w-full h-full object-cover opacity-60" onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }} />
-            )}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/60 to-black"></div>
-          </div>
-          <div className="flex items-center p-4 sticky top-0 z-20">
-            <button aria-label={t('artistDetailBackLabel')} onClick={() => { setPlayingSong(null); handleGoBack(); }} className="text-white bg-black/40 backdrop-blur p-2 rounded-full"><IconChevronLeft /></button>
-          </div>
-          <div className="px-6 relative z-10 mt-[15vh] mb-8">
-            <h1 className="text-5xl font-black tracking-tighter mb-2 break-all leading-tight drop-shadow-lg flex items-center flex-wrap gap-4">
-              {activeArtistProfile.artistName}
-              {/* 💡 ステップ11: 本物のアーティスト情報が取得できた場合のみ、緑の公式マークを表示 */}
-              {activeArtistProfile.isVerifiedReal && (
-                <span className="text-[#1DB954] w-10 h-10 flex items-center justify-center bg-black/30 rounded-full backdrop-blur-md">
-                  <IconVerified />
-                </span>
-              )}
-            </h1>
-            <p className="text-xs text-zinc-300 font-bold mb-6 drop-shadow">
-              {getArtistFavoriteCountLabel(artistFavoriteCounts[getArtistFavoriteId(activeArtistProfile)] || 0)}
-            </p>
-            <div className="flex items-center gap-4 mb-6">
-              <button onClick={() => artistSongs[0] && togglePlay(artistSongs[0].previewUrl)} className="w-14 h-14 bg-[#1DB954] rounded-full flex items-center justify-center text-black shadow-xl hover:scale-105 transition-transform">
-                {playingSong === artistSongs[0]?.previewUrl ? <IconStop /> : <IconPlay />}
-              </button>
-              <button aria-label={t('favoriteArtists')} aria-pressed={isFavoriteArtist(activeArtistProfile)} onClick={() => toggleFavoriteArtist(activeArtistProfile)} className="w-12 h-12 bg-black/40 backdrop-blur rounded-full flex items-center justify-center border border-zinc-700/50">
-                <IconHeart filled={isFavoriteArtist(activeArtistProfile)} />
-              </button>
-            </div>
-            {activeArtistCommunity && (
-              <div className="bg-[#1c1c1e]/90 border border-[#1DB954]/20 rounded-2xl p-4 shadow-2xl backdrop-blur-md">
-                <div className="flex gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-zinc-800 overflow-hidden flex-shrink-0">
-                    {activeArtistCommunity.artworkUrl ? (
-                      <>
-                        <img src={activeArtistCommunity.artworkUrl} className="w-full h-full object-cover" onError={(e) => {
-                          e.currentTarget.style.display = 'none';
-                          const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
-                          if (fallback) fallback.style.display = 'flex';
-                        }} />
-                        <div className="hidden w-full h-full items-center justify-center text-zinc-500"><IconUsers /></div>
-                      </>
-                    ) : <div className="w-full h-full flex items-center justify-center text-zinc-500"><IconUsers /></div>}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-base font-black text-white truncate">{formatArtistCommunityDisplayName(activeArtistCommunity)}</p>
-                    <p className="text-xs text-zinc-300 leading-relaxed mt-1">{formatCommunityDescription(activeArtistCommunity)}</p>
-                    <p className="text-[11px] text-zinc-500 font-bold mt-2">{formatCountTemplate('communityJoinedCount', activeArtistCommunity.memberCount)}</p>
-                  </div>
-                </div>
-                {activeArtistCommunity.isJoined || chatCommunities.some(c => c.id === activeArtistCommunity.id) ? (
-                  <button onClick={() => openCommunityChat(activeArtistCommunity)} className="w-full mt-4 py-3 bg-[#1DB954] text-black rounded-xl text-xs font-bold">{t('viewCommunity')}</button>
-                ) : (
-                  <button onClick={() => joinCommunity(activeArtistCommunity)} className="w-full mt-4 py-3 bg-white text-black rounded-xl text-xs font-bold">{t('joinCommunityAction')}</button>
-                )}
-              </div>
-            )}
-          </div>
-          <div className="px-4 pb-24 relative z-10 bg-black min-h-[50vh]">
-            {isArtistLoading ? <p className="text-center text-zinc-500 py-12">{t('artistTracksLoading')}</p> : (
-              <>
-                {latestReleaseSong && (
-                  <div className="mb-10">
-                    <h3 className="text-lg font-bold mb-4 px-2">{t('latestRelease')}</h3>
-                    <div onClick={() => { if ((activeTab === 'chat' && activeChatUserId) || (activeTab === 'other_profile' && viewingUser)) { if (activeTab === 'other_profile' && viewingUser) setActiveChatUserId(viewingUser.id); setSelectedChatSong(latestReleaseSong); setShowChatMusicSelector(true); } else { setDraftSong(latestReleaseSong); } }} className="flex items-center gap-4 bg-[#1c1c1e] p-4 rounded-2xl cursor-pointer hover:bg-zinc-800 transition-colors group">
-                      <div className="relative w-16 h-16 rounded overflow-hidden shadow-md flex-shrink-0 z-10 hover:scale-105 transition-transform" onClick={(e) => { e.stopPropagation(); togglePlay(latestReleaseSong.previewUrl, { title: latestReleaseSong.trackName, artist: latestReleaseSong.artistName, imgUrl: latestReleaseSong.artworkUrl100 }); }}>
-                        <img src={latestReleaseSong.artworkUrl60.replace('60x60bb', '300x300bb')} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100"><IconPlay /></div>
-                      </div>
-                      <div className="flex-1 overflow-hidden"><p className="font-bold text-base truncate">{latestReleaseSong.trackName}</p><p className="text-xs text-[#1DB954] font-bold mt-1">NEW</p></div>
-                      {(activeTab === 'chat' && activeChatUserId) || (activeTab === 'other_profile' && viewingUser) ? (
-                        <button onClick={(e) => {
-                          e.stopPropagation();
-                          if (activeTab === 'other_profile' && viewingUser) setActiveChatUserId(viewingUser.id);
-                          setSelectedChatSong(latestReleaseSong);
-                          setShowChatMusicSelector(true);
-                        }} className="w-10 h-10 rounded-full bg-zinc-800/80 flex items-center justify-center text-white hover:bg-[#1DB954] hover:text-black transition-colors shrink-0 shadow-md">
-                          <IconSend />
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-                )}
-                <h3 className="text-lg font-bold mb-4 px-2">{t('popularSongs')}</h3>
-                <div className="flex flex-col gap-1 mb-10">
-                  {artistSongs.slice(0, 10).map((s, i) => (
-                    <div key={i} onClick={() => { if ((activeTab === 'chat' && activeChatUserId) || (activeTab === 'other_profile' && viewingUser)) { if (activeTab === 'other_profile' && viewingUser) setActiveChatUserId(viewingUser.id); setSelectedChatSong(s); setShowChatMusicSelector(true); } else { setDraftSong(s); } }} className="flex items-center gap-4 py-3 px-2 hover:bg-zinc-800/50 rounded-xl cursor-pointer group">
-                      <p className="text-zinc-500 font-bold text-sm w-4 text-right group-hover:hidden">{i + 1}</p>
-                      <div className="w-4 hidden group-hover:block text-[#1DB954]"><IconPlay /></div>
-                      <img src={s.artworkUrl60} className="w-10 h-10 rounded object-cover shadow-sm z-10 relative hover:scale-105 transition-transform cursor-pointer" onClick={(e) => { e.stopPropagation(); togglePlay(s.previewUrl, { title: s.trackName, artist: s.artistName, imgUrl: s.artworkUrl100 }); }} />
-                      <div className="flex-1 overflow-hidden"><p className="font-bold text-sm truncate group-hover:text-[#1DB954] transition-colors">{s.trackName}</p></div>
-                      {(activeTab === 'chat' && activeChatUserId) || (activeTab === 'other_profile' && viewingUser) ? (
-                        <button onClick={(e) => {
-                          e.stopPropagation();
-                          if (activeTab === 'other_profile' && viewingUser) setActiveChatUserId(viewingUser.id);
-                          setSelectedChatSong(s);
-                          setShowChatMusicSelector(true);
-                        }} className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-400 hover:bg-[#1DB954] hover:text-black transition-colors shrink-0 opacity-0 group-hover:opacity-100">
-                          <IconSend />
-                        </button>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-                {uniqueAlbums.length > 0 && (
-                  <div>
-                    <h3 className="text-lg font-bold mb-4 px-2">{t('popularAlbums')}</h3>
-                    <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-4 px-2">
-                      {uniqueAlbums.map((album, i) => (
-                        <div key={i} onClick={() => setActiveAlbumProfile({ collectionId: album.collectionId, collectionName: album.collectionName, artworkUrl: album.artworkUrl100.replace('100x100bb', '600x600bb'), artistName: album.artistName })} className="flex-shrink-0 w-32 cursor-pointer group">
-                          <img src={album.artworkUrl100.replace('100x100bb', '400x400bb')} className="w-32 h-32 rounded-xl object-cover shadow-md mb-2 group-hover:opacity-80 transition-opacity" />
-                          <p className="font-bold text-xs truncate">{album.collectionName}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
-        </div>
+        <ArtistDetailOverlay
+          artist={activeArtistProfile}
+          artistSongs={artistSongs}
+          latestReleaseSong={latestReleaseSong}
+          uniqueAlbums={uniqueAlbums}
+          activeArtistCommunity={activeArtistCommunity}
+          chatCommunities={chatCommunities}
+          isArtistLoading={isArtistLoading}
+          isFavoriteArtist={isFavoriteArtist(activeArtistProfile)}
+          playingSong={playingSong}
+          favoriteCountLabel={getArtistFavoriteCountLabel(artistFavoriteCounts[getArtistFavoriteId(activeArtistProfile)] || 0)}
+          labels={{
+            back: t('artistDetailBackLabel'),
+            favoriteArtists: t('favoriteArtists'),
+            latestRelease: t('latestRelease'),
+            popularSongs: t('popularSongs'),
+            popularAlbums: t('popularAlbums'),
+            artistTracksLoading: t('artistTracksLoading'),
+            viewCommunity: t('viewCommunity'),
+            joinCommunityAction: t('joinCommunityAction'),
+          }}
+          formatArtistCommunityDisplayName={formatArtistCommunityDisplayName}
+          formatCommunityDescription={formatCommunityDescription}
+          formatCommunityJoinedCount={(count) => formatCountTemplate('communityJoinedCount', count)}
+          onBack={() => { setPlayingSong(null); handleGoBack(); }}
+          onPlayTopSong={() => { if (artistSongs[0]) togglePlay(artistSongs[0].previewUrl); }}
+          onToggleFavoriteArtist={() => toggleFavoriteArtist(activeArtistProfile)}
+          onOpenCommunityChat={openCommunityChat}
+          onJoinCommunity={joinCommunity}
+          onSelectSong={(song) => { if ((activeTab === 'chat' && activeChatUserId) || (activeTab === 'other_profile' && viewingUser)) { if (activeTab === 'other_profile' && viewingUser) setActiveChatUserId(viewingUser.id); setSelectedChatSong(song); setShowChatMusicSelector(true); } else { setDraftSong(song); } }}
+          onSendSong={(song) => { if (activeTab === 'other_profile' && viewingUser) setActiveChatUserId(viewingUser.id); setSelectedChatSong(song); setShowChatMusicSelector(true); }}
+          onPlaySongPreview={(song) => togglePlay(song.previewUrl, { title: song.trackName, artist: song.artistName, imgUrl: song.artworkUrl100 })}
+          onOpenAlbum={(album) => setActiveAlbumProfile({ collectionId: album.collectionId, collectionName: album.collectionName, artworkUrl: album.artworkUrl100.replace('100x100bb', '600x600bb'), artistName: album.artistName })}
+          canSendSong={Boolean((activeTab === 'chat' && activeChatUserId) || (activeTab === 'other_profile' && viewingUser))}
+        />
       )}
       {activeAlbumProfile && (
         <div className="fixed inset-0 bg-black z-[1000] animate-fade-in flex flex-col overflow-y-auto">
