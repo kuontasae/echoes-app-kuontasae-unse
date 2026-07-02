@@ -20,6 +20,7 @@ import { ChatListSection } from './components/chat/ChatListSection';
 import { ChatMessages } from './components/chat/ChatMessages';
 import { ChatRoomHeader } from './components/chat/ChatRoomHeader';
 import { AlbumDetailOverlay } from './components/AlbumDetailOverlay';
+import { AppInfoModal } from './components/AppInfoModal';
 import { ArtistDetailOverlay } from './components/ArtistDetailOverlay';
 import { BlockedUsersModal } from './components/BlockedUsersModal';
 import { CalendarMonthYearPicker } from './components/CalendarMonthYearPicker';
@@ -6197,16 +6198,16 @@ const renderFeedCard = (s: Song) => (
         )}
       </div>
       {showAppInfoModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[950] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowAppInfoModal(null)}>
-          <div className="bg-[#1c1c1e] border border-zinc-800 p-8 rounded-3xl w-full max-w-sm shadow-2xl relative text-center" onClick={e => e.stopPropagation()}>
-            <div className="mx-auto w-12 h-12 bg-black rounded-full flex items-center justify-center mb-4 text-white"><IconInfo /></div>
-            <h3 className="font-bold text-lg mb-4 text-white">{showAppInfoModal.title}</h3>
-            <div className="max-h-[50vh] overflow-y-auto mb-8 scrollbar-hide text-left">
-              <p className="text-sm text-zinc-400 leading-relaxed whitespace-pre-line">{showAppInfoModal.content}</p>
-            </div>
-            <button onClick={() => setShowAppInfoModal(null)} className="w-full py-3 bg-white text-black rounded-xl text-sm font-bold uppercase hover:bg-zinc-200 transition-colors">{t('AuthClose')}</button>
-          </div>
-        </div>
+        <AppInfoModal
+          title={showAppInfoModal.title}
+          content={showAppInfoModal.content}
+          closeLabel={t('AuthClose')}
+          titleClassName="font-bold text-lg mb-4 text-white"
+          contentWrapperClassName="max-h-[50vh] overflow-y-auto mb-8 scrollbar-hide text-left"
+          contentClassName="text-sm text-zinc-400 leading-relaxed whitespace-pre-line"
+          closeButtonClassName="w-full py-3 bg-white text-black rounded-xl text-sm font-bold uppercase hover:bg-zinc-200 transition-colors"
+          onClose={() => setShowAppInfoModal(null)}
+        />
       )}
     </div>
   );
@@ -7283,14 +7284,15 @@ const renderFeedCard = (s: Song) => (
         />
       )}
       {showAppInfoModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[950] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowAppInfoModal(null)}>
-          <div className="bg-[#1c1c1e] border border-zinc-800 p-8 rounded-3xl w-full max-w-sm shadow-2xl relative text-center" onClick={e => e.stopPropagation()}>
-            <div className="mx-auto w-12 h-12 bg-black rounded-full flex items-center justify-center mb-4 text-white"><IconInfo /></div>
-            <h3 className="font-bold text-lg mb-2">{showAppInfoModal.title}</h3>
-            <p className="text-sm text-zinc-400 leading-relaxed mb-8 whitespace-pre-line">{showAppInfoModal.content}</p>
-            <button onClick={() => setShowAppInfoModal(null)} className="w-full py-3 bg-white text-black rounded-xl text-xs font-bold uppercase">{t('close')}</button>
-          </div>
-        </div>
+        <AppInfoModal
+          title={showAppInfoModal.title}
+          content={showAppInfoModal.content}
+          closeLabel={t('close')}
+          titleClassName="font-bold text-lg mb-2"
+          contentClassName="text-sm text-zinc-400 leading-relaxed mb-8 whitespace-pre-line"
+          closeButtonClassName="w-full py-3 bg-white text-black rounded-xl text-xs font-bold uppercase"
+          onClose={() => setShowAppInfoModal(null)}
+        />
       )}
       <UserListModal
         title={showUserListModal ? t(showUserListModal === 'FOLLOWING' ? 'following' : 'followers') : null}
