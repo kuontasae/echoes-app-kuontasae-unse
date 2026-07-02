@@ -20,6 +20,7 @@ import { ChatListSection } from './components/chat/ChatListSection';
 import { ChatMessages } from './components/chat/ChatMessages';
 import { ChatRoomHeader } from './components/chat/ChatRoomHeader';
 import { CalendarMonthYearPicker } from './components/CalendarMonthYearPicker';
+import { MatchFilterModal } from './components/MatchFilterModal';
 import { MiniPlayer } from './components/MiniPlayer';
 import { displayLocalTime, formatCount } from './utils/formatters';
 import { COIN_CHARGE_PLANS, type CoinChargePlan } from './coinPlans';
@@ -7031,65 +7032,41 @@ const renderFeedCard = (s: Song) => (
         </div>
       )}
       {showMatchFilterModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[950] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowMatchFilterModal(false)}>
-          <div className="bg-[#1c1c1e] border border-zinc-800 p-8 rounded-3xl w-full max-w-sm shadow-2xl relative" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-6"><h3 className="font-bold text-lg">{t('matchFilterTitle')}</h3><button onClick={() => setShowMatchFilterModal(false)} className="text-zinc-500 hover:text-white"><IconCross /></button></div>
-            <div className="flex flex-col gap-6">
-              <div className="relative">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">{t('artist')}</label>
-                {matchFilter.artists.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {matchFilter.artists.map(a => (
-                      <div key={a.artistId} className="flex items-center bg-zinc-800 rounded-full pl-1 pr-3 py-1 gap-2">
-                        <img src={a.artworkUrl} className="w-6 h-6 rounded-full object-cover cursor-pointer" onClick={(e) => handleArtistClick(e, a.artistId, a.artistName, a.artworkUrl)} />
-                        <span className="text-xs font-bold text-white cursor-pointer hover:underline" onClick={(e) => handleArtistClick(e, a.artistId, a.artistName, a.artworkUrl)}>{a.artistName}</span>
-                        <button onClick={() => setMatchFilter({ ...matchFilter, artists: matchFilter.artists.filter(fa => fa.artistId !== a.artistId) })} className="text-zinc-500 hover:text-white ml-1"><IconCross /></button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <input type="text" placeholder={t('matchFilterArtistPlaceholder')} value={filterArtistInput} onChange={e => setFilterArtistInput(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-zinc-500" />
-                {filterArtistSuggestions.length > 0 && filterArtistInput && (
-                  <div className="absolute top-full left-0 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden z-50">
-                    {filterArtistSuggestions.map(a => (
-                      <div key={a.artistId} onMouseDown={(e) => { e.preventDefault(); if (!matchFilter.artists.some(fa => fa.artistId === a.artistId)) { setMatchFilter({ ...matchFilter, artists: [...matchFilter.artists, a] }); } setFilterArtistInput(""); }} className="flex items-center gap-3 p-3 text-xs text-white hover:bg-zinc-700 cursor-pointer border-b border-zinc-700 last:border-0">
-                        <img src={a.artworkUrl} className="w-8 h-8 rounded-full object-cover" />
-                        <span className="font-bold">{a.artistName}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="relative">
-                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">{t('matchFilterTagLiveLabel')}</label>
-                {matchFilter.hashtags.length > 0 && (<div className="flex flex-wrap gap-2 mb-3">{matchFilter.hashtags.map(h => (<div key={h} className="flex items-center bg-zinc-800 rounded-full px-3 py-1 gap-2"><span className="text-xs font-bold text-white">#{getMusicTagLabel(h)}</span><button onClick={() => setMatchFilter({ ...matchFilter, hashtags: matchFilter.hashtags.filter(fh => fh !== h) })} className="text-zinc-500 hover:text-white ml-1"><IconCross /></button></div>))}</div>)}
-                {matchFilter.liveHistories.length > 0 && (<div className="flex flex-wrap gap-2 mb-3">{matchFilter.liveHistories.map(l => (<div key={l} className="flex items-center bg-zinc-800 rounded-full px-3 py-1 gap-2"><span className="text-xs font-bold text-white"><IconTicket /> {l}</span><button onClick={() => setMatchFilter({ ...matchFilter, liveHistories: matchFilter.liveHistories.filter(fl => fl !== l) })} className="text-zinc-500 hover:text-white ml-1"><IconCross /></button></div>))}</div>)}
-                <input type="text" placeholder={t('matchFilterTagLivePlaceholder')} value={filterHashtagInput} onChange={e => setFilterHashtagInput(e.target.value)} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-zinc-500" />
-                {filterHashtagInput && (
-                  <div className="absolute top-full left-0 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-xl overflow-hidden z-50">
-                    {allAvailableHashtags.filter(h => h.toLowerCase().includes(filterHashtagInput.toLowerCase())).slice(0, 3).map(h => (<div key={h} onMouseDown={(e) => { e.preventDefault(); if (!matchFilter.hashtags.includes(h)) setMatchFilter({ ...matchFilter, hashtags: [...matchFilter.hashtags, h] }); setFilterHashtagInput(""); }} className="p-3 text-xs text-white hover:bg-zinc-700 cursor-pointer border-b border-zinc-700 last:border-0">#{getMusicTagLabel(h)}</div>))}
-                    {allAvailableLiveHistories.filter(l => l.toLowerCase().includes(filterHashtagInput.toLowerCase())).slice(0, 3).map(l => (<div key={l} onMouseDown={(e) => { e.preventDefault(); if (!matchFilter.liveHistories.includes(l)) setMatchFilter({ ...matchFilter, liveHistories: [...matchFilter.liveHistories, l] }); setFilterHashtagInput(""); }} className="p-3 text-xs text-white hover:bg-zinc-700 cursor-pointer border-b border-zinc-700 last:border-0"><IconTicket /> {l}</div>))}
-                  </div>
-                )}
-              </div>
-              <div className="flex gap-4">
-                <div className="flex-1">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">{t('matchFilterAgeRange')}</label>
-                  <div className="flex items-center gap-2">
-                    <select value={matchFilter.ageMin} onChange={e => setMatchFilter({ ...matchFilter, ageMin: parseInt(e.target.value) })} className="bg-black border border-zinc-800 rounded-xl px-2 py-2 text-xs text-white focus:outline-none appearance-none flex-1 text-center">{Array.from({ length: 83 }, (_, i) => 18 + i).map(y => <option key={y} value={y}>{y}</option>)}</select>
-                    <span className="text-zinc-500 text-xs">~</span>
-                    <select value={matchFilter.ageMax} onChange={e => setMatchFilter({ ...matchFilter, ageMax: parseInt(e.target.value) })} className="bg-black border border-zinc-800 rounded-xl px-2 py-2 text-xs text-white focus:outline-none appearance-none flex-1 text-center">{Array.from({ length: 83 }, (_, i) => 18 + i).map(y => <option key={y} value={y}>{y}</option>)}</select>
-                  </div>
-                </div>
-                <div className="flex-1">
-                  <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-2 block">{t('matchFilterSex')}</label>
-                  <select value={matchFilter.gender} onChange={e => setMatchFilter({ ...matchFilter, gender: e.target.value })} className="w-full bg-black border border-zinc-800 rounded-xl px-4 py-2 text-xs text-white focus:outline-none appearance-none"><option value="All">{t('matchFilterSexAll')}</option><option value="Male">{t('matchFilterSexMale')}</option><option value="Female">{t('matchFilterSexFemale')}</option></select>
-                </div>
-              </div>
-            </div>
-            <button onClick={() => setShowMatchFilterModal(false)} className="w-full mt-8 bg-white text-black font-bold py-3.5 rounded-xl shadow-lg hover:bg-gray-200 transition-colors">{t('matchFilterApply')}</button>
-          </div>
-        </div>
+        <MatchFilterModal
+          matchFilter={matchFilter}
+          filterArtistInput={filterArtistInput}
+          filterArtistSuggestions={filterArtistSuggestions}
+          filterHashtagInput={filterHashtagInput}
+          allAvailableHashtags={allAvailableHashtags}
+          allAvailableLiveHistories={allAvailableLiveHistories}
+          labels={{
+            title: t('matchFilterTitle'),
+            artist: t('artist'),
+            artistPlaceholder: t('matchFilterArtistPlaceholder'),
+            tagLive: t('matchFilterTagLiveLabel'),
+            tagLivePlaceholder: t('matchFilterTagLivePlaceholder'),
+            ageRange: t('matchFilterAgeRange'),
+            sex: t('matchFilterSex'),
+            sexAll: t('matchFilterSexAll'),
+            sexMale: t('matchFilterSexMale'),
+            sexFemale: t('matchFilterSexFemale'),
+            apply: t('matchFilterApply'),
+          }}
+          getMusicTagLabel={getMusicTagLabel}
+          onClose={() => setShowMatchFilterModal(false)}
+          onArtistInputChange={setFilterArtistInput}
+          onHashtagInputChange={setFilterHashtagInput}
+          onArtistClick={handleArtistClick}
+          onRemoveArtist={(artistId) => setMatchFilter({ ...matchFilter, artists: matchFilter.artists.filter(fa => fa.artistId !== artistId) })}
+          onSelectArtistSuggestion={(artist) => { if (!matchFilter.artists.some(fa => fa.artistId === artist.artistId)) { setMatchFilter({ ...matchFilter, artists: [...matchFilter.artists, artist] }); } setFilterArtistInput(""); }}
+          onRemoveHashtag={(hashtag) => setMatchFilter({ ...matchFilter, hashtags: matchFilter.hashtags.filter(fh => fh !== hashtag) })}
+          onRemoveLiveHistory={(liveHistory) => setMatchFilter({ ...matchFilter, liveHistories: matchFilter.liveHistories.filter(fl => fl !== liveHistory) })}
+          onSelectHashtagSuggestion={(hashtag) => { if (!matchFilter.hashtags.includes(hashtag)) setMatchFilter({ ...matchFilter, hashtags: [...matchFilter.hashtags, hashtag] }); setFilterHashtagInput(""); }}
+          onSelectLiveHistorySuggestion={(liveHistory) => { if (!matchFilter.liveHistories.includes(liveHistory)) setMatchFilter({ ...matchFilter, liveHistories: [...matchFilter.liveHistories, liveHistory] }); setFilterHashtagInput(""); }}
+          onAgeMinChange={(ageMin) => setMatchFilter({ ...matchFilter, ageMin })}
+          onAgeMaxChange={(ageMax) => setMatchFilter({ ...matchFilter, ageMax })}
+          onGenderChange={(gender) => setMatchFilter({ ...matchFilter, gender })}
+        />
       )}
       {showCreateGroupModal && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[950] flex items-center justify-center p-6 animate-fade-in" onClick={() => setShowCreateGroupModal(false)}>
