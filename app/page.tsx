@@ -26,6 +26,7 @@ import { BlockedUsersModal } from './components/BlockedUsersModal';
 import { CalendarMonthYearPicker } from './components/CalendarMonthYearPicker';
 import { CalendarPopupVibeOverlay } from './components/CalendarPopupVibeOverlay';
 import { CommunityCalendarModal } from './components/CommunityCalendarModal';
+import { CommunityDetailModal } from './components/CommunityDetailModal';
 import { ChatMusicPickerModal } from './components/ChatMusicPickerModal';
 import { CommunityCalendarPicker } from './components/CommunityCalendarPicker';
 import { CreateGroupModal } from './components/CreateGroupModal';
@@ -6240,6 +6241,14 @@ const renderFeedCard = (s: Song) => (
     scheduledCountLabel: formatCountTemplate('communityScheduledCount', c.memberCount),
   }));
   const selectedDatePerformanceLabel = selectedModalDate ? formatDatePerformances(selectedModalDate) : "";
+  const communityDetailMe = activeCommunityDetail ? allProfiles.find(u => u.id === currentUser?.id) || myProfile : null;
+  const communityDetailParticipants = activeCommunityDetail && communityDetailMe ? (
+    activeCommunityDetail.memberCount <= 1
+      ? [communityDetailMe].slice(0, activeCommunityDetail.memberCount)
+      : [communityDetailMe, ...allProfiles.filter(u => u.id !== communityDetailMe.id)].slice(0, activeCommunityDetail.memberCount)
+  ) : [];
+  const isActiveCommunityJoined = activeCommunityDetail ? chatCommunities.some(c => c.id === activeCommunityDetail.id) || activeCommunityDetail.isJoined : false;
+  const canReportActiveCommunity = activeCommunityDetail ? !activeCommunityDetail.isVerified && activeCommunityDetail.communityType !== 'artist' : false;
   return (
     <main className="min-h-screen bg-black text-white pb-24 font-sans relative selection:bg-zinc-800 overflow-x-hidden">
       <audio ref={audioRef} onEnded={() => setPlayingSong(null)} />
@@ -6376,65 +6385,25 @@ const renderFeedCard = (s: Song) => (
         />
       )}
       {activeCommunityDetail && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[950] flex items-center justify-center p-6 animate-fade-in" onClick={() => setActiveCommunityDetail(null)}>
-          <div className="bg-[#1c1c1e] border border-zinc-800 p-8 rounded-[32px] w-full max-w-sm relative flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="font-bold text-lg">{t('communityDetailTitle')}</h3>
-              <button onClick={() => setActiveCommunityDetail(null)} className="text-zinc-500 hover:text-white"><IconCross /></button>
-            </div>
-            <div className="flex flex-col items-center mb-8">
-              <div className="w-20 h-20 bg-zinc-800 rounded-2xl flex items-center justify-center text-zinc-500 mb-4 shadow-lg overflow-hidden">
-                {activeCommunityDetail.artworkUrl ? (
-                  <>
-                    <img src={activeCommunityDetail.artworkUrl} className="w-full h-full object-cover" onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
-                      if (fallback) fallback.style.display = 'flex';
-                    }} />
-                    <div className="hidden w-full h-full items-center justify-center text-zinc-500">{activeCommunityDetail.communityType === 'artist' ? <IconUsers /> : <IconTicket />}</div>
-                  </>
-                ) : activeCommunityDetail.communityType === 'artist' ? <IconUsers /> : <IconTicket />}
-              </div>
-              {/* 💡 公式マークを表示 */}
-              <h2 className="text-2xl font-black text-center mb-2 flex items-center justify-center gap-2">
-                {formatArtistCommunityDisplayName(activeCommunityDetail)}
-                {activeCommunityDetail.isVerified && <span className="text-[#1DB954] w-5 h-5 flex items-center"><IconVerified /></span>}
-              </h2>
-              {formatCommunityDescription(activeCommunityDetail) && <p className="text-sm text-zinc-300 text-center leading-relaxed mb-3">{formatCommunityDescription(activeCommunityDetail)}</p>}
-              <p className="text-sm text-[#1DB954] font-bold mb-4">{activeCommunityDetail.communityType === 'artist' ? t('permanentFanCommunity') : formatCommunityDate(activeCommunityDetail.date)}</p>
-              <div className="flex -space-x-3 justify-center mb-2">
-                {(() => {
-                  const me = allProfiles.find(u => u.id === currentUser?.id) || myProfile;
-                  const participants = activeCommunityDetail.memberCount <= 1 
-                    ? [me].slice(0, activeCommunityDetail.memberCount)
-                    : [me, ...allProfiles.filter(u => u.id !== me.id)].slice(0, activeCommunityDetail.memberCount);
-                  return (
-                    <>
-                      {participants.slice(0, 3).map(u => <img key={u.id} src={u.avatar} className="w-9 h-9 rounded-full border-2 border-[#1c1c1e] object-cover" />)}
-                      {activeCommunityDetail.memberCount > 3 && (
-                        <div className="w-9 h-9 rounded-full bg-zinc-800 border-2 border-[#1c1c1e] flex items-center justify-center text-[10px] font-bold text-zinc-400 z-10">
-                          +{activeCommunityDetail.memberCount - 3}
-                        </div>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-              <p className="text-xs text-zinc-400">{formatCountTemplate('communityJoinedCount', activeCommunityDetail.memberCount)}</p>
-            </div>
-            {chatCommunities.some(c => c.id === activeCommunityDetail.id) || activeCommunityDetail.isJoined ? (
-              <button onClick={() => openCommunityChat(activeCommunityDetail)} className="w-full py-4 bg-[#1DB954] text-black rounded-xl text-sm font-bold shadow-lg hover:scale-105 transition-transform mb-2">{t('viewCommunity')}</button>
-            ) : (
-              <button onClick={() => joinCommunity(activeCommunityDetail)} className="w-full py-4 bg-white text-black rounded-xl text-sm font-bold shadow-lg hover:scale-105 transition-transform mb-2">{t('joinCommunityAction')}</button>
-            )}
-            {/* 💡 ユーザー作成の非公式ライブの場合のみ、通報ボタンを表示 */}
-            {!activeCommunityDetail.isVerified && activeCommunityDetail.communityType !== 'artist' && (
-              <button onClick={() => handleReportCommunity(activeCommunityDetail.id)} className="w-full py-3 bg-transparent text-zinc-600 hover:text-red-500 rounded-xl text-[10px] font-bold transition-colors flex items-center justify-center gap-1.5 mt-2">
-                <IconWarning /> {t('reportFalseLiveInfo')}
-              </button>
-            )}
-          </div>
-        </div>
+        <CommunityDetailModal
+          title={t('communityDetailTitle')}
+          artworkUrl={activeCommunityDetail.artworkUrl}
+          isArtistCommunity={activeCommunityDetail.communityType === 'artist'}
+          displayName={formatArtistCommunityDisplayName(activeCommunityDetail)}
+          isVerified={activeCommunityDetail.isVerified}
+          description={formatCommunityDescription(activeCommunityDetail)}
+          dateLabel={activeCommunityDetail.communityType === 'artist' ? t('permanentFanCommunity') : formatCommunityDate(activeCommunityDetail.date)}
+          participants={communityDetailParticipants}
+          extraParticipantCount={activeCommunityDetail.memberCount > 3 ? activeCommunityDetail.memberCount - 3 : 0}
+          joinedCountLabel={formatCountTemplate('communityJoinedCount', activeCommunityDetail.memberCount)}
+          primaryActionLabel={isActiveCommunityJoined ? t('viewCommunity') : t('joinCommunityAction')}
+          primaryActionVariant={isActiveCommunityJoined ? 'open' : 'join'}
+          canReport={canReportActiveCommunity}
+          reportLabel={t('reportFalseLiveInfo')}
+          onClose={() => setActiveCommunityDetail(null)}
+          onPrimaryAction={() => { isActiveCommunityJoined ? openCommunityChat(activeCommunityDetail) : joinCommunity(activeCommunityDetail); }}
+          onReport={() => handleReportCommunity(activeCommunityDetail.id)}
+        />
       )}
       {activeChatUserId && (
         <div className={`fixed inset-0 bg-black animate-fade-in flex flex-col ${showChatMusicSelector ? 'z-[1200]' : 'z-[900]'}`}>
