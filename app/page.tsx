@@ -573,6 +573,28 @@ Object.assign(localI18n["日本語"], {
   profileSection: "プロフィール",
   musicTaste: "音楽の好み",
   favoriteGenres: "好きなジャンル",
+  onboardingDefaultChoiceLabels: {
+    "邦ロック": "邦ロック",
+    "J-POP": "J-POP",
+    "K-POP": "K-POP",
+    "洋楽": "洋楽",
+    "ヒップホップ": "ヒップホップ",
+    "R&B": "R&B",
+    "EDM": "EDM",
+    "テクノ": "テクノ",
+    "ジャズ": "ジャズ",
+    "アニソン": "アニソン",
+    "ボカロ": "ボカロ",
+    "アイドル": "アイドル",
+    "フェス勢": "フェス勢",
+    "ライブ好き": "ライブ好き",
+    "チルい曲": "チルい曲",
+    "カラオケ好き": "カラオケ好き",
+    "音楽友達募集": "音楽友達募集",
+    "新譜チェック": "新譜チェック",
+    "推し活": "推し活",
+    "レコード好き": "レコード好き"
+  },
   favoriteArtist: "好きなアーティスト",
   artistSearchPlaceholder: "アーティストを検索",
   artistDetailBackLabel: "アーティストページを戻る",
@@ -1067,6 +1089,28 @@ Object.assign(localI18n["English"], {
   profileSection: "Profile",
   musicTaste: "Music taste",
   favoriteGenres: "Favorite genres",
+  onboardingDefaultChoiceLabels: {
+    "邦ロック": "Japanese rock",
+    "J-POP": "J-POP",
+    "K-POP": "K-POP",
+    "洋楽": "Western music",
+    "ヒップホップ": "Hip-hop",
+    "R&B": "R&B",
+    "EDM": "EDM",
+    "テクノ": "Techno",
+    "ジャズ": "Jazz",
+    "アニソン": "Anime songs",
+    "ボカロ": "Vocaloid",
+    "アイドル": "Idol pop",
+    "フェス勢": "Festival-goer",
+    "ライブ好き": "Live music fan",
+    "チルい曲": "Chill songs",
+    "カラオケ好き": "Karaoke fan",
+    "音楽友達募集": "Looking for music friends",
+    "新譜チェック": "New release watcher",
+    "推し活": "Fan activity",
+    "レコード好き": "Record lover"
+  },
   favoriteArtist: "Favorite artist",
   artistSearchPlaceholder: "Search artists",
   artistDetailBackLabel: "Back from artist page",
@@ -1561,6 +1605,28 @@ Object.assign(localI18n["中文"], {
   profileSection: "个人资料",
   musicTaste: "音乐喜好",
   favoriteGenres: "喜欢的类型",
+  onboardingDefaultChoiceLabels: {
+    "邦ロック": "日摇",
+    "J-POP": "J-POP",
+    "K-POP": "K-POP",
+    "洋楽": "西洋音乐",
+    "ヒップホップ": "嘻哈",
+    "R&B": "R&B",
+    "EDM": "EDM",
+    "テクノ": "Techno",
+    "ジャズ": "爵士",
+    "アニソン": "动画歌曲",
+    "ボカロ": "Vocaloid",
+    "アイドル": "偶像流行",
+    "フェス勢": "音乐节爱好者",
+    "ライブ好き": "喜欢现场",
+    "チルい曲": "轻松歌曲",
+    "カラオケ好き": "喜欢卡拉OK",
+    "音楽友達募集": "寻找音乐好友",
+    "新譜チェック": "关注新歌",
+    "推し活": "应援活动",
+    "レコード好き": "喜欢唱片"
+  },
   favoriteArtist: "喜欢的艺人",
   artistSearchPlaceholder: "搜索艺人",
   artistDetailBackLabel: "返回艺人页面",
@@ -5930,6 +5996,10 @@ const renderFeedCard = (s: Song) => (
     }
     setItems(prev => [...prev, value].slice(0, 8));
   };
+  const getOnboardingChoiceDisplayLabel = (candidate: string) => {
+    const labels = localI18n[language]?.onboardingDefaultChoiceLabels;
+    return labels?.[candidate] || candidate;
+  };
   const renderOnboardingChipPicker = (
     label: string,
     candidates: string[],
@@ -5949,7 +6019,7 @@ const renderFeedCard = (s: Song) => (
               onClick={() => toggleOnboardingChoice(candidate, items, setItems)}
               className={`px-3 py-2 rounded-full border text-[11px] font-bold transition-colors ${isSelected ? 'bg-[#1DB954] border-[#1DB954] text-black' : 'bg-black border-zinc-800 text-zinc-300 hover:text-white'}`}
             >
-              {prefix}{candidate}
+              {prefix}{getOnboardingChoiceDisplayLabel(candidate)}
             </button>
           );
         })}
